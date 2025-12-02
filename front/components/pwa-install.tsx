@@ -53,7 +53,7 @@ export default function PwaInstall() {
       boxShadow: "0 8px 24px rgba(0,0,0,.3)",
     }}>
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <strong>Install NWB2B</strong>
+        <strong>Install ANF</strong>
         <span style={{ opacity: .8, fontSize: 12 }}>Get faster access from your home screen</span>
       </div>
       <div style={{ display: "flex", gap: 8 }}>

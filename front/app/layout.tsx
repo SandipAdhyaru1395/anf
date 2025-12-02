@@ -18,7 +18,7 @@ import { getBasePath } from "@/lib/utils";
 import EarlyRedirect from "@/components/early-redirect";
 
 export const metadata: Metadata = {
-  title: "NWB2B",
+  title: "ANF",
   description: "",
   generator: "v0.app",
   icons: {},
@@ -29,7 +29,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const iconUrl = !process.env.NEXT_PUBLIC_API_URL ? "/icons" : "/nwb2b/front/icons";
+  const iconUrl = !process.env.NEXT_PUBLIC_API_URL ? "/icons" : "/anf/front/icons";
 
 
   return (
@@ -42,7 +42,7 @@ html {
   --font-mono: ${GeistMono.variable};
 }
         `}</style>
-        <link rel="manifest" href={(!process.env.NEXT_PUBLIC_API_URL) ? "/manifest.webmanifest" : "/nwb2b/front/manifest.webmanifest"} />
+        <link rel="manifest" href={(!process.env.NEXT_PUBLIC_API_URL) ? "/manifest.webmanifest" : "/anf/front/manifest.webmanifest"} />
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
 
@@ -56,7 +56,7 @@ html {
         {/* ------------------ iOS ----------------------- */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="NWB2B" />
+        <meta name="apple-mobile-web-app-title" content="anf" />
 
 
         <link rel="apple-touch-icon" sizes="120x120" href={`${iconUrl}/120.png`} />

@@ -1,13 +1,13 @@
 {
   "id": ".",
-  "name": "NWB2B",
-  "short_name": "NWB2B",
+  "name": "ANF",
+  "short_name": "ANF",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
-  "description": "NWB2B Progressive Web App",
+  "description": "ANF Progressive Web App",
   "icons": [
     {
       "src": "icons/32.png",

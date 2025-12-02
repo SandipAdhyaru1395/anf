@@ -6,7 +6,7 @@ export default function EarlyRedirect() {
   React.useEffect(() => {
     try {
       const path = window.location.pathname || "/";
-      const base = path.startsWith("/nwb2b/front") ? "/nwb2b/front" : "/";
+      const base = path.startsWith("/anf/front") ? "/anf/front" : "/";
       const login = (base.replace(/\/$/, "")) + "/login";
       if (!path.startsWith(login)) {
         const token = localStorage.getItem("auth_token");

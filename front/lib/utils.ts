@@ -22,11 +22,11 @@ export function setFavicon(url: string) {
 
 // Returns the base path this app is served from.
 // Local dev: '/'
-// Production (aidemo): '/nwb2b/front'
+// Production (aidemo): '/anf/front'
 export function getBasePath(): string {
   if (typeof window === 'undefined') return '/'
   const pathname = window.location?.pathname || '/'
-  return pathname.startsWith('/nwb2b/front') ? '/nwb2b/front' : '/'
+  return pathname.startsWith('/anf/front') ? '/anf/front' : '/'
 }
 
 // Joins the base path with a relative path segment safely.

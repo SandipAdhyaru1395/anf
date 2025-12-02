@@ -1286,11 +1286,11 @@ class ProductController extends Controller
         '20%',
         '',
         '1',
-        'https://aidemo.in/nwb2b/admin/public/storage/products/jihfqWToNwczA0CK6.JH19x9NSrFCyVAOv07.JtfGv.jpg',
+        'https://aidemo.in/anf/admin/public/storage/products/jihfqWToNwczA0CK6.JH19x9NSrFCyVAOv07.JtfGv.jpg',
         'Electronics',
         'Vape Pods',
         'Hayati Pro Ultra 25K Prefilled Pods',
-        'https://aidemo.in/nwb2b/admin/public/storage/brands/brand-image.jpg'
+        'https://aidemo.in/anf/admin/public/storage/brands/brand-image.jpg'
       ]
     ];
 
