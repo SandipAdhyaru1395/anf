@@ -1,0 +1,273 @@
+@extends('layouts/layoutMaster')
+
+@section('title', 'Add Purchase')
+
+@section('vendor-style')
+    @vite([
+        'resources/assets/vendor/libs/quill/typography.scss',
+        'resources/assets/vendor/libs/quill/katex.scss',
+        'resources/assets/vendor/libs/quill/editor.scss',
+        'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
+        'resources/assets/vendor/libs/select2/select2.scss',
+        'resources/assets/vendor/libs/@form-validation/form-validation.scss'
+    ])
+@endsection
+
+@section('vendor-script')
+    @vite([
+        'resources/assets/vendor/libs/flatpickr/flatpickr.js',
+        'resources/assets/vendor/libs/quill/quill.js',
+        'resources/assets/vendor/libs/select2/select2.js',
+        'resources/assets/vendor/libs/@form-validation/popular.js',
+        'resources/assets/vendor/libs/@form-validation/bootstrap5.js',
+        'resources/assets/vendor/libs/@form-validation/auto-focus.js'
+    ])
+@endsection
+
+@section('page-script')
+    <style>
+        /* Product search dropdown styling */
+        #product-search-results { border: 0 !important; }
+        #product-search-results .list-group-item { color: #000 !important; border: 0 !important; }
+        #product-search-results .list-group-item:hover,
+        #product-search-results .list-group-item.active { color: #fff !important; background-color: var(--bs-primary) !important; }
+        
+        /* Products table column widths */
+        #products-table th:nth-child(1),
+        #products-table td:nth-child(1) {
+            width: auto;
+            min-width: 200px;
+        }
+        
+        #products-table th:nth-child(2),
+        #products-table td:nth-child(2) {
+            width: 120px;
+            min-width: 120px;
+            
+        }
+        
+        #products-table th:nth-child(3),
+        #products-table td:nth-child(3) {
+            width: 100px;
+            min-width: 100px;
+            text-align: right;
+        }
+        
+        #products-table th:nth-child(4),
+        #products-table td:nth-child(4) {
+            width: 100px;
+            min-width: 100px;
+            text-align: right;
+        }
+        
+        #products-table .vat-cell {
+            text-align: right;
+        }
+        
+        #products-table th:nth-child(5),
+        #products-table td:nth-child(5) {
+            width: 120px;
+            min-width: 120px;
+            text-align: right;
+        }
+        
+        #products-table tr th:nth-child(6),
+        #products-table tr td:nth-child(6) {
+            width: 120px;
+            min-width: 120px;
+            text-align: center;
+          
+        }
+        
+        #products-table .form-control-sm {
+            width: 100%;
+        }
+    </style>
+    @vite('resources/assets/js/purchase-add.js')
+@endsection
+
+@section('content')
+    <div class="app-ecommerce">
+        <!-- Add Purchase -->
+        <form id="addPurchaseForm" method="POST" action="{{ route('purchase.create') }}" enctype="multipart/form-data">
+            @csrf
+
+            <div style="background: var(--bs-body-bg);"
+                class="py-5 px-2 card-header sticky-element d-flex justify-content-sm-between align-items-sm-center flex-column flex-sm-row">
+                <div class="d-flex flex-column justify-content-center">
+                    <h4 class="mb-1">Add Purchase</h4>
+                    <p class="mb-0">Please fill in the information below. The field labels marked with * are required input fields.</p>
+                </div>
+                <div class="d-flex align-content-center flex-wrap gap-4">
+                    <div class="d-flex gap-4">
+                        <a href="{{ route('purchase.list') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <!-- Basic Information -->
+                    <div class="card mb-6">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-4 form-control-validation">
+                                    <label class="form-label" for="date">Date <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control flatpickr" id="date" name="date" 
+                                        value="{{ old('date', date('d/m/Y H:i')) }}">
+                                    @error('date')
+                                        <span class="text-danger" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                                
+                                <div class="col-md-4 mb-4 form-control-validation">
+                                    <label class="form-label" for="document">Attach Document</label>
+                                    <input type="file" class="form-control" id="document" name="document" 
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                    @error('document')
+                                        <span class="text-danger" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4 mb-4 form-control-validation">
+                                    <label class="form-label" for="supplier_id">Supplier <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="supplier_id" name="supplier_id">
+                                        <option value="" disabled {{ old('supplier_id') ? '' : 'selected' }}>Select Supplier</option>
+                                        @forelse($suppliers as $supplier)
+                                            <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                                {{ $supplier->company ?? $supplier->full_name ?? 'Supplier #' . $supplier->id }}
+                                            </option>
+                                        @empty
+                                            <option value="" disabled>No active suppliers available</option>
+                                        @endforelse
+                                    </select>
+                                    @error('supplier_id')
+                                        <span class="text-danger" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="row">
+                                
+                                <div class="col-md-4 mb-4 form-control-validation">
+                                    <label class="form-label" for="deliver">Deliver </label>
+                                    <select class="form-select" id="deliver" name="deliver">
+                                        <option value="">Select Deliver</option>
+                                        <option value="purchase" {{ old('deliver') == 'purchase' ? 'selected' : '' }}>Purchase</option>
+                                        <option value="delivery_note" {{ old('deliver') == 'delivery_note' ? 'selected' : '' }}>Delivery Note</option>
+                                    </select>
+                                    @error('deliver')
+                                        <span class="text-danger" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4 mb-4 form-control-validation">
+                                    <label class="form-label" for="shipping_charge">Shipping Charge</label>
+                                    <input type="text" class="form-control" id="shipping_charge" name="shipping_charge" 
+                                        value="{{ old('shipping_charge', '0.00') }}" placeholder="0.00" 
+                                        onkeypress="return /^[0-9.]+$/.test(event.key)" autocomplete="off">
+                                    @error('shipping_charge')
+                                        <span class="text-danger" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Section -->
+                    <div class="card mb-6">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Products <span class="text-danger">*</span></h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4" id="product-search-container">
+                                <label class="form-label" for="product-search">Search Product</label>
+                                <div class="position-relative">
+                                    <input type="text" id="product-search" class="form-control pe-5" placeholder="Please add products to order list" autocomplete="off" autofocus>
+                                    <div id="product-search-spinner" class="position-absolute top-50 end-0 translate-middle-y me-3" style="display: none;">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></div>
+                                    </div>
+                                    <div id="product-search-results" class="list-group position-absolute w-100 shadow-sm bg-white" style="z-index: 1050; display: none; max-height: 280px; overflow-y: auto;"></div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table id="products-table" class="table table-bordered">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Product Name (Product Code)</th>
+                                            <th>Cost Price</th>
+                                            <th>Quantity</th>
+                                            <th>VAT</th>
+                                            <th>Sub Total</th>
+                                            <th class="last-column"><i class="icon-base ti tabler-trash"></i></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="total-row">
+                                            <td class="text-end fw-bold" colspan="2">Total</td>
+                                            <td class="fw-bold total-quantity">0.00</td>
+                                            <td></td>
+                                            <td class="fw-bold total-amount">0.00</td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @error('products')
+                                <span class="text-danger" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- Note Section -->
+                    <div class="card mb-6">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Note</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-control p-0">
+                                <div class="comment-toolbar border-0 border-bottom">
+                                    <div class="d-flex justify-content-start">
+                                        <span class="ql-formats me-0">
+                                            <button class="ql-bold"></button>
+                                            <button class="ql-italic"></button>
+                                            <button class="ql-underline"></button>
+                                            <button class="ql-strike"></button>
+                                            <button class="ql-list" value="ordered"></button>
+                                            <button class="ql-list" value="bullet"></button>
+                                            <button class="ql-align" value=""></button>
+                                            <button class="ql-align" value="center"></button>
+                                            <button class="ql-align" value="right"></button>
+                                            <button class="ql-align" value="justify"></button>
+                                            <button class="ql-link"></button>
+                                            <button class="ql-image"></button>
+                                            <button class="ql-code-block"></button>
+                                            <button class="ql-clean"></button>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="note-editor" class="comment-editor border-0 pb-6" style="min-height: 200px;">
+                                    {!! old('note') !!}
+                                </div>
+                            </div>
+                            <input type="hidden" name="note" id="note" value="{{ old('note') }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+@endsection
+

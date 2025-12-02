@@ -1,0 +1,134 @@
+{
+  "navigation": {
+    "Apps": [
+      {
+        "name": "eCommerce Dashboard",
+        "icon": "tabler-smart-home",
+        "url": "dashboard"
+      },
+      {
+        "name": "eCommerce - Product List",
+        "icon": "tabler-list-details",
+        "url": "product/list"
+      },
+      {
+        "name": "eCommerce - Add Product",
+        "icon": "tabler-plus",
+        "url": "product/add"
+      },
+      {
+        "name": "eCommerce - Category List",
+        "icon": "tabler-list",
+        "url": "product/category"
+      },
+      {
+        "name": "eCommerce - Order List",
+        "icon": "tabler-list",
+        "url": "order/list"
+      },
+      {
+        "name": "eCommerce - Orders Details",
+        "icon": "tabler-list-check",
+        "url": "order/details"
+      },
+      {
+        "name": "eCommerce - Customers",
+        "icon": "tabler-user",
+        "url": "customer/all"
+      },
+      {
+        "name": "eCommerce - Manage Reviews",
+        "icon": "tabler-quote",
+        "url": "manage/reviews"
+      },
+      {
+        "name": "eCommerce - Referrals",
+        "icon": "tabler-building-factory-2",
+        "url": "referrals"
+      },
+      {
+        "name": "eCommerce - Settings Store Details",
+        "icon": "tabler-building-store",
+        "url": "settings/details"
+      },
+      {
+        "name": "eCommerce - Settings Store Payments",
+        "icon": "tabler-currency-dollar",
+        "url": "settings/payments"
+      },
+      {
+        "name": "eCommerce - Settings Store Checkout",
+        "icon": "tabler-shopping-cart",
+        "url": "settings/checkout"
+      },
+      {
+        "name": "eCommerce - Settings Shipping & Delivery",
+        "icon": "tabler-truck",
+        "url": "settings/shipping"
+      },
+      {
+        "name": "eCommerce - Settings Locations",
+        "icon": "tabler-map-pin",
+        "url": "settings/locations"
+      },
+      {
+        "name": "eCommerce - Settings Notifications",
+        "icon": "tabler-bell-ringing",
+        "url": "settings/notifications"
+      },
+      {
+        "name": "User List",
+        "icon": "tabler-list-numbers",
+        "url": "user/list"
+      },
+      {
+        "name": "Roles",
+        "icon": "tabler-shield-checkered",
+        "url": "access-roles"
+      },
+      {
+        "name": "Invoice List",
+        "icon": "tabler-list-numbers",
+        "url": "invoice/list"
+      },
+      {
+        "name": "Invoice Preview",
+        "icon": "tabler-file-text",
+        "url": "invoice/preview"
+      },
+      {
+        "name": "Invoice Edit",
+        "icon": "tabler-user-plus",
+        "url": "invoice/edit"
+      },
+      {
+        "name": "Invoice Add",
+        "icon": "tabler-user-plus",
+        "url": "invoice/add"
+      }
+    ],
+    "Pages": [
+      {
+        "name": "User Profile",
+        "icon": "tabler-user-circle",
+        "url": "profile-user"
+      },
+      {
+        "name": "User Profile - Teams",
+        "icon": "tabler-users",
+        "url": "profile-teams"
+      },
+      {
+        "name": "User Profile - Projects",
+        "icon": "tabler-layout-grid",
+        "url": "profile-projects"
+      },
+      {
+        "name": "User Profile - Connections",
+        "icon": "tabler-link",
+        "url": "profile-connections"
+      }
+    ]
+  },
+  "suggestions": {}
+}

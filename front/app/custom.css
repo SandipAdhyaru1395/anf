@@ -1,0 +1,264 @@
+@font-face {
+  font-family: "proxima-nova";
+  src: url("fonts/proxima-nova-400.woff2") format("woff2");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "proxima-nova";
+  src: url("fonts/proxima-nova-600.woff2") format("woff2");
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: "proxima-nova";
+  src: url("fonts/proxima-nova-800.woff2") format("woff2");
+  font-weight: 800;
+}
+
+:root {
+  --site-font-family: "proxima-nova" !important;
+  --placeholder-text-color: rgba(117, 117, 117);
+  --p-10: 10px;
+  --body-font-size: 16px;
+  --p-50: 50px;
+  --box-shadow-bottom: 0 6px 6px -6px #666;
+  --box-shadow-top: 0 -6px 6px -6px #666;
+  --border-dark: #5b697c;
+  --radius-8: 8px;
+  --fa-font-thin-900: normal 900 1em/1 "Font Awesome 6 Pro";
+  --border-btn-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Login page css start */
+body {
+  font-family: var(--site-font-family);
+}
+.box-shadow-top {
+  box-shadow: var(--box-shadow-top);
+}
+.box-shadow-bottom {
+  box-shadow: var(--box-shadow-bottom);
+}
+.py-50 {
+  padding-top: var(--p-50);
+  padding-bottom: var(--p-50);
+}
+.pt-50 {
+  padding-bottom: var(--p-50);
+}
+.pb-50 {
+  padding-bottom: var(--p-50);
+}
+.header-logo {
+  background-color: var(--color-white);
+  height: auto;
+  max-width: 1000px;
+  width: 100vw;
+  min-width: 375px;
+  box-shadow: 0 6px 6px -6px #666;
+  z-index: 200;
+  font-weight: 600;
+  position: relative;
+}
+.loginRegisterWrapper {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-8);
+  padding: 2px;
+  display: flex;
+}
+.loginRegisterWrapper > * {
+  flex-grow: 1;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 18px;
+  padding: 12px;
+  text-decoration: none;
+}
+.loginRegisterWrapper > a,
+.register-main-wrap .loginRegisterWrapper > button {
+  border-radius: 0px var(--radius-8) var(--radius-8) 0px;
+  /* background-color: #eee;
+  color: #607565; */
+}
+.loginRegisterWrapper > button,
+.register-main-wrap .loginRegisterWrapper > a {
+  border-radius: var(--radius-8) 0px 0px var(--radius-8);
+  /* background-color: #3dbe59;
+  color: #fff; */
+}
+.wrapper-space,
+.p-10 {
+  padding: var(--p-10);
+}
+
+input::-webkit-input-placeholder {
+  /* Chrome/Opera/Safari */
+  color: var(--placeholder-text-color);
+  font-family: var(--site-font-family);
+  font-size: var(--body-font-size);
+  line-height: 1.15;
+}
+input::-moz-placeholder {
+  /* Firefox 19+ */
+  color: var(--placeholder-text-color);
+  font-family: var(--site-font-family);
+  font-size: var(--body-font-size);
+  line-height: 1.15;
+}
+input:-ms-input-placeholder {
+  /* IE 10+ */
+  color: var(--placeholder-text-color);
+  font-family: var(--site-font-family);
+  font-size: var(--body-font-size);
+  line-height: 1.15;
+}
+input:-moz-placeholder {
+  /* Firefox 18- */
+  color: var(--placeholder-text-color);
+  font-family: var(--site-font-family);
+  font-size: var(--body-font-size);
+  line-height: 1.15;
+}
+.loginregisterform .relative {
+  margin-bottom: 0px;
+  line-height: 1.2;
+}
+button,
+input,
+optgroup,
+select,
+textarea {
+  line-height: 1.15;
+}
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"] {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-8);
+  padding: 16px;
+  outline: none;
+  margin-bottom: 8px;
+  line-height: 1.15;
+  margin-top: 0;
+}
+input[type="text"]:focus::placeholder,
+input[type="number"]:focus::placeholder,
+input[type="email"]:focus::placeholder,
+input[type="password"]:focus::placeholder {
+  color: rgba(0, 0, 0, 0);
+}
+.loginregisterform label {
+  position: absolute;
+  pointer-events: none;
+  left: 16px;
+  top: 18px;
+  transition: 0.2s ease all;
+  color: var(--color-gray-400);
+  opacity: 0;
+}
+input[type="text"]:focus ~ label,
+input[type="text"]:not(:placeholder-shown) ~ label,
+input[type="number"]:focus ~ label,
+input[type="number"]:not(:placeholder-shown) ~ label,
+input[type="email"]:focus ~ label,
+input[type="email"]:not(:placeholder-shown) ~ label,
+input[type="password"]:focus ~ label,
+input[type="password"]:not(:placeholder-shown) ~ label {
+  top: 8px;
+  left: 16px;
+  font-size: 10px;
+  opacity: 1;
+}
+.loginregisterform button {
+  display: block;
+  width: 100%;
+  color: var(--color-white);
+  background-color: var(--color-black);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  padding: 16px;
+  border-radius: var(--radius-8);
+  border: none;
+}
+
+.register-main-wrap .loginregisterform p {
+  line-height: 16px;
+}
+.loginregisterform .text-red-600 {
+  margin-bottom: 10px;
+  margin-top: -5px !important;
+}
+
+/* dashboard page css start */
+.inner-header-shadow {
+  height: 50px;
+  max-width: 1000px;
+  width: 100vw;
+  min-width: 375px;
+  box-shadow: 0 6px 6px -6px #666;
+  z-index: 200;
+  font-weight: 600;
+  position: relative;
+}
+.quickLinksWrapper h3,
+.quickLinksWrapper p {
+  line-height: 16px;
+}
+.referralbox {
+  display: block;
+  background-image: url("./../public/referrals-bg.png");
+  background-repeat: no-repeat;
+  background-size: 81px 65px;
+  font-weight: 600;
+  background-position: right center;
+  text-decoration: none;
+  border-radius: 4px;
+}
+.space-y-2 > .w-full {
+  padding: 5px 6px 5px 12px;
+}
+.offer-products {
+  border: 1px solid var(--border-dark);
+}
+.offer-product-price {
+  font-size: var(--body-font-size);
+  line-height: 20px;
+}
+.offer-product-name {
+  line-height: 16px;
+}
+.offer-product-name > span.text-sm {
+  line-height: 16px;
+}
+.offer-increase-sign {
+  transition: all 0.4s ease;
+}
+
+.footer-nav {
+  z-index: 878;
+}
+
+button.box-shadow-bottom {
+  line-height: 1.35;
+}
+
+.border-btn-shadow {
+  box-shadow: var(--border-btn-shadow);
+}
+.pricesWrapper {
+  line-height: 16px;
+}
+.line-16 {
+  line-height: 16px;
+}
+.delivery-info div:empty {
+  display: none;
+}

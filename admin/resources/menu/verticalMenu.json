@@ -1,0 +1,82 @@
+{
+  "menu": [
+    {
+      "url": "dashboard",
+      "icon": "menu-icon icon-base ti tabler-home",
+      "name": "Dashboard",
+      "slug": "dashboard"
+    },
+    {
+      "url": "category",
+      "icon": "menu-icon icon-base ti tabler-category",
+      "name": "Categories",
+      "slug": "category"
+    },
+    {
+      "url": "brand",
+      "icon": "menu-icon icon-base ti tabler-tags",
+      "name": "Brands",
+      "slug": "brand"
+    },
+    {
+      "url": "product",
+      "icon": "menu-icon icon-base ti tabler-cube",
+      "name": "Products",
+      "slug": "product"
+    },
+    {
+      "url": "order",
+      "icon": "menu-icon icon-base ti tabler-shopping-cart",
+      "name": "Orders",
+      "slug": "order"
+    },
+    {
+      "url": "customer",
+      "icon": "menu-icon icon-base ti tabler-id",
+      "name": "Customers",
+      "slug": "customer"
+    },
+    {
+      "url": "supplier",
+      "icon": "menu-icon icon-base ti tabler-building-factory-2",
+      "name": "Suppliers",
+      "slug": "supplier"
+    },
+    {
+      "url": "quantity-adjustment",
+      "icon": "menu-icon icon-base ti tabler-numbers",
+      "name": "Quantity Adjustments",
+      "slug": "quantity-adjustment"
+    },
+    {
+      "url": "purchase",
+      "icon": "menu-icon icon-base ti tabler-file-invoice",
+      "name": "Purchases",
+      "slug": "purchase"
+    },
+    {
+      "url": "user",
+      "icon": "menu-icon icon-base ti tabler-users",
+      "name": "Users",
+      "slug": "user"
+    },
+    {
+      "url": "role",
+      "icon": "menu-icon icon-base ti tabler-user-check",
+      "name": "Roles",
+      "slug": "role"
+    },
+    {
+      "url": "report",
+      "icon": "menu-icon icon-base ti tabler-report",
+      "name": "Reports",
+      "slug": "report"
+    },
+    {
+      "url": "settings",
+      "icon": "menu-icon icon-base ti tabler-settings",
+      "name": "Settings",
+      "slug": "settings"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+/.phpunit.cache
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+
+# .env
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+
+docker-compose.override.yml
+
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+!/public/assets
+!/public/assets/*
+/resources/assets/vendor/fonts/flags/**
+/resources/assets/vendor/fonts/fontawesome/**
+/public/css
+/public/js
+/public/mix-manifest.json
+# /public/assets/*
+# But not these files...
+# !/public/assets/json
+# /public/assets/json/*
+# !/public/assets/json/search-vertical.json
+# !/public/assets/json/search-horizontal.json
+
+/resources/assets/vendor/fonts/flags/**
+/resources/assets/vendor/fonts/fontawesome/**
+
+# Except for 'template-customizer.js' inside 'resources/assets/vendor/js/'
+!/resources/assets/vendor/js/template-customizer.js
+
+# Storage (sensitive runtime files)
+/storage/logs/*
+/storage/framework/**
+/storage/app/private/**
+/storage/app/*.sql
+/storage/app/*.sqlite
+
+# Root SQL dumps or DB files (do not commit data)
+/*.sql
+/*.sqlite
+
+# OS/Editor
+*.DS_Store
+Thumbs.db
