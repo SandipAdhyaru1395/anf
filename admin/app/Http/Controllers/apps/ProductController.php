@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\BrandCategory;
+use App\Models\Tag;
+use App\Models\BrandTag;
 use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\VatMethod;
@@ -555,12 +557,14 @@ class ProductController extends Controller
         'RRP' => ['RRP (Optional)', 'RRP', 'rrp', 'Recommended Retail Price'],
         'Expiry Date' => ['Expiry Date (Optional)', 'Expiry Date', 'expiry date', 'EXPIRY DATE', 'Expiry', 'expiry', 'Exp Date', 'exp date'],
         'Quantity' => ['Quantity', 'quantity', 'QUANTITY', 'Qty', 'qty', 'Stock Quantity', 'stock quantity'],
+        'Step Quantity' => ['Step Quantity', 'step quantity', 'STEP QUANTITY', 'Step', 'step'],
         'VAT Method' => ['VAT Method (Optional)', 'VAT Method', 'vat method', 'VAT METHOD', 'Vat Method', 'VAT', 'vat', 'Tax Method', 'tax method'],
         'Product Unit' => ['Product Unit', 'product unit', 'PRODUCT UNIT', 'Unit', 'unit'],
         'Description' => ['Description (Optional)', 'Description', 'description', 'DESCRIPTION', 'Desc', 'desc'],
         'Category' => ['Category', 'category', 'CATEGORY', 'Product Category', 'product category'],
         'Type ( Sub Category )' => ['Type ( Sub Category )', 'Type ( Sub Category )', 'Type (Sub Category)', 'Type', 'type', 'Sub Category', 'sub category', 'SubCategory', 'Subcategory'],
-        'Brand Image' => ['Brand Image', 'brand image', 'BRAND IMAGE', 'Brand Image URL', 'brand image url', 'BrandImage']
+        'Brand Image' => ['Brand Image', 'brand image', 'BRAND IMAGE', 'Brand Image URL', 'brand image url', 'BrandImage'],
+        'Brand Tags' => ['Brand Tags', 'brand tags', 'BRAND TAGS', 'Brand Tag', 'brand tag', 'Tags', 'tags']
       ];
       
       $missingHeaders = [];
@@ -806,6 +810,7 @@ class ProductController extends Controller
       'rrp' => $getValue('RRP') ?: $getValue('RRP (Optional)') ?: $getValue('rrp') ?: $getValue('Recommended Retail Price'),
       'expiry_date' => $getValue('Expiry Date') ?: $getValue('Expiry Date (Optional)') ?: $getValue('expiry date') ?: $getValue('Expiry') ?: $getValue('Exp Date'),
       'quantity' => $getValue('Quantity') ?: $getValue('quantity') ?: $getValue('Qty') ?: $getValue('Stock Quantity'),
+      'stepQuantity' => $getValue('Step Quantity') ?: $getValue('step quantity') ?: $getValue('Step') ?: $getValue('step'),
       'productUnit' => $getValue('Product Unit') ?: $getValue('product unit') ?: $getValue('Unit'),
       'vatMethod' => $getValue('VAT Method (Optional)') ?: $getValue('VAT Method') ?: $getValue('vat method') ?: $getValue('VAT') ?: $getValue('Tax Method'),
       'productDescription' => $getValue('Description') ?: $getValue('Description (Optional)') ?: $getValue('description') ?: $getValue('Desc'),
@@ -814,6 +819,7 @@ class ProductController extends Controller
       'type' => $getValue('Type ( Sub Category )') ?: $getValue('Type (Sub Category)') ?: $getValue('Type') ?: $getValue('Sub Category') ?: $getValue('SubCategory'),
       'brand' => $getValue('Brand'),
       'brandImage' => $getValue('Brand Image') ?: $getValue('Brand Image URL') ?: $getValue('brand image') ?: $getValue('BrandImage'),
+      'brandTags' => $getValue('Brand Tags') ?: $getValue('brand tags') ?: $getValue('Brand Tag') ?: $getValue('brand tag') ?: $getValue('Tags') ?: $getValue('tags'),
       'productImageUrl' => $getValue('Image') ?: $getValue('Image URL') ?: $getValue('image') ?: $getValue('image url') ?: $getValue('Product Image'),
     ];
 
@@ -1054,6 +1060,24 @@ class ProductController extends Controller
             ]);
           }
         }
+        
+        // Handle brand tags for new brand
+        if (!empty($data['brandTags'])) {
+          $tagNames = array_map('trim', explode(',', $data['brandTags']));
+          $tagNames = array_filter($tagNames, function($name) { return !empty($name); }); // Remove empty values
+          
+          foreach ($tagNames as $tagName) {
+            $tag = Tag::updateOrCreate(
+              ['name' => $tagName, 'type' => 'categorical'],
+              ['is_active' => 1]
+            );
+            
+            BrandTag::updateOrCreate([
+              'brand_id' => $brand->id,
+              'tag_id' => $tag->id
+            ]);
+          }
+        }
       } else {
         // Brand exists - ensure it's linked to the category if category exists
         if ($brandCategoryId) {
@@ -1066,6 +1090,31 @@ class ProductController extends Controller
               'brand_id' => $brand->id,
               'category_id' => $brandCategoryId
             ]);
+          }
+        }
+        
+        // Handle brand tags for existing brand - check if tags exist, if not create them
+        if (!empty($data['brandTags'])) {
+          $tagNames = array_map('trim', explode(',', $data['brandTags']));
+          $tagNames = array_filter($tagNames, function($name) { return !empty($name); }); // Remove empty values
+          
+          foreach ($tagNames as $tagName) {
+            $tag = Tag::updateOrCreate(
+              ['name' => $tagName, 'type' => 'categorical'],
+              ['is_active' => 1]
+            );
+            
+            // Check if brand tag link exists, if not create it
+            $existingBrandTag = BrandTag::where('brand_id', $brand->id)
+              ->where('tag_id', $tag->id)
+              ->first();
+            
+            if (!$existingBrandTag) {
+              BrandTag::create([
+                'brand_id' => $brand->id,
+                'tag_id' => $tag->id
+              ]);
+            }
           }
         }
       }
@@ -1117,8 +1166,12 @@ class ProductController extends Controller
       }
     }
 
-    // Set default step quantity (default to 1)
+    // Set step quantity (default to 1 if not provided or less than 1)
     $step = 1;
+    if (!empty($data['stepQuantity'])) {
+      $stepValue = is_numeric($data['stepQuantity']) ? (int)$data['stepQuantity'] : 1;
+      $step = $stepValue >= 1 ? $stepValue : 1;
+    }
 
     $price = (float)$data['productPrice'];
     
@@ -1257,16 +1310,18 @@ class ProductController extends Controller
       'Weight (Kg) (Optional)',
       'RRP (Optional)',
       'Expiry Date (Optional)',
-        'Quantity',
-        'Product Unit',
-        'VAT Method (Optional)',
-        'Description (Optional)',
+      'Quantity',
+      'Product Unit',
+      'VAT Method (Optional)',
+      'Description (Optional)',
       'Status (1 = Active / 0 = Inactive)',
       'Image',
       'Category',
       'Type ( Sub Category )',
       'Brand',
-      'Brand Image'
+      'Brand Image',
+      'Step Quantity (Optional)',
+      'Brand Tags (Optional)'
     ];
 
     $sampleData = [
@@ -1286,11 +1341,13 @@ class ProductController extends Controller
         '20%',
         '',
         '1',
-        'https://aidemo.in/anf/admin/public/storage/products/jihfqWToNwczA0CK6.JH19x9NSrFCyVAOv07.JtfGv.jpg',
+        'https://aidemo.in/nwb2b/admin/public/storage/products/jihfqWToNwczA0CK6.JH19x9NSrFCyVAOv07.JtfGv.jpg',
         'Electronics',
         'Vape Pods',
         'Hayati Pro Ultra 25K Prefilled Pods',
-        'https://aidemo.in/anf/admin/public/storage/brands/brand-image.jpg'
+        'https://aidemo.in/nwb2b/admin/public/storage/brands/brand-image.jpg',
+        '1',
+        'Premium, Vape, Pods'
       ]
     ];
 

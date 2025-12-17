@@ -154,10 +154,11 @@
             <h6 class="alert-heading">File Format Requirements:</h6>
             <ul class="mb-0">
               <li><strong>File Format:</strong> CSV files only. If you have an Excel file (.xlsx, .xls), please convert it to CSV first: In Excel, go to File > Save As > Choose "CSV (Comma delimited) (*.csv)"</li>
-              <li><strong>Column Headers (in order):</strong> SR NO., Product Name, Product Code, Product Unit Code, Selling Price, Cost Price (Optional), Wallet Credit (Optional), Weight (Kg) (Optional), RRP (Optional), Expiry Date (Optional), Quantity, Product Unit, VAT Method, Description (Optional), Status (1 = Active / 0 = Inactive), Image, Category, Type ( Sub Category ), Brand, Brand Image</li>
+              <li><strong>Column Headers (in order):</strong> SR NO., Product Name, Product Code, Product Unit Code, Selling Price, Cost Price (Optional), Wallet Credit (Optional), Weight (Kg) (Optional), RRP (Optional), Expiry Date (Optional), Quantity, Product Unit, VAT Method, Description (Optional), Status (1 = Active / 0 = Inactive), Image, Category, Type ( Sub Category ), Brand, Brand Image, Step Quantity (Optional), Brand Tags (Optional)</li>
               <li><strong>Required fields:</strong> Product Name, Product Code, Product Unit Code, Selling Price, Status, Brand</li>
-              <li><strong>Optional fields:</strong> Cost Price, Wallet Credit, Weight (Kg), RRP, Expiry Date, Quantity, Product Unit, VAT Method, Description, Category, Type ( Sub Category ), Brand Image, Image</li>
+              <li><strong>Optional fields:</strong> Cost Price, Wallet Credit, Weight (Kg), RRP, Expiry Date, Quantity, Product Unit, VAT Method, Description, Category, Type ( Sub Category ), Brand Image, Step Quantity (Optional), Brand Tags (Optional), Image</li>
               <li><strong>Status:</strong> Enter 1 for Active or 0 for Inactive</li>
+              <li><strong>Step Quantity:</strong> Enter the step quantity for the product. If not provided or less than 1, it will default to 1.</li>
               <li><strong>Category:</strong> Enter the main category name. If the category doesn't exist, it will be created automatically with Active status.</li>
               <li><strong>Type ( Sub Category ):</strong> Enter the subcategory name. If Category is provided, Type will be created under that Category if it doesn't exist. If Category is blank but Type is provided, the system will search for the Type as an existing subcategory - if found, new brands will be bound to it; if not found, an error will be shown.</li>
               <li><strong>Brand:</strong> Enter one or more brand names separated by commas (e.g., "Brand 1, Brand 2, Brand 3"). 
@@ -172,6 +173,12 @@
                 </ul>
               </li>
               <li><strong>Brand Image:</strong> Enter a full URL (e.g., https://example.com/brand-image.jpg). If URL doesn't start with http:// or https://, it will be automatically prefixed. This is used when creating new brands.</li>
+              <li><strong>Brand Tags:</strong> Enter one or more tag names separated by commas (e.g., "Premium, Vape, Pods"). 
+                <ul style="margin-top: 5px; margin-bottom: 0;">
+                  <li>When creating a new brand, the tags will be created and linked to the brand.</li>
+                  <li>If the brand exists, the system will check if the tags exist. If tags don't exist, they will be created and linked to the brand.</li>
+                </ul>
+              </li>
               <li><strong>VAT Method:</strong> Enter the VAT Method name as it appears in your system (e.g., "20%", "Standard VAT", etc.). If it doesn't exist, it will be created automatically.</li>
               <li><strong>Expiry Date:</strong> Format must be dd/mm/yyyy or dd-mm-yyyy (e.g., 26/11/2026 or 26-11-2026)</li>
               <li><strong>Product Code & Product Unit Code:</strong> Must be unique. Scientific notation (e.g., 6.93633E+12) will be automatically converted.</li>
