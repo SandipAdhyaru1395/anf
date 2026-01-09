@@ -58,7 +58,7 @@ class ProductController extends Controller
             'subcategories' => $brands->map(function ($brand) {
                 $products = ($brand->products ?? collect())
                     ->filter(fn($p) => (int)($p->is_active ?? 0) === 1)
-                    ->sortByDesc('id')
+                    ->sortByDesc('stock_quantity')
                     ->values();
                 // Check if image is a full URL or a stored file path
                 $imageUrl = null;

@@ -37,6 +37,22 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
   const { refresh } = useCustomer();
   const [adjustments, setAdjustments] = useState<Array<{ product_id: number; product_name?: string; old_quantity: number; new_quantity: number }>>([]);
 
+   // Get API base URL (without /api) to access admin assets
+  const getApiBaseUrl = () => {
+    if (typeof window === 'undefined') return 'http://localhost:8000';
+    const rawBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    return rawBase.replace(/\/api$/, '').replace(/\/$/, '');
+  };
+  
+  const defaultImagePath = `${getApiBaseUrl()}/public/assets/img/default_product.png`;
+  
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.currentTarget;
+    if (target.src !== defaultImagePath && !target.src.includes('default_product.png')) {
+      target.src = defaultImagePath;
+    }
+  };
+
   // Sync favourites from shared customer provider to local map
   const { favoriteProductIds, setFavorite } = useCustomer();
   useEffect(() => {
@@ -309,7 +325,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
           <div key={product.id} className="flex items-start flex-col border-t border-gray-200 py-[16px] mx-[10px]">
             <div className="flex items-start h-[53px] w-[100%] grow">
               <div className="w-[50px] h-[50px] overflow-hidden flex items-center justify-center">
-                <img src={product.image || "/placeholder.svg"} alt={product.name} className="w-full h-full object-contain" />
+                <img src={product.image || defaultImagePath } onError={handleImageError} alt={product.name} className="w-full h-full object-contain" />
               </div>
               <div className="text-[16px] h-[53px] text-black truncate grow">{product.name}</div>
             </div>
