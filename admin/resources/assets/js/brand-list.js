@@ -32,11 +32,11 @@ document.addEventListener('DOMContentLoaded', function (e) {
       ajax: baseUrl + 'brand/list/ajax',
       columns: [
         // columns according to JSON
-        { data: 'id' },
-        { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'brand', orderable: false},
+        { data: 'id',orderable: false, searchable: false },
+        { data: 'id', orderable: false, searchable: false, render: DataTable.render.select() },
+        { data: 'brand'},
         { data: 'categories', orderable: false},
-        { data: 'is_active', orderable: false},
+        { data: 'is_active'},
         // { data: 'status'},
         { data: 'id'}
       ],
@@ -45,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function (e) {
           // For Responsive
           className: 'control',
           searchable: false,
-          orderable: false,
           responsivePriority: 2,
           targets: 0,
           render: function (data, type, full, meta) {
@@ -142,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         style: 'multi',
         selector: 'td:nth-child(2)'
       },
-      // order: [0, 'asc'],
+      // order: [[0, 'desc']],
       displayLength: 7,
       lengthMenu: [[7, 10, 25, 50, 100, -1], [7, 10, 25, 50, 100, "All"]],
       layout: {

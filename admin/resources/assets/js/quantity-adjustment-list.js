@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
       ajax: baseUrl + 'quantity-adjustment/list/ajax',
       columns: [
         // columns according to JSON
-        { data: 'id' },
+        { data: 'id',orderable: false, searchable: false },
         { data: 'id', orderable: false, render: DataTable.render.select() },
         { data: 'date_formatted' },
         { data: 'reference_no_display' },

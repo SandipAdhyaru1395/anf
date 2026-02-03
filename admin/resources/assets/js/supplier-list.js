@@ -27,11 +27,11 @@ document.addEventListener('DOMContentLoaded', function (e) {
       columns: [
         { data: 'id' },
         { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'company', orderable: false },
-        { data: 'full_name', orderable: false },
-        { data: 'email', orderable: false },
-        { data: 'phone', orderable: false },
-        { data: 'is_active', orderable: false },
+        { data: 'company' },
+        { data: 'full_name' },
+        { data: 'email' },
+        { data: 'phone' },
+        { data: 'is_active' },
         { data: 'id' }
       ],
       columnDefs: [

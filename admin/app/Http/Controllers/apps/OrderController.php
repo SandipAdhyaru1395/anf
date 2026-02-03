@@ -130,7 +130,7 @@ class OrderController extends Controller
     }
 
     // Normalize products array (in case keys are product IDs)
-    $products = array_filter($validated['products'], function($productData) {
+    $products = array_filter($validated['products'], function ($productData) {
       return isset($productData['product_id']);
     });
 
@@ -139,7 +139,7 @@ class OrderController extends Controller
     foreach ($products as $index => $productData) {
       $productId = (int) ($productData['product_id'] ?? 0);
       $orderedQuantity = (float) ($productData['quantity'] ?? 0);
-      
+
       if ($productId > 0 && $orderedQuantity > 0) {
         $product = Product::find($productId);
         if ($product) {
@@ -151,7 +151,7 @@ class OrderController extends Controller
         }
       }
     }
-    
+
     if (!empty($stockErrors)) {
       return redirect()->back()
         ->withErrors($stockErrors)
@@ -183,7 +183,7 @@ class OrderController extends Controller
 
     // Get order number from order_ref table based on order type
     $orderRef = OrderRef::orderBy('id', 'desc')->first();
-    
+
     if (!$orderRef) {
       // Create initial order_ref record if it doesn't exist
       $orderRef = OrderRef::create([
@@ -193,7 +193,7 @@ class OrderController extends Controller
         'po' => 1,
       ]);
     }
-    
+
     // Use order_ref.est for EST orders, order_ref.so for SO orders
     if ($orderType === 'EST') {
       $orderNumber = $orderRef->est ?? 1;
@@ -247,29 +247,29 @@ class OrderController extends Controller
       foreach ($products as $productData) {
         $quantity = (int) $productData['quantity'];
         $unitPrice = (float) ($productData['unit_cost'] ?? 0);
-        
+
         // Get fresh product data to ensure we have the latest wallet_credit value
         $product = Product::with('unit')->findOrFail($productData['product_id']);
-        
+
         // Get product unit name
         $productUnit = $product->unit ? $product->unit->name : null;
-        
+
         // Calculate wallet credit: unit_wallet_credit = product wallet_credit, wallet_credit_earned = unit_wallet_credit * quantity
-        $unitWalletCredit = round((float)($product->wallet_credit ?? 0), 2);
+        $unitWalletCredit = round((float) ($product->wallet_credit ?? 0), 2);
         $walletCreditEarnedPerItem = round($unitWalletCredit * $quantity, 2);
         $walletCreditEarned += $walletCreditEarnedPerItem;
-        
+
         // Calculate total price
         $totalPrice = round($unitPrice * $quantity, 2);
-        
+
         // Calculate VAT: if is_est is checked, VAT is 0 (included in price), otherwise use product vat_amount
         if ($orderType === 'EST') {
           $unitVat = 0; // VAT is included in the sale price for EST orders
         } else {
-          $unitVat = round((float)($product->vat_amount ?? 0), 2);
+          $unitVat = round((float) ($product->vat_amount ?? 0), 2);
         }
         $totalVat = round($unitVat * $quantity, 2);
-        
+
         // Calculate total: total_price + total_vat
         $total = round($totalPrice + $totalVat, 2);
 
@@ -301,14 +301,14 @@ class OrderController extends Controller
       // EST orders do not affect wallet credit or credit balance
       $walletCreditUsed = 0;
       if ($orderType !== 'EST') {
-        $currentBalance = (float)($customer->credit_balance ?? 0);
+        $currentBalance = (float) ($customer->credit_balance ?? 0);
         $walletCreditUsed = min($subtotal, $currentBalance);
 
         // Update customer credit balance
         if ($walletCreditUsed > 0) {
           $customer->credit_balance = $currentBalance - $walletCreditUsed;
           $customer->save();
-          
+
           WalletTransaction::create([
             'customer_id' => $customer->id,
             'order_id' => $order->id,
@@ -323,7 +323,7 @@ class OrderController extends Controller
         if ($walletCreditEarned > 0) {
           $customer->credit_balance = ($customer->credit_balance ?? 0) + $walletCreditEarned;
           $customer->save();
-          
+
           WalletTransaction::create([
             'customer_id' => $customer->id,
             'order_id' => $order->id,
@@ -341,7 +341,7 @@ class OrderController extends Controller
 
       // Update order totals
       $this->updateOrderTotals($order->id);
-      
+
       // Decrement product quantities after order is created
       foreach ($products as $productData) {
         $quantity = (float) ($productData['quantity'] ?? 0);
@@ -355,7 +355,7 @@ class OrderController extends Controller
           }
         }
       }
-      
+
       return $order;
     });
 
@@ -367,13 +367,13 @@ class OrderController extends Controller
   public function edit($id)
   {
     $order = Order::with(['customer.branches', 'items.product', 'statusHistories', 'creditNotes'])->findOrFail($id);
-    
+
     // Check if order has credit notes - if so, prevent edit access
     if ($order->type === 'SO' && $order->creditNotes()->exists()) {
       Toastr::error('This order cannot be edited because a credit note has been generated for it.');
       return redirect()->route('order.list');
     }
-    
+
     $products = Product::where('is_active', 1)->select('id', 'name', 'sku', 'price', 'wallet_credit', 'image_url')->get();
 
     return view('content.order.edit', [
@@ -498,7 +498,7 @@ class OrderController extends Controller
     }
 
     // Normalize products array (in case keys are product IDs)
-    $products = array_filter($validated['products'], function($productData) {
+    $products = array_filter($validated['products'], function ($productData) {
       return isset($productData['product_id']);
     });
 
@@ -517,7 +517,7 @@ class OrderController extends Controller
     foreach ($products as $index => $productData) {
       $productId = (int) ($productData['product_id'] ?? 0);
       $orderedQuantity = (float) ($productData['quantity'] ?? 0);
-      
+
       if ($productId > 0 && $orderedQuantity > 0) {
         $product = Product::find($productId);
         if ($product) {
@@ -525,7 +525,7 @@ class OrderController extends Controller
           // Add back the old quantity that will be restored
           $oldQuantity = (float) ($oldQuantitiesByProduct[$productId] ?? 0);
           $availableQuantity = $currentStock + $oldQuantity;
-          
+
           if ($orderedQuantity > $availableQuantity) {
             $productName = $product->name ?? 'Product #' . $productId;
             $stockErrors["products.{$index}.quantity"] = "Insufficient stock for {$productName}. Available: {$availableQuantity}, Requested: {$orderedQuantity}";
@@ -533,7 +533,7 @@ class OrderController extends Controller
         }
       }
     }
-    
+
     if (!empty($stockErrors)) {
       return redirect()->back()
         ->withErrors($stockErrors)
@@ -561,8 +561,8 @@ class OrderController extends Controller
     DB::transaction(function () use ($order, $products, $validated, $date, $addressData) {
       // Calculate old wallet credit earned before deleting items
       $oldWalletCreditEarned = $order->items->sum('wallet_credit_earned');
-      $oldWalletCreditUsed = (float)($order->wallet_credit_used ?? 0);
-      
+      $oldWalletCreditUsed = (float) ($order->wallet_credit_used ?? 0);
+
       // Get customer for wallet credit adjustments
       $customer = $order->customer;
 
@@ -589,30 +589,30 @@ class OrderController extends Controller
       foreach ($products as $productData) {
         $quantity = (int) $productData['quantity'];
         $unitPrice = (float) ($productData['unit_cost'] ?? 0); // Note: form uses unit_cost but it's actually unit_price for orders
-        
+
         // Get fresh product data to ensure we have the latest wallet_credit value
         $product = Product::with('unit')->findOrFail($productData['product_id']);
-        
+
         // Get product unit name
         $productUnit = $product->unit ? $product->unit->name : null;
-        
+
         // Calculate wallet credit: unit_wallet_credit = product wallet_credit, wallet_credit_earned = unit_wallet_credit * quantity
         // This automatically recalculates when quantity changes
-        $unitWalletCredit = round((float)($product->wallet_credit ?? 0), 2);
+        $unitWalletCredit = round((float) ($product->wallet_credit ?? 0), 2);
         $walletCreditEarned = round($unitWalletCredit * $quantity, 2);
         $newWalletCreditEarned += $walletCreditEarned;
-        
+
         // Calculate total price
         $totalPrice = round($unitPrice * $quantity, 2);
-        
+
         // Calculate VAT: if order type is EST, VAT is 0 (included in price), otherwise use product vat_amount
         if ($order->type === 'EST') {
           $unitVat = 0; // VAT is included in the sale price for EST orders
         } else {
-          $unitVat = round((float)($product->vat_amount ?? 0), 2);
+          $unitVat = round((float) ($product->vat_amount ?? 0), 2);
         }
         $totalVat = round($unitVat * $quantity, 2);
-        
+
         // Calculate total: total_price + total_vat
         $total = round($totalPrice + $totalVat, 2);
 
@@ -653,14 +653,14 @@ class OrderController extends Controller
       if ($order->type !== 'EST' && $customer) {
         // Reload customer to get fresh balance data
         $customer->refresh();
-        $currentBalance = (float)($customer->credit_balance ?? 0);
-        
+        $currentBalance = (float) ($customer->credit_balance ?? 0);
+
         // To calculate available credit for new order, we need to:
         // 1. Add back the old wallet_credit_used (it was subtracted before)
         // 2. Subtract the old wallet_credit_earned (it was added before)
         // This gives us the balance as if the old order never happened
         $balanceBeforeOldOrder = $currentBalance - $oldWalletCreditEarned + $oldWalletCreditUsed;
-        
+
         // Calculate new wallet_credit_used based on new subtotal and available credit
         $newWalletCreditUsed = min($newSubtotal, $balanceBeforeOldOrder);
 
@@ -670,7 +670,7 @@ class OrderController extends Controller
           $customer->credit_balance = $currentBalance - $oldWalletCreditEarned;
           $customer->save();
           $currentBalance = $customer->credit_balance;
-          
+
           WalletTransaction::create([
             'customer_id' => $customer->id,
             'order_id' => $order->id,
@@ -686,7 +686,7 @@ class OrderController extends Controller
           $customer->credit_balance = $currentBalance + $oldWalletCreditUsed;
           $customer->save();
           $currentBalance = $customer->credit_balance;
-          
+
           WalletTransaction::create([
             'customer_id' => $customer->id,
             'order_id' => $order->id,
@@ -702,7 +702,7 @@ class OrderController extends Controller
           $customer->credit_balance = $currentBalance - $newWalletCreditUsed;
           $customer->save();
           $currentBalance = $customer->credit_balance;
-          
+
           WalletTransaction::create([
             'customer_id' => $customer->id,
             'order_id' => $order->id,
@@ -717,7 +717,7 @@ class OrderController extends Controller
         if ($newWalletCreditEarned > 0) {
           $customer->credit_balance = $currentBalance + $newWalletCreditEarned;
           $customer->save();
-          
+
           WalletTransaction::create([
             'customer_id' => $customer->id,
             'order_id' => $order->id,
@@ -748,7 +748,7 @@ class OrderController extends Controller
 
       // Update order totals again to recalculate with new wallet_credit_used
       $this->updateOrderTotals($order->id);
-      
+
       // Decrement new product quantities after order is updated
       foreach ($products as $productData) {
         $quantity = (float) ($productData['quantity'] ?? 0);
@@ -771,7 +771,7 @@ class OrderController extends Controller
   public function getCustomerBranches($customerId)
   {
     $customer = \App\Models\Customer::with('branches')->findOrFail($customerId);
-    $branches = $customer->branches->map(function($branch) {
+    $branches = $customer->branches->map(function ($branch) {
       $addressText = $branch->name . ' - ' . $branch->address_line1;
       if ($branch->address_line2) {
         $addressText .= ', ' . $branch->address_line2;
@@ -788,7 +788,7 @@ class OrderController extends Controller
         'text' => $addressText
       ];
     });
-    
+
     return response()->json($branches);
   }
 
@@ -812,228 +812,269 @@ class OrderController extends Controller
       'parent_orders.order_number as parent_order_number',
       'credit_notes.type as credit_note_type',
       'credit_notes.order_number as credit_note_number'
-    ])->leftJoin('customers', 'customers.id', '=', 'orders.customer_id')
+    ])
+      ->leftJoin('customers', 'customers.id', '=', 'orders.customer_id')
       ->leftJoin('orders as parent_orders', 'parent_orders.id', '=', 'orders.parent_order_id')
-      ->leftJoin('orders as credit_notes', function($join) {
+      ->leftJoin('orders as credit_notes', function ($join) {
         $join->on('credit_notes.parent_order_id', '=', 'orders.id')
-             ->where('credit_notes.type', '=', 'CN');
+          ->where('credit_notes.type', '=', 'CN');
       })
       ->withCount(['creditNotes as has_credit_note_count']);
 
-    // Apply filters
-    if ($request->has('reference_no') && !empty($request->reference_no)) {
-      $referenceNo = trim($request->reference_no);
-      
-      // Check if search term starts with order type (SO, EST, CN)
-      $orderTypes = ['SO', 'EST', 'CN'];
-      $matchedType = null;
-      $numberPart = $referenceNo;
-      
-      foreach ($orderTypes as $type) {
-        // Case-insensitive check if search starts with type
-        if (stripos($referenceNo, $type) === 0) {
-          $matchedType = $type;
-          // Extract the number part after the type
-          $numberPart = substr($referenceNo, strlen($type));
-          break;
-        }
+    // Apply filters here (reference_no, customer, date ranges)
+    if ($request->filled('reference_no')) {
+
+      $reference = ltrim($request->reference_no, '#');
+
+      if (preg_match('/^(CN|SO|EST)(.*)$/i', $reference, $matches)) {
+
+        $type = strtoupper($matches[1]);
+        $number = $matches[2];
+
+        $query->where(function ($q) use ($type, $number) {
+
+          // Match main order
+          $q->where(function ($sub) use ($type, $number) {
+            $sub->where('orders.type', $type);
+
+            if (!empty($number)) {
+              $sub->where('orders.order_number', 'like', "%{$number}%");
+            }
+          })
+
+            // OR match parent order
+            ->orWhere(function ($sub) use ($type, $number) {
+              $sub->where('parent_orders.type', $type);
+
+              if (!empty($number)) {
+                $sub->where('parent_orders.order_number', 'like', "%{$number}%");
+              }
+            })
+
+            // OR match credit note
+            ->orWhere(function ($sub) use ($type, $number) {
+              $sub->where('credit_notes.type', $type);
+
+              if (!empty($number)) {
+                $sub->where('credit_notes.order_number', 'like', "%{$number}%");
+              }
+            });
+
+        });
+
+      } else {
+
+        // No prefix → search by number everywhere
+        $query->where(function ($q) use ($reference) {
+          $q->where('orders.order_number', 'like', "%{$reference}%")
+            ->orWhere('parent_orders.order_number', 'like', "%{$reference}%")
+            ->orWhere('credit_notes.order_number', 'like', "%{$reference}%");
+        });
       }
-      
-      // Build the query to search both type+number combination and order_number
-      $query->where(function($q) use ($referenceNo, $matchedType, $numberPart) {
-        if ($matchedType && !empty($numberPart)) {
-          // If type was matched with a number (e.g., "SO1"), search for that specific type + number
-          $q->where('orders.type', '=', $matchedType)
-            ->where('orders.order_number', 'like', '%' . $numberPart . '%');
-        } elseif ($matchedType) {
-          // If only type was provided (e.g., "SO"), search for that type
-          $q->where('orders.type', '=', $matchedType);
-        } else {
-          // If no type prefix (only numbers like "1", "12"), search by order_number only (matches any type)
-          $q->where('orders.order_number', 'like', '%' . $numberPart . '%');
-        }
+    }
+
+
+    if ($request->has('customer') && !empty($request->customer)) {
+      $query->where(function ($q) use ($request) {
+        $q->where('customers.company_name', 'like', '%' . $request->customer . '%')
+          ->orWhere('customers.email', 'like', '%' . $request->customer . '%');
       });
     }
 
-    if ($request->has('customer') && !empty($request->customer)) {
-      // If customer is numeric, treat it as customer_id, otherwise search by name/email
-      if (is_numeric($request->customer)) {
-        $query->where('orders.customer_id', '=', $request->customer);
-      } else {
-        $query->where(function($q) use ($request) {
-          $q->where('customers.company_name', 'like', '%' . $request->customer . '%')
-            ->orWhere('customers.email', 'like', '%' . $request->customer . '%');
-        });
-      }
-    }
-
     if ($request->has('start_date') && !empty($request->start_date)) {
-      try {
-        $startDateStr = trim($request->start_date);
-        // Try to parse d/m/Y format first
-        if (strpos($startDateStr, '/') !== false) {
-          $startDate = Carbon::createFromFormat('d/m/Y', $startDateStr)->startOfDay();
-        } else {
-          // Fallback to standard parsing
-          $startDate = Carbon::parse($startDateStr)->startOfDay();
-        }
-        $query->where('orders.order_date', '>=', $startDate);
-      } catch (\Exception $e) {
-        // Invalid date format, skip filter
-      }
+      $startDate = Carbon::createFromFormat('d/m/Y', $request->start_date)
+        ->format('Y-m-d');
+      $query->where('orders.order_date', '>=', $startDate);
     }
 
     if ($request->has('end_date') && !empty($request->end_date)) {
-      try {
-        $endDateStr = trim($request->end_date);
-        // Try to parse d/m/Y format first
-        if (strpos($endDateStr, '/') !== false) {
-          $endDate = Carbon::createFromFormat('d/m/Y', $endDateStr)->endOfDay();
-        } else {
-          // Fallback to standard parsing
-          $endDate = Carbon::parse($endDateStr)->endOfDay();
-        }
-        $query->where('orders.order_date', '<=', $endDate);
-      } catch (\Exception $e) {
-        // Invalid date format, skip filter
-      }
+      $endDate = Carbon::createFromFormat('d/m/Y', $request->end_date)
+        ->format('Y-m-d');
+      $query->where('orders.order_date', '<=', $endDate);
     }
-
-    $query->orderBy('orders.id', 'desc');
 
     return DataTables::eloquent($query)
       ->filter(function ($query) use ($request) {
-        // Handle global search - search across all relevant columns
-        if ($request->has('search') && !empty($request->input('search.value'))) {
-          $keyword = $request->input('search.value');
-          
-          $query->where(function($q) use ($keyword) {
-            // Search in order number
-            $q->where('orders.order_number', 'like', "%{$keyword}%");
-            
-            // Search in order type + number combination (e.g., SO1, EST12, CN5)
-            $orderTypes = ['SO', 'EST', 'CN'];
-            foreach ($orderTypes as $type) {
-              if (stripos($keyword, $type) === 0) {
-                $numberPart = substr($keyword, strlen($type));
-                if (!empty($numberPart)) {
-                  $q->orWhere(function($subQ) use ($type, $numberPart) {
-                    $subQ->where('orders.type', '=', $type)
-                         ->where('orders.order_number', 'like', "%{$numberPart}%");
-                  });
-                } else {
-                  $q->orWhere('orders.type', '=', $type);
-                }
-                break; // Found a match, no need to check other types
-              }
+
+        $searchValue = $request->get('search')['value'] ?? '';
+
+        if (!empty($searchValue)) {
+
+          $searchValue = ltrim($searchValue, '#'); // remove #
+  
+          $query->where(function ($q) use ($searchValue) {
+
+            $reference = $searchValue;
+
+            if (preg_match('/^(CN|SO|EST)(.*)$/i', $reference, $matches)) {
+
+              $type = strtoupper($matches[1]);
+              $number = $matches[2];
+
+              $q->where(function ($q) use ($type, $number) {
+
+                // Match main order
+                $q->where(function ($sub) use ($type, $number) {
+                  $sub->where('orders.type', $type);
+
+                  if (!empty($number)) {
+                    $sub->where('orders.order_number', 'like', "%{$number}%");
+                  }
+                })
+
+                  // OR match parent order
+                  ->orWhere(function ($sub) use ($type, $number) {
+                  $sub->where('parent_orders.type', $type);
+
+                  if (!empty($number)) {
+                    $sub->where('parent_orders.order_number', 'like', "%{$number}%");
+                  }
+                })
+
+                  // OR match credit note
+                  ->orWhere(function ($sub) use ($type, $number) {
+                  $sub->where('credit_notes.type', $type);
+
+                  if (!empty($number)) {
+                    $sub->where('credit_notes.order_number', 'like', "%{$number}%");
+                  }
+                });
+
+              });
+
+            } else {
+
+              // No prefix → search by number everywhere
+              $q->where(function ($q) use ($reference) {
+                $q->where('orders.order_number', 'like', "%{$reference}%")
+                  ->orWhere('parent_orders.order_number', 'like', "%{$reference}%")
+                  ->orWhere('credit_notes.order_number', 'like', "%{$reference}%");
+              });
             }
-            
-            // Search in customer name
-            $q->orWhere('customers.company_name', 'like', "%{$keyword}%");
-            // Search in customer email
-            $q->orWhere('customers.email', 'like', "%{$keyword}%");
-            // Search in order date
-            $q->orWhere('orders.order_date', 'like', "%{$keyword}%");
-            // Search in total amount
-            $q->orWhere('orders.total_amount', 'like', "%{$keyword}%");
-            // Search in paid amount
-            $q->orWhere('orders.paid_amount', 'like', "%{$keyword}%");
-            // Search in unpaid amount
-            $q->orWhere('orders.unpaid_amount', 'like', "%{$keyword}%");
-            // Search in VAT amount
-            $q->orWhere('orders.vat_amount', 'like', "%{$keyword}%");
-            // Search in order status
-            $q->orWhere('orders.status', 'like', "%{$keyword}%");
-            // Search in payment status
-            $q->orWhere('orders.payment_status', 'like', "%{$keyword}%");
+
+            // Detect prefix
+            // if (preg_match('/^(SO|CN|EST)(.*)$/i', $searchValue, $matches)) {
+  
+            //   $type = strtoupper($matches[1]); // SO / CN / EST
+            //   $number = $matches[2];             // remaining number part
+  
+            //   $q->where(function ($sub) use ($type, $number) {
+            //     $sub->where('orders.type', $type)
+            //       ->where('orders.order_number', 'like', "%{$number}%");
+            //   });
+  
+            // } else {
+            //   // Normal search fallback
+            //   $q->where('orders.order_number', 'like', "%{$searchValue}%");
+            // }
+  
+            // Other searchable columns
+            $q->orWhere('customers.email', 'like', "%{$searchValue}%")
+              ->orWhere('customers.company_name', 'like', "%{$searchValue}%")
+              ->orWhere(function ($dateQuery) use ($searchValue) {
+
+              try {
+
+                // Check if it contains time
+                if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}(:\d{2})?/', $searchValue)) {
+
+                  // Format: d/m/Y H:i:s
+                  $date = Carbon::createFromFormat('d/m/Y H:i:s', $searchValue);
+
+                  $dateQuery->where('orders.order_date', $date->format('Y-m-d H:i:s'));
+
+                } elseif (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $searchValue, $matches)) {
+
+                  // Date only
+                  $date = Carbon::createFromFormat('d/m/Y', $matches[0]);
+
+                  $dateQuery->whereDate('orders.order_date', $date->format('Y-m-d'));
+
+                } else {
+
+                  // Try generic parsing
+                  $date = Carbon::parse($searchValue);
+
+                  $dateQuery->whereDate('orders.order_date', $date->format('Y-m-d'));
+                }
+
+              } catch (\Exception $e) {
+
+                $dateQuery->whereRaw(
+                  "DATE_FORMAT(orders.order_date, '%d/%m/%Y %H:%i:%s') LIKE ?",
+                  ["%{$searchValue}%"]
+                );
+              }
+            });
+
+
           });
         }
       })
+
       ->addColumn('has_credit_note', function ($order) {
-        if ($order->type === 'SO') {
-          return ($order->has_credit_note_count ?? 0) > 0 ? 1 : 0;
-        }
-        return 0;
+        return ($order->type === 'SO' && ($order->has_credit_note_count ?? 0) > 0) ? 1 : 0;
       })
       ->addColumn('parent_order_display', function ($order) {
-        if ($order->type === 'CN' && $order->parent_order_type && $order->parent_order_number) {
-          return $order->parent_order_type . $order->parent_order_number;
-        }
-        return null;
+        return ($order->type === 'CN' && $order->parent_order_type && $order->parent_order_number)
+          ? $order->parent_order_type . $order->parent_order_number
+          : null;
       })
       ->addColumn('credit_note_display', function ($order) {
-        if ($order->type === 'SO' && $order->credit_note_type && $order->credit_note_number) {
-          return $order->credit_note_type . $order->credit_note_number;
+        return ($order->type === 'SO' && $order->credit_note_type && $order->credit_note_number)
+          ? $order->credit_note_type . $order->credit_note_number
+          : null;
+      })
+      // Dynamic column-wise ordering
+      ->order(function ($query) use ($request) {
+        if ($request->has('order')) {
+          $columnIndex = $request->order[0]['column'];
+          $dir = $request->order[0]['dir'];
+
+          // Map your column indexes to database columns
+          $columns = [
+            0 => 'orders.id',              // id
+            // 1 => not orderable (select), skip
+            2 => 'orders.order_date',      // order_date
+            3 => 'orders.order_number',    // order_number
+            4 => 'customers.company_name', // customer_name
+            5 => 'orders.total_amount',    // total_amount
+            6 => 'orders.paid_amount',     // paid_amount
+            7 => 'orders.unpaid_amount',   // unpaid_amount
+            8 => 'orders.vat_amount',      // vat_amount
+            9 => 'orders.status',          // order_status
+            10 => 'orders.payment_status',  // payment_status
+            // 11 => has_credit_note (computed), skip
+            12 => 'orders.id'               // last id column
+          ];
+
+          // If the requested column is 2 (order_date), override to id
+          if ($columnIndex == 2) {
+            $query->orderBy('orders.id', $dir);
+          } elseif (isset($columns[$columnIndex])) {
+            $query->orderBy($columns[$columnIndex], $dir);
+          } else {
+            $query->orderBy('orders.id', 'desc');
+          }
+        } else {
+          $query->orderBy('orders.id', 'desc');
         }
-        return null;
       })
-      ->filterColumn('order_number', function ($query, $keyword) {
-        $query->where('orders.order_number', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('order_date', function ($query, $keyword) {
-        $query->where('orders.order_date', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('customer_name', function ($query, $keyword) {
-        $query->where(function($q) use ($keyword) {
-          $q->where('customers.company_name', 'like', "%{$keyword}%")
-            ->orWhere('customers.email', 'like', "%{$keyword}%");
-        });
-      })
-      ->filterColumn('total_amount', function ($query, $keyword) {
-        $query->where('orders.total_amount', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('paid_amount', function ($query, $keyword) {
-        $query->where('orders.paid_amount', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('unpaid_amount', function ($query, $keyword) {
-        $query->where('orders.unpaid_amount', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('vat_amount', function ($query, $keyword) {
-        $query->where('orders.vat_amount', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('order_status', function ($query, $keyword) {
-        $query->where('orders.status', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('payment_status', function ($query, $keyword) {
-        $query->where('orders.payment_status', 'like', "%{$keyword}%");
-      })
-      ->orderColumn('order_number', function ($query, $order) {
-        $query->orderBy('orders.order_number', $order);
-      })
-      ->orderColumn('order_date', function ($query, $order) {
-        $query->orderBy('orders.order_date', $order);
-      })
-      ->orderColumn('total_amount', function ($query, $order) {
-        $query->orderBy('orders.total_amount', $order);
-      })
-      ->orderColumn('paid_amount', function ($query, $order) {
-        $query->orderBy('orders.paid_amount', $order);
-      })
-      ->orderColumn('unpaid_amount', function ($query, $order) {
-        $query->orderBy('orders.unpaid_amount', $order);
-      })
-      ->orderColumn('vat_amount', function ($query, $order) {
-        $query->orderBy('orders.vat_amount', $order);
-      })
-      ->orderColumn('order_status', function ($query, $order) {
-        $query->orderBy('orders.status', $order);
-      })
-      ->orderColumn('payment_status', function ($query, $order) {
-        $query->orderBy('orders.payment_status', $order);
-      })
+
       ->toJson();
   }
+
 
   public function showAjax($id)
   {
     $order = Order::with(['items.product', 'customer', 'parentOrder', 'creditNotes.items.product', 'payments'])->findOrFail($id);
-    
+
     // Get settings for store information
     $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
-    
+
     // Get currency symbol
     $currencySymbol = $settings['currency_symbol'] ?? '£';
-    
+
     $html = view('_partials._modals.modal-order-show', compact('order', 'settings', 'currencySymbol'))->render();
     return response()->json(['html' => $html]);
   }
@@ -1041,18 +1082,18 @@ class OrderController extends Controller
   public function showInvoice($id)
   {
     $order = Order::with(['items.product', 'customer', 'parentOrder', 'creditNotes.items.product', 'payments'])->findOrFail($id);
-    
+
     // Get settings for store information
     $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
-    
+
     // Get currency symbol
     $currencySymbol = $settings['currency_symbol'] ?? '£';
-    
+
     // Use EST invoice template for EST orders
     if ($order->type === 'EST') {
       return view('content.order.est-invoice', compact('order', 'settings', 'currencySymbol'));
     }
-    
+
     return view('content.order.invoice', compact('order', 'settings', 'currencySymbol'));
   }
 
@@ -1062,13 +1103,13 @@ class OrderController extends Controller
   public function generateInvoicePdf($id)
   {
     $order = Order::with(['items.product', 'customer', 'parentOrder', 'creditNotes.items.product', 'payments'])->findOrFail($id);
-    
+
     // Get settings for store information
     $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
-    
+
     // Get currency symbol
     $currencySymbol = $settings['currency_symbol'] ?? '£';
-    
+
     // Convert logo to base64 if exists
     $logoBase64 = null;
     if (isset($settings['company_logo']) && $settings['company_logo']) {
@@ -1079,24 +1120,24 @@ class OrderController extends Controller
         $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
       }
     }
-    
+
     // Render the PDF view - use EST template for EST orders
     $viewName = ($order->type === 'EST') ? 'content.order.est-invoice-pdf' : 'content.order.invoice-pdf';
     $html = view($viewName, compact('order', 'settings', 'currencySymbol', 'logoBase64'))->render();
-    
+
     // Configure Dompdf
     $options = new Options();
     $options->set('isHtml5ParserEnabled', true);
     $options->set('isRemoteEnabled', true);
     $options->set('defaultFont', 'DejaVu Sans');
-    
+
     $dompdf = new Dompdf($options);
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
-    
+
     $filename = ($order->type === 'CN' ? 'CreditNote' : ($order->type === 'EST' ? 'Invoice' : 'Invoice')) . '_' . $order->order_number . '.pdf';
-    
+
     return response($dompdf->output(), 200)
       ->header('Content-Type', 'application/pdf')
       ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
@@ -1109,15 +1150,15 @@ class OrderController extends Controller
   {
     try {
       $order = Order::with(['items.product', 'customer', 'parentOrder', 'creditNotes.items.product', 'payments'])->findOrFail($id);
-      
+
       // Get email addresses from request, or use customer email as fallback
       $emails = $request->input('emails', []);
-      
+
       // If emails is a string (from JSON), convert to array
       if (is_string($emails)) {
         $emails = json_decode($emails, true) ?? [$emails];
       }
-      
+
       // If no emails provided, try to use customer email
       if (empty($emails) || !is_array($emails)) {
         if ($order->customer && $order->customer->email) {
@@ -1129,7 +1170,7 @@ class OrderController extends Controller
           ], 400);
         }
       }
-      
+
       // Validate and clean email addresses
       $validEmails = [];
       foreach ($emails as $email) {
@@ -1138,20 +1179,20 @@ class OrderController extends Controller
           $validEmails[] = $email;
         }
       }
-      
+
       if (empty($validEmails)) {
         return response()->json([
           'success' => false,
           'message' => 'No valid email addresses provided.'
         ], 400);
       }
-      
+
       // Get settings for store information
       $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
-      
+
       // Get currency symbol
       $currencySymbol = $settings['currency_symbol'] ?? '£';
-      
+
       // Convert logo to base64 if exists
       $logoBase64 = null;
       if (isset($settings['company_logo']) && $settings['company_logo']) {
@@ -1162,7 +1203,7 @@ class OrderController extends Controller
           $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
         }
       }
-      
+
       // Generate PDF - use EST template for EST orders
       $viewName = ($order->type === 'EST') ? 'content.order.est-invoice-pdf' : 'content.order.invoice-pdf';
       $html = view($viewName, compact('order', 'settings', 'currencySymbol', 'logoBase64'))->render();
@@ -1171,37 +1212,37 @@ class OrderController extends Controller
       $options->set('isHtml5ParserEnabled', true);
       $options->set('isRemoteEnabled', false);
       $options->set('defaultFont', 'DejaVu Sans');
-      
+
       $dompdf = new Dompdf($options);
       $dompdf->loadHtml($html);
       $dompdf->setPaper('A4', 'portrait');
       $dompdf->render();
-      
+
       $pdfContent = $dompdf->output();
       $filename = ($order->type === 'CN' ? 'CreditNote' : ($order->type === 'EST' ? 'Order Details' : 'Invoice')) . '_' . $order->order_number . '.pdf';
-      
+
       // Get company email from settings or use default
       $fromEmail = $settings['company_email'] ?? config('mail.from.address');
       $fromName = $settings['company_name'] ?? config('mail.from.name');
-      
+
       // Prepare email subject
       $invoiceType = $order->type === 'CN' ? 'Credit Note' : ($order->type === 'EST' ? 'Order Details' : 'Invoice');
       $invoiceNumber = $order->type === 'CN' ? 'CN' . $order->order_number : ($order->type === 'EST' ? 'EST' . $order->order_number : 'SO' . $order->order_number);
       $subject = $invoiceType . ' #' . $invoiceNumber;
-      
+
       // Prepare email body
       $invoiceDate = optional($order->order_date)->format('d/m/Y') ?? optional($order->created_at)->format('d/m/Y');
       $body = "Dear " . ($order->customer->company_name ?? 'Customer') . ",\n\n";
-      if($order->type !== 'EST') {
+      if ($order->type !== 'EST') {
         $body .= "Please find attached your " . strtolower($invoiceType) . " #" . $invoiceNumber . " dated " . $invoiceDate . ".\n\n";
       } else {
         $body .= "Please find attached your Order Details dated " . $invoiceDate . ".\n\n";
       }
-      
+
       $body .= "Total Amount: " . $currencySymbol . number_format($order->total_amount ?? 0, 2) . "\n\n";
       $body .= "Thank you for your business!\n\n";
       $body .= "Best regards,\n" . ($settings['company_name'] ?? '');
-      
+
       // Send email to all provided email addresses
       Mail::raw($body, function ($message) use ($validEmails, $fromEmail, $fromName, $subject, $pdfContent, $filename) {
         $message->from($fromEmail, $fromName)
@@ -1211,13 +1252,13 @@ class OrderController extends Controller
             'mime' => 'application/pdf',
           ]);
       });
-      
+
       $emailList = implode(', ', $validEmails);
       return response()->json([
         'success' => true,
         'message' => 'Invoice email sent successfully to: ' . $emailList
       ]);
-      
+
     } catch (\Exception $e) {
       return response()->json([
         'success' => false,
@@ -1229,29 +1270,29 @@ class OrderController extends Controller
   public function delete($id)
   {
     $order = Order::with(['items', 'creditNotes', 'payments', 'customer'])->findOrFail($id);
-    
+
     DB::transaction(function () use ($order) {
       // Handle credit note deletion separately
       if ($order->type === 'CN') {
         // Get customer for credit balance adjustment
         $customer = $order->customer;
-        
+
         // Calculate wallet credit that was added when credit note was created
         // This needs to be reversed (subtracted) when credit note is deleted
         $walletCreditToReverse = 0;
-        
+
         if ($order->parent_order_id) {
           $parentOrder = Order::with('items')->find($order->parent_order_id);
           if ($parentOrder) {
             // Calculate wallet credit for returned items in credit note
             foreach ($order->items as $creditNoteItem) {
-              $returnedQty = (float)($creditNoteItem->quantity ?? 0);
-              $productId = (int)($creditNoteItem->product_id ?? 0);
-              
+              $returnedQty = (float) ($creditNoteItem->quantity ?? 0);
+              $productId = (int) ($creditNoteItem->product_id ?? 0);
+
               // Find corresponding item in parent order
               $parentOrderItem = $parentOrder->items->firstWhere('product_id', $productId);
               if ($parentOrderItem) {
-                $originalQty = (float)($parentOrderItem->quantity ?? 1);
+                $originalQty = (float) ($parentOrderItem->quantity ?? 1);
                 if ($originalQty > 0) {
                   // Calculate proportional wallet credit earned for returned items
                   $proportionalWalletCredit = ($parentOrderItem->wallet_credit_earned ?? 0) * ($returnedQty / $originalQty);
@@ -1261,16 +1302,16 @@ class OrderController extends Controller
             }
           }
         }
-        
+
         // Reverse the wallet credit that was added when credit note was created
         if ($walletCreditToReverse > 0 && $customer) {
           $customer->refresh();
-          $currentBalance = (float)($customer->credit_balance ?? 0);
-          
+          $currentBalance = (float) ($customer->credit_balance ?? 0);
+
           // Subtract the wallet credit (reverse what was added)
           $customer->credit_balance = $currentBalance - $walletCreditToReverse;
           $customer->save();
-          
+
           // Create wallet transaction to record the reversal
           WalletTransaction::create([
             'customer_id' => $customer->id,
@@ -1281,7 +1322,7 @@ class OrderController extends Controller
             'balance_after' => $customer->credit_balance,
           ]);
         }
-        
+
         // Delete credit note items and decrease product quantities
         // When credit note is deleted, we need to reverse the addition that was done when it was created
         // So we subtract (decrease) the quantity
@@ -1297,28 +1338,28 @@ class OrderController extends Controller
           }
         }
       }
-      
+
       // Delete all credit notes associated with this order (if SO order)
       if ($order->type === 'SO') {
         foreach ($order->creditNotes as $creditNote) {
           // Get customer for credit balance adjustment
           $customer = $creditNote->customer;
-          
+
           // Calculate wallet credit that was added when credit note was created
           $walletCreditToReverse = 0;
-          
+
           if ($creditNote->parent_order_id) {
             $parentOrder = Order::with('items')->find($creditNote->parent_order_id);
             if ($parentOrder) {
               // Calculate wallet credit for returned items in credit note
               foreach ($creditNote->items as $creditNoteItem) {
-                $returnedQty = (float)($creditNoteItem->quantity ?? 0);
-                $productId = (int)($creditNoteItem->product_id ?? 0);
-                
+                $returnedQty = (float) ($creditNoteItem->quantity ?? 0);
+                $productId = (int) ($creditNoteItem->product_id ?? 0);
+
                 // Find corresponding item in parent order
                 $parentOrderItem = $parentOrder->items->firstWhere('product_id', $productId);
                 if ($parentOrderItem) {
-                  $originalQty = (float)($parentOrderItem->quantity ?? 1);
+                  $originalQty = (float) ($parentOrderItem->quantity ?? 1);
                   if ($originalQty > 0) {
                     // Calculate proportional wallet credit earned for returned items
                     $proportionalWalletCredit = ($parentOrderItem->wallet_credit_earned ?? 0) * ($returnedQty / $originalQty);
@@ -1328,16 +1369,16 @@ class OrderController extends Controller
               }
             }
           }
-          
+
           // Reverse the wallet credit that was added when credit note was created
           if ($walletCreditToReverse > 0 && $customer) {
             $customer->refresh();
-            $currentBalance = (float)($customer->credit_balance ?? 0);
-            
+            $currentBalance = (float) ($customer->credit_balance ?? 0);
+
             // Subtract the wallet credit (reverse what was added)
             $customer->credit_balance = $currentBalance - $walletCreditToReverse;
             $customer->save();
-            
+
             // Create wallet transaction to record the reversal
             WalletTransaction::create([
               'customer_id' => $customer->id,
@@ -1348,7 +1389,7 @@ class OrderController extends Controller
               'balance_after' => $customer->credit_balance,
             ]);
           }
-          
+
           // Delete credit note items and decrease product quantities
           // When credit note is deleted, we need to reverse the addition that was done when it was created
           // So we subtract (decrease) the quantity
@@ -1373,10 +1414,10 @@ class OrderController extends Controller
           $creditNote->delete();
         }
       }
-      
+
       // Delete all payments for this order
       $order->payments()->delete();
-      
+
       // Restore product quantities before deleting items (skip CN and EST orders)
       // CN orders are handled above, EST orders should not affect quantities
       if ($order->type !== 'CN' && $order->type !== 'EST') {
@@ -1393,7 +1434,7 @@ class OrderController extends Controller
           }
         }
       }
-      
+
       // Delete order items
       $order->items()->delete();
       // Delete status histories
@@ -1401,7 +1442,7 @@ class OrderController extends Controller
       // Delete the order
       $order->delete();
     });
-    
+
     Toastr::success('Order deleted successfully');
     return redirect()->back();
   }
@@ -1413,10 +1454,10 @@ class OrderController extends Controller
   {
     try {
       $validator = Validator::make($request->all(), [
-        'order_id' => ['required','integer','exists:orders,id'],
-        'product_id' => ['required','integer','exists:products,id'],
-        'quantity' => ['required','integer','min:1'],
-        'unit_price' => ['required','numeric','min:0.01'],
+        'order_id' => ['required', 'integer', 'exists:orders,id'],
+        'product_id' => ['required', 'integer', 'exists:products,id'],
+        'quantity' => ['required', 'integer', 'min:1'],
+        'unit_price' => ['required', 'numeric', 'min:0.01'],
       ]);
 
       if ($validator->fails()) {
@@ -1426,7 +1467,7 @@ class OrderController extends Controller
       }
 
       $validated = $validator->validated();
-      
+
       // Check if order has credit notes - if so, prevent update
       $order = Order::with('creditNotes')->find($validated['order_id']);
       if ($order && $order->type === 'SO' && $order->creditNotes()->exists()) {
@@ -1435,34 +1476,34 @@ class OrderController extends Controller
       }
 
       $product = Product::with('unit')->findOrFail($validated['product_id']);
-      
+
       // Get product unit name
       $productUnit = $product->unit ? $product->unit->name : null;
-      
+
       // Calculate wallet credit: unit_wallet_credit = product wallet_credit, wallet_credit_earned = unit_wallet_credit * quantity
-      $unitWalletCredit = round((float)($product->wallet_credit ?? 0), 2);
+      $unitWalletCredit = round((float) ($product->wallet_credit ?? 0), 2);
       $walletCreditEarned = round($unitWalletCredit * $validated['quantity'], 2);
-      
+
       // Calculate total price
       $totalPrice = $validated['unit_price'] * $validated['quantity'];
-      
+
       DB::beginTransaction();
 
       // Get order to determine type
       $order = Order::findOrFail($validated['order_id']);
       $itemType = $order->type ?? 'SO';
-      
+
       // Calculate VAT: if order type is EST, VAT is 0 (included in price), otherwise use product vat_amount
       if ($itemType === 'EST') {
         $unitVat = 0; // VAT is included in the sale price for EST orders
       } else {
-        $unitVat = round((float)($product->vat_amount ?? 0), 2);
+        $unitVat = round((float) ($product->vat_amount ?? 0), 2);
       }
       $totalVat = round($unitVat * $validated['quantity'], 2);
-      
+
       // Calculate total: total_price + total_vat
       $total = round($totalPrice + $totalVat, 2);
-      
+
       // Create the order item
       $orderItem = OrderItem::create([
         'order_id' => $validated['order_id'],
@@ -1501,9 +1542,9 @@ class OrderController extends Controller
   {
     try {
       $validator = Validator::make($request->all(), [
-        'id' => ['required','integer','exists:order_items,id'],
-        'quantity' => ['required','integer','min:1'],
-        'unit_price' => ['required','numeric','min:0.01'],
+        'id' => ['required', 'integer', 'exists:order_items,id'],
+        'quantity' => ['required', 'integer', 'min:1'],
+        'unit_price' => ['required', 'numeric', 'min:0.01'],
       ]);
 
       if ($validator->fails()) {
@@ -1515,34 +1556,34 @@ class OrderController extends Controller
       $validated = $validator->validated();
 
       $orderItem = OrderItem::findOrFail($validated['id']);
-      
+
       // Check if order has credit notes - if so, prevent update
       $order = $orderItem->order;
       if ($order && $order->type === 'SO' && $order->creditNotes()->exists()) {
         Toastr::error('This order cannot be updated because a credit note has been generated for it.');
         return back()->withInput();
       }
-      
+
       $product = $orderItem->product;
-      
+
       // Get product unit name
       $productUnit = $product && $product->unit ? $product->unit->name : ($orderItem->product_unit ?? null);
-      
+
       // Calculate wallet credit: unit_wallet_credit = product wallet_credit, wallet_credit_earned = unit_wallet_credit * quantity
-      $unitWalletCredit = round((float)($product->wallet_credit ?? 0), 2);
+      $unitWalletCredit = round((float) ($product->wallet_credit ?? 0), 2);
       $walletCreditEarned = round($unitWalletCredit * $validated['quantity'], 2);
-      
+
       // Calculate total price
       $totalPrice = $validated['unit_price'] * $validated['quantity'];
-      
+
       // Calculate VAT: if order type is EST, VAT is 0 (included in price), otherwise use product vat_amount
       if ($order && $order->type === 'EST') {
         $unitVat = 0; // VAT is included in the sale price for EST orders
       } else {
-        $unitVat = round((float)($product->vat_amount ?? 0), 2);
+        $unitVat = round((float) ($product->vat_amount ?? 0), 2);
       }
       $totalVat = round($unitVat * $validated['quantity'], 2);
-      
+
       // Calculate total: total_price + total_vat
       $total = round($totalPrice + $totalVat, 2);
 
@@ -1584,7 +1625,7 @@ class OrderController extends Controller
     try {
       $orderItem = OrderItem::findOrFail($id);
       $orderId = $orderItem->order_id;
-      
+
       // Check if order has credit notes - if so, prevent update
       $order = Order::with('creditNotes')->find($orderId);
       if ($order && $order->type === 'SO' && $order->creditNotes()->exists()) {
@@ -1653,8 +1694,8 @@ class OrderController extends Controller
     // outstanding_amount = total_amount - wallet_credit_used (always)
     // payment_amount = outstanding_amount (always)
     // payment_amount = paid_amount + unpaid_amount
-    $walletCreditUsed = (float)($order->wallet_credit_used ?? 0);
-    $paymentsTotal = (float)($order->payments()->sum('amount') ?? 0);
+    $walletCreditUsed = (float) ($order->wallet_credit_used ?? 0);
+    $paymentsTotal = (float) ($order->payments()->sum('amount') ?? 0);
     $outstandingAmount = $totalAmount - $walletCreditUsed;
     $paymentAmount = $outstandingAmount; // payment_amount always equals outstanding_amount
     $paidAmount = $paymentsTotal; // paid_amount only includes actual payments, not wallet_credit_used
@@ -1750,16 +1791,16 @@ class OrderController extends Controller
       ]);
 
       $order = Order::findOrFail($validated['order_id']);
-      
+
       // Refresh order to ensure we have the latest unpaid_amount
       $order->refresh();
-      
+
       // Calculate current unpaid amount (before adding this payment)
       // outstanding_amount = total_amount - wallet_credit_used (always)
       // payment_amount = outstanding_amount (always)
       // unpaid_amount = outstanding_amount - paid_amount
-      $walletCreditUsed = (float)($order->wallet_credit_used ?? 0);
-      $existingPaymentsTotal = (float)($order->payments()->sum('amount') ?? 0);
+      $walletCreditUsed = (float) ($order->wallet_credit_used ?? 0);
+      $existingPaymentsTotal = (float) ($order->payments()->sum('amount') ?? 0);
       $outstandingAmount = ($order->total_amount ?? 0) - $walletCreditUsed;
       $paidAmount = $existingPaymentsTotal; // paid_amount only includes actual payments, not wallet_credit_used
       $unpaidAmount = $outstandingAmount - $paidAmount;
@@ -1789,7 +1830,7 @@ class OrderController extends Controller
 
       // Get reference number from order_ref table (pay column)
       $orderRef = OrderRef::orderBy('id', 'desc')->first();
-      
+
       if (!$orderRef) {
         // Create initial order_ref record if it doesn't exist
         $orderRef = OrderRef::create([
@@ -1799,9 +1840,9 @@ class OrderController extends Controller
           'pay' => 1,
         ]);
       }
-      
+
       $referenceNo = $orderRef->pay ?? 1;
-      
+
       // Increment pay for next payment
       $orderRef->update([
         'pay' => ($orderRef->pay ?? 0) + 1,
@@ -1822,7 +1863,7 @@ class OrderController extends Controller
 
         // Refresh order to ensure we have latest data
         $order->refresh();
-        
+
         // Update order totals (this will recalculate paid_amount including the new payment)
         $this->updateOrderTotals($order->id);
       });
@@ -1853,7 +1894,7 @@ class OrderController extends Controller
   {
     try {
       $order = Order::findOrFail($orderId);
-      
+
       $payments = \App\Models\Payment::where('order_id', $orderId)
         ->orderBy('date', 'desc')
         ->get()
@@ -1925,8 +1966,8 @@ class OrderController extends Controller
         SUM(CASE WHEN payment_status = "Partial" THEN 1 ELSE 0 END) as partial_count,
         SUM(CASE WHEN payment_status = "Paid" THEN 1 ELSE 0 END) as paid_count
       ')
-      ->where('type', 'SO')
-      ->first();
+        ->where('type', 'SO')
+        ->first();
 
       // Calculate statistics for CN orders
       $cnStats = Order::selectRaw('
@@ -1937,8 +1978,8 @@ class OrderController extends Controller
         SUM(CASE WHEN payment_status = "Partial" THEN 1 ELSE 0 END) as partial_count,
         SUM(CASE WHEN payment_status = "Paid" THEN 1 ELSE 0 END) as paid_count
       ')
-      ->where('type', 'CN')
-      ->first();
+        ->where('type', 'CN')
+        ->first();
 
       // Calculate statistics as SO - CN
       $soGrandTotal = (float) ($soStats->grand_total ?? 0);
@@ -1976,19 +2017,19 @@ class OrderController extends Controller
   public function creditNoteAdd($id)
   {
     $order = Order::with(['customer', 'items.product', 'creditNotes'])->findOrFail($id);
-    
+
     // Validate that this is an SO order
     if ($order->type !== 'SO') {
       Toastr::error('Credit notes can only be created for Sales Orders (SO).');
       return redirect()->route('order.list');
     }
-    
+
     // Validate that this SO order doesn't already have a credit note
     if ($order->creditNotes()->exists()) {
       Toastr::error('A credit note has already been generated for this order.');
       return redirect()->route('order.list');
     }
-    
+
     return view('content.order.credit-note-add', [
       'order' => $order
     ]);
@@ -2027,7 +2068,7 @@ class OrderController extends Controller
       Toastr::error('Credit notes can only be created for Sales Orders (SO).');
       return redirect()->back()->withInput();
     }
-    
+
     // Validate that this SO order doesn't already have a credit note
     if ($order->creditNotes()->exists()) {
       Toastr::error('A credit note has already been generated for this order.');
@@ -2040,21 +2081,21 @@ class OrderController extends Controller
       $productId = (int) ($productData['product_id'] ?? 0);
       $returnedQty = (float) ($productData['returned_quantity'] ?? 0);
       $orderQty = (float) ($productData['order_quantity'] ?? 0);
-      
+
       // Find the original order item
       $orderItem = $order->items->firstWhere('product_id', $productId);
       if (!$orderItem) {
         $validationErrors["products.{$index}.product_id"] = "Product not found in order";
         continue;
       }
-      
+
       if ($returnedQty > $orderQty) {
         $product = Product::find($productId);
         $productName = $product ? $product->name : 'Product #' . $productId;
         $validationErrors["products.{$index}.returned_quantity"] = "Returned quantity for {$productName} cannot exceed order quantity ({$orderQty})";
       }
     }
-    
+
     if (!empty($validationErrors)) {
       return redirect()->back()
         ->withErrors($validationErrors)
@@ -2064,12 +2105,12 @@ class OrderController extends Controller
     // Check if at least one returned quantity is greater than 0
     $hasReturnedItems = false;
     foreach ($validated['products'] as $productData) {
-      if ((float)($productData['returned_quantity'] ?? 0) > 0) {
+      if ((float) ($productData['returned_quantity'] ?? 0) > 0) {
         $hasReturnedItems = true;
         break;
       }
     }
-    
+
     if (!$hasReturnedItems) {
       return redirect()->back()
         ->withErrors(['products' => 'At least one returned quantity must be greater than 0'])
@@ -2078,7 +2119,7 @@ class OrderController extends Controller
 
     // Get reference number from order_ref table (cn column)
     $orderRef = OrderRef::orderBy('id', 'desc')->first();
-    
+
     if (!$orderRef) {
       // Create initial order_ref record if it doesn't exist
       $orderRef = OrderRef::create([
@@ -2089,9 +2130,9 @@ class OrderController extends Controller
         'cn' => 1,
       ]);
     }
-    
+
     $referenceNo = $orderRef->cn ?? 1;
-    
+
     // Increment cn for next credit note
     $orderRef->update([
       'cn' => ($orderRef->cn ?? 0) + 1,
@@ -2104,7 +2145,7 @@ class OrderController extends Controller
     DB::transaction(function () use ($validated, $order, $referenceNo, $customer) {
       // Get original order display number (with type prefix if exists)
       $originalOrderDisplay = $order->type ? $order->type . $order->order_number : $order->order_number;
-      
+
       // Create credit note order (similar structure to regular order)
       $creditNoteData = [
         'customer_id' => $order->customer_id,
@@ -2145,56 +2186,56 @@ class OrderController extends Controller
         $productId = (int) ($productData['product_id'] ?? 0);
         $returnedQty = (float) ($productData['returned_quantity'] ?? 0);
         $unitPrice = (float) ($productData['unit_price'] ?? 0);
-        
+
         if ($returnedQty <= 0) {
           continue; // Skip items with zero returned quantity
         }
-        
+
         // Verify the product exists in the original order (for validation only)
         $orderItem = $order->items->firstWhere('product_id', $productId);
         if (!$orderItem) {
           continue;
         }
-        
+
         // Calculate wallet credit to reverse for returned items
         // Get the proportion of returned quantity to original quantity
-        $originalQty = (float)($orderItem->quantity ?? 1);
-        $returnedQtyFloat = (float)$returnedQty;
+        $originalQty = (float) ($orderItem->quantity ?? 1);
+        $returnedQtyFloat = (float) $returnedQty;
         if ($originalQty > 0) {
           // Calculate proportional wallet credit earned for returned items
           $proportionalWalletCredit = ($orderItem->wallet_credit_earned ?? 0) * ($returnedQtyFloat / $originalQty);
           $walletCreditToReverse += round($proportionalWalletCredit, 2);
         }
-        
+
         // Calculate total price for returned items
         $totalPrice = round($unitPrice * $returnedQty, 2);
-        
+
         // Calculate VAT: unit_vat = product vat_amount, total_vat = unit_vat * quantity
         $product = Product::with('unit')->find($productId);
-        $unitVat = $product ? round((float)($product->vat_amount ?? 0), 2) : 0;
+        $unitVat = $product ? round((float) ($product->vat_amount ?? 0), 2) : 0;
         $totalVat = round($unitVat * $returnedQty, 2);
-        
+
         // Get product unit name (use from product or from original order item)
         $productUnit = $product && $product->unit ? $product->unit->name : ($orderItem->product_unit ?? null);
-        
+
         // Calculate wallet credit from original order item (proportional to returned quantity)
         $unitWalletCredit = 0;
         $walletCreditEarned = 0;
-        
+
         if ($originalQty > 0) {
           // Get unit_wallet_credit from original order item
-          $unitWalletCredit = round((float)($orderItem->unit_wallet_credit ?? 0), 2);
-          
+          $unitWalletCredit = round((float) ($orderItem->unit_wallet_credit ?? 0), 2);
+
           // Calculate proportional wallet_credit_earned for returned items
-          $originalWalletCreditEarned = (float)($orderItem->wallet_credit_earned ?? 0);
+          $originalWalletCreditEarned = (float) ($orderItem->wallet_credit_earned ?? 0);
           $walletCreditEarned = round($originalWalletCreditEarned * ($returnedQtyFloat / $originalQty), 2);
         }
-        
+
         $subtotal += $totalPrice;
-        
+
         // Calculate total: total_price + total_vat
         $total = round($totalPrice + $totalVat, 2);
-        
+
         // Create credit note item (independent of original order)
         OrderItem::create([
           'order_id' => $creditNote->id,
@@ -2210,7 +2251,7 @@ class OrderController extends Controller
           'total_vat' => $totalVat,
           'total' => $total,
         ]);
-        
+
         // Restore product quantity to warehouse (inventory management, not order modification)
         if ($productId > 0 && $returnedQty > 0) {
           try {
@@ -2224,10 +2265,10 @@ class OrderController extends Controller
       // Refresh credit note to get new items
       $creditNote->refresh();
       $creditNote->load('items');
-      
+
       // Update credit note totals using the same method for consistency
       // Note: Credit notes have no wallet credit
-      
+
       $creditNoteSubtotal = $creditNote->items->sum('total_price');
       $creditNoteVatAmount = $creditNote->items->sum('total_vat'); // Sum total_vat from order_items
       $creditNoteTotalAmount = $creditNoteSubtotal + $creditNoteVatAmount;

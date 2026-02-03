@@ -25,60 +25,85 @@ class CategoryController extends Controller
     return view('content.category.list', $data);
   }
 
-  public function ajaxList(Request $request)
-  {
+public function ajaxList(Request $request)
+{
     $query = Category::select([
-      'id',
-      'name',
-      'is_active',
-      'parent_id'
-    ])->with(['parent', 'children'])
-      ->orderBy('id', 'desc');
+        'categories.id',                   // needed for checkbox
+        'categories.name',
+        'categories.is_active',
+        'categories.parent_id',
+        'parents.name as parent_name'
+    ])
+    ->leftJoin('categories as parents', 'categories.parent_id', '=', 'parents.id')
+    ->with('children');
 
     return DataTables::eloquent($query)
-      ->filter(function ($query) use ($request) {
-        $searchValue = $request->get('search')['value'] ?? '';
-        if (!empty($searchValue)) {
-          $query->where(function ($q) use ($searchValue) {
-            // Search in category name
-            $q->where('categories.name', 'like', "%{$searchValue}%")
-              // Search in parent category name
-              ->orWhereHas('parent', function ($parentQuery) use ($searchValue) {
-                $parentQuery->where('name', 'like', "%{$searchValue}%");
-              })
-              // Search in child categories names
-              ->orWhereHas('children', function ($childQuery) use ($searchValue) {
-                $childQuery->where('name', 'like', "%{$searchValue}%");
-              });
-          });
-        }
-      })
-      ->filterColumn('name', function ($query, $keyword) {
-        $query->where('categories.name', 'like', "%{$keyword}%");
-      })
-      ->filterColumn('parent_category', function ($query, $keyword) {
-        $query->whereHas('parent', function ($q) use ($keyword) {
-          $q->where('name', 'like', "%{$keyword}%");
-        });
-      })
-      ->filterColumn('child_categories', function ($query, $keyword) {
-        $query->whereHas('children', function ($q) use ($keyword) {
-          $q->where('name', 'like', "%{$keyword}%");
-        });
-      })
-      ->addColumn('parent_category', function ($category) {
-        return $category->parent?->name ?? '-';
-      })
-      ->addColumn('child_categories', function ($category) {
-        return ($category->children && $category->children->isNotEmpty())
-          ? $category->children->implode('name', ', ')
-          : '-';
-      })
-      ->addColumn('image', function () {
-        return null;
-      })
-      ->toJson();
-  }
+        ->filter(function ($query) use ($request) {
+            $searchValue = $request->get('search')['value'] ?? '';
+            if (!empty($searchValue)) {
+                $query->where(function ($q) use ($searchValue) {
+                    $q->where('categories.name', 'like', "%{$searchValue}%")
+                      ->orWhere('parents.name', 'like', "%{$searchValue}%")
+                      ->orWhereHas('children', function ($childQuery) use ($searchValue) {
+                          $childQuery->where('name', 'like', "%{$searchValue}%");
+                      });
+                });
+            }
+        })
+        ->filterColumn('name', function ($query, $keyword) {
+            $query->where('categories.name', 'like', "%{$keyword}%");
+        })
+        ->filterColumn('parent_category', function ($query, $keyword) {
+            $query->where('parents.name', 'like', "%{$keyword}%");
+        })
+        ->filterColumn('child_categories', function ($query, $keyword) {
+            $query->whereHas('children', function ($q) use ($keyword) {
+                $q->where('name', 'like', "%{$keyword}%");
+            });
+        })
+        ->order(function ($query) use ($request) {
+            // Handle backend sorting
+            if ($request->has('order')) {
+                $columns = [
+                    0 => 'categories.id',        // control column (ignore)
+                    1 => 'categories.id',        // checkbox (not sortable)
+                    2 => 'categories.name',
+                    3 => 'parents.name',
+                    4 => 'categories.child_categories',
+                    5 => 'categories.is_active',
+                ];
+
+                $colIndex = $request->order[0]['column'];
+                $dir = $request->order[0]['dir'];
+
+                // only sort visible/sortable columns
+                if (in_array($colIndex, [2, 3, 4,5])) {
+                    $query->orderBy($columns[$colIndex], $dir);
+                } else {
+                    // fallback default: sort by id descending
+                    $query->orderBy('categories.id', 'desc');
+                }
+            } else {
+                // default latest by id
+                $query->orderBy('categories.id', 'desc');
+            }
+        })
+        ->addColumn('parent_category', function ($category) {
+            return $category->parent_name ?? '-';
+        })
+        ->addColumn('child_categories', function ($category) {
+            return ($category->children && $category->children->isNotEmpty())
+                ? $category->children->implode('name', ', ')
+                : '-';
+        })
+        ->addColumn('image', function () {
+            return null;
+        })
+        ->toJson();
+}
+
+
+
 
   public function add(){
 

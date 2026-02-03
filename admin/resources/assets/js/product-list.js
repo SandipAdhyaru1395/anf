@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
   // Variable declaration for table
   const dt_product_table = document.querySelector('.datatables-products'),
     productAdd = baseUrl + 'product/add',
-     productEdit = baseUrl + 'product/edit',
-     publishedObj = {
-       0 : { title: 'Inactive', class: 'bg-label-danger' },
-        1 : { title: 'Active', class: 'bg-label-success' }
+    productEdit = baseUrl + 'product/edit',
+    publishedObj = {
+      0: { title: 'Inactive', class: 'bg-label-danger' },
+      1: { title: 'Active', class: 'bg-label-success' }
     };
 
   // E-commerce Products datatable
@@ -28,18 +28,16 @@ document.addEventListener('DOMContentLoaded', function (e) {
       // ajax: assetsPath + 'json/ecommerce-product-list.json',
       processing: true,
       stateSave: true,
-       serverSide: true,
+      serverSide: true,
       ajax: baseUrl + 'product/list/ajax',
       columns: [
-        // columns according to JSON
-        { data: 'id' },
-        { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'product_name', orderable: false,},
-        { data: 'sku',orderable: false},
-        { data: 'price',orderable: false},
-        { data: 'is_active',orderable: false},
-        // { data: 'status'},
-        { data: 'id'}
+        { data: 'id' },                        // hidden or control
+        { data: 'id', orderable: false, render: DataTable.render.select() }, // checkbox
+        { data: 'product_name', orderable: true },  // sortable
+        { data: 'sku', orderable: true },           // sortable
+        { data: 'price', orderable: true },         // sortable
+        { data: 'is_active', orderable: true },    // status
+        { data: 'id', orderable: false }           // actions
       ],
       columnDefs: [
         {
@@ -116,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
           render: function (data, type, full, meta) {
             const is_active = full['is_active'];
 
-             return (
+            return (
               '<span class="badge ' +
               publishedObj[is_active].class +
               '" text-capitalized>' +
@@ -144,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         style: 'multi',
         selector: 'td:nth-child(2)'
       },
-      order: [0, 'desc'],
+      // order: [0, 'desc'],
       displayLength: 7,
       lengthMenu: [[7, 10, 25, 50, 100, -1], [7, 10, 25, 50, 100, "All"]],
       layout: {
@@ -472,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
       },
       initComplete: function () {
         const api = this.api();
-        
+
       }
     });
   }

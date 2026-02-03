@@ -126,7 +126,7 @@ class QuantityAdjustmentController extends Controller
         }
 
         // Normalize products array (in case keys are product IDs)
-        $products = array_filter($validated['products'], function($productData) {
+        $products = array_filter($validated['products'], function ($productData) {
             return isset($productData['product_id']);
         });
 
@@ -143,7 +143,7 @@ class QuantityAdjustmentController extends Controller
             ]);
 
             $adjustments = [];
-            
+
             // Create adjustment items and collect adjustments
             foreach ($products as $productData) {
                 QuantityAdjustmentItem::create([
@@ -241,7 +241,7 @@ class QuantityAdjustmentController extends Controller
         $adjustment = QuantityAdjustment::with('items')->findOrFail($request->id);
 
         // Prepare old adjustments for reversal
-        $oldAdjustments = $adjustment->items->map(function($item) {
+        $oldAdjustments = $adjustment->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'type' => $item->type,
@@ -279,7 +279,7 @@ class QuantityAdjustmentController extends Controller
         ]);
 
         // Normalize products array (in case keys are product IDs)
-        $products = array_filter($validated['products'], function($productData) {
+        $products = array_filter($validated['products'], function ($productData) {
             return isset($productData['product_id']);
         });
 
@@ -321,7 +321,7 @@ class QuantityAdjustmentController extends Controller
         $adjustment = QuantityAdjustment::with('items')->findOrFail($id);
 
         // Prepare adjustments for reversal
-        $adjustments = $adjustment->items->map(function($item) {
+        $adjustments = $adjustment->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'type' => $item->type,
@@ -347,6 +347,13 @@ class QuantityAdjustmentController extends Controller
 
     public function ajaxList(Request $request)
     {
+        $columns = [
+            2 => 'date',
+            3 => 'reference_no',
+            4 => 'user_id',
+            5 => 'note',
+        ];
+
         $query = QuantityAdjustment::with('user')
             ->select([
                 'id',
@@ -355,8 +362,24 @@ class QuantityAdjustmentController extends Controller
                 'note',
                 'user_id',
                 'created_at',
-            ])
-            ->orderBy('id', 'desc');
+            ]);
+
+        if ($request->has('order')) {
+
+            $orderColumnIndex = $request->order[0]['column'];
+            $orderDirection = $request->order[0]['dir'];
+
+            if (isset($columns[$orderColumnIndex])) {
+                $query->orderBy($columns[$orderColumnIndex], $orderDirection);
+            } else {
+                // If user clicks non-sortable column
+                $query->orderByDesc('id');
+            }
+
+        } else {
+            // Default order
+            $query->orderByDesc('id');
+        }
 
         return DataTables::eloquent($query)
             ->filter(function ($query) use ($request) {
@@ -374,25 +397,25 @@ class QuantityAdjustmentController extends Controller
                             ->orWhere('note', 'like', "%{$searchValue}%")
                             // Search in date (try to parse date formats)
                             ->orWhere(function ($dateQuery) use ($searchValue) {
-                                try {
-                                    // Try d/m/Y format first
-                                    if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $searchValue, $matches)) {
-                                        $date = Carbon::createFromFormat('d/m/Y', $matches[0]);
-                                        $dateQuery->whereDate('date', $date->format('Y-m-d'));
-                                    } else {
-                                        // Try to parse as date and search
-                                        $date = Carbon::parse($searchValue);
-                                        $dateQuery->whereDate('date', $date->format('Y-m-d'));
-                                    }
-                                } catch (\Exception $e) {
-                                    // If parsing fails, search in formatted date string
-                                    $dateQuery->whereRaw("DATE_FORMAT(date, '%d/%m/%Y %H:%i') LIKE ?", ["%{$searchValue}%"]);
+                            try {
+                                // Try d/m/Y format first
+                                if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $searchValue, $matches)) {
+                                    $date = Carbon::createFromFormat('d/m/Y', $matches[0]);
+                                    $dateQuery->whereDate('date', $date->format('Y-m-d'));
+                                } else {
+                                    // Try to parse as date and search
+                                    $date = Carbon::parse($searchValue);
+                                    $dateQuery->whereDate('date', $date->format('Y-m-d'));
                                 }
-                            })
+                            } catch (\Exception $e) {
+                                // If parsing fails, search in formatted date string
+                                $dateQuery->whereRaw("DATE_FORMAT(date, '%d/%m/%Y %H:%i') LIKE ?", ["%{$searchValue}%"]);
+                            }
+                        })
                             // Search in user name
                             ->orWhereHas('user', function ($userQuery) use ($searchValue) {
-                                $userQuery->where('name', 'like', "%{$searchValue}%");
-                            });
+                            $userQuery->where('name', 'like', "%{$searchValue}%");
+                        });
                     });
                 }
             })
@@ -411,9 +434,9 @@ class QuantityAdjustmentController extends Controller
             ->addColumn('actions', function ($adjustment) {
                 $editUrl = route('quantity_adjustment.edit', $adjustment->id);
                 return '<div class="d-inline-block text-nowrap">' .
-                       '<a href="' . $editUrl . '" class="rounded-pill waves-effect btn-icon"><button class="btn btn-text-secondary "><i class="icon-base ti tabler-edit icon-22px"></i></button></a> ' .
-                       '<a href="javascript:;" onclick="deleteAdjustment(' . $adjustment->id . ')" class="rounded-pill waves-effect btn-icon"><button class="btn"><i class="icon-base ti tabler-trash icon-22px"></i></button></a>' .
-                       '</div>';
+                    '<a href="' . $editUrl . '" class="rounded-pill waves-effect btn-icon"><button class="btn btn-text-secondary "><i class="icon-base ti tabler-edit icon-22px"></i></button></a> ' .
+                    '<a href="javascript:;" onclick="deleteAdjustment(' . $adjustment->id . ')" class="rounded-pill waves-effect btn-icon"><button class="btn"><i class="icon-base ti tabler-trash icon-22px"></i></button></a>' .
+                    '</div>';
             })
             ->filterColumn('reference_no_display', function ($query, $keyword) {
                 // Remove #QA prefix if present for searching reference_no
@@ -467,7 +490,7 @@ class QuantityAdjustmentController extends Controller
             ->where('is_active', 1);
 
         if ($q !== '') {
-            $query->where(function($sub) use ($q) {
+            $query->where(function ($sub) use ($q) {
                 $sub->where('name', 'like', "%{$q}%")
                     ->orWhere('sku', 'like', "%{$q}%");
             });
@@ -476,7 +499,7 @@ class QuantityAdjustmentController extends Controller
         $products = $query->orderBy('id', 'desc')->limit($limit)->get();
 
         return response()->json([
-            'results' => $products->map(function($p) {
+            'results' => $products->map(function ($p) {
                 return [
                     'id' => $p->id,
                     'text' => $p->name . ' (' . $p->sku . ')',
@@ -486,5 +509,5 @@ class QuantityAdjustmentController extends Controller
             })
         ]);
     }
-    
+
 }

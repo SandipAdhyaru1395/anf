@@ -35,7 +35,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
   if (dt_customer_table) {
     var dt_customer = new DataTable(dt_customer_table, {
       ajax: baseUrl + 'customer/list/ajax',
-      ordering: false,
+      processing: true,
+      stateSave: true,
+      serverSide: true,
+      // ordering: false,
       columns: [
         // columns according to JSON
         { data: '' },
@@ -149,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         style: 'multi',
         selector: 'td:nth-child(2)'
       },
-      order: [[2, 'desc']],
+      // order: [[2, 'desc']],
       layout: {
         topStart: {
           rowClass: 'row m-3 my-0 justify-content-between',

@@ -113,44 +113,82 @@ class SupplierController extends Controller
         return view('content.supplier.add');
     }
 
-    public function ajaxList(Request $request)
-    {
-        $query = Supplier::select([
-            'id',
-            'company',
-            'full_name',
-            'vat_number',
-            'email',
-            'phone',
-            'is_active',
-        ])->orderBy('id', 'desc');
+   public function ajaxList(Request $request)
+{
+    // Only sortable DB columns (match with JS indexes 2–6)
+    $columns = [
+        2 => 'suppliers.company',
+        3 => 'suppliers.full_name',
+        4 => 'suppliers.email',
+        5 => 'suppliers.phone',
+        6 => 'suppliers.is_active',
+    ];
 
-        return DataTables::eloquent($query)
-            ->filterColumn('company', function($query, $keyword) {
-                $query->where('suppliers.company', 'like', "%{$keyword}%");
-            })
-            ->filterColumn('full_name', function($query, $keyword) {
-                $query->where('suppliers.full_name', 'like', "%{$keyword}%");
-            })
-            ->filterColumn('email', function($query, $keyword) {
-                $query->where('suppliers.email', 'like', "%{$keyword}%");
-            })
-            ->filterColumn('phone', function($query, $keyword) {
-                $query->where('suppliers.phone', 'like', "%{$keyword}%");
-            })
-            ->filterColumn('is_active', function($query, $keyword) {
-                $isActive = null;
-                if (stripos('active', $keyword) !== false) { $isActive = 1; }
-                if (stripos('inactive', $keyword) !== false) { $isActive = 0; }
-                if ($isActive !== null) {
-                    $query->where('suppliers.is_active', $isActive);
-                }
-            })
-            ->orderColumn('company', function ($query, $order) {
-                $query->orderBy('suppliers.company', $order);
-            })
-            ->make(true);
+    $query = Supplier::select([
+        'suppliers.id',
+        'suppliers.company',
+        'suppliers.full_name',
+        'suppliers.vat_number',
+        'suppliers.email',
+        'suppliers.phone',
+        'suppliers.is_active',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Manual Ordering
+    |--------------------------------------------------------------------------
+    */
+    if ($request->has('order')) {
+
+        $orderColumnIndex = $request->order[0]['column'];
+        $orderDirection   = $request->order[0]['dir'];
+
+        if (isset($columns[$orderColumnIndex])) {
+            $query->orderBy($columns[$orderColumnIndex], $orderDirection);
+        } else {
+            // If user clicks non-sortable column
+            $query->orderByDesc('suppliers.id');
+        }
+
+    } else {
+        // Default order
+        $query->orderByDesc('suppliers.id');
     }
+
+    return DataTables::eloquent($query)
+
+        // Filtering
+        ->filterColumn('company', function($query, $keyword) {
+            $query->where('suppliers.company', 'like', "%{$keyword}%");
+        })
+        ->filterColumn('full_name', function($query, $keyword) {
+            $query->where('suppliers.full_name', 'like', "%{$keyword}%");
+        })
+        ->filterColumn('email', function($query, $keyword) {
+            $query->where('suppliers.email', 'like', "%{$keyword}%");
+        })
+        ->filterColumn('phone', function($query, $keyword) {
+            $query->where('suppliers.phone', 'like', "%{$keyword}%");
+        })
+        ->filterColumn('is_active', function($query, $keyword) {
+            $isActive = null;
+
+            if (stripos('active', $keyword) !== false) {
+                $isActive = 1;
+            } elseif (stripos('inactive', $keyword) !== false) {
+                $isActive = 0;
+            }
+
+            if ($isActive !== null) {
+                $query->where('suppliers.is_active', $isActive);
+            }
+        })
+
+        ->make(true);
+}
+
+
 
     public function delete($id)
     {

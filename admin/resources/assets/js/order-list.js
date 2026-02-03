@@ -51,15 +51,15 @@ document.addEventListener('DOMContentLoaded', function (e) {
         // columns according to JSON
         { data: 'id' },
         { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'order_date' },
-        { data: 'order_number' },
-        { data: 'customer_name' },
-        { data: 'total_amount' },
-        { data: 'paid_amount' },
-        { data: 'unpaid_amount' },
-        { data: 'vat_amount' },
-        { data: 'order_status' },
-        { data: 'payment_status' },
+        { data: 'order_date',orderable: true, searchable: true },
+        { data: 'order_number',orderable: true, searchable: true  },
+        { data: 'customer_name',orderable: true, searchable: true  },
+        { data: 'total_amount',orderable: true, searchable: true  },
+        { data: 'paid_amount',orderable: true, searchable: true  },
+        { data: 'unpaid_amount',orderable: true, searchable: true  },
+        { data: 'vat_amount',orderable: true, searchable: true  },
+        { data: 'order_status',orderable: true, searchable: true  },
+        { data: 'payment_status',orderable: true, searchable: true  },
         { data: 'has_credit_note' },
         { data: 'id' }
       ],
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         style: 'multi',
         selector: 'td:nth-child(2)'
       },
-      order: [2, 'desc'],
+      // order: [2, 'desc'],
       layout: {
         topStart: {
           search: {

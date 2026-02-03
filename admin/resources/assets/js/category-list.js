@@ -33,12 +33,12 @@ document.addEventListener('DOMContentLoaded', function (e) {
       ajax: baseUrl + 'category/list/ajax',
       columns: [
         // columns according to JSON
-        { data: 'id' },
-        { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'name', width: "20%",orderable: false},
-        { data: 'parent_category',orderable: false, width: "20%"},
+        { data: 'id',orderable: false, searchable: false },
+        { data: 'id', orderable: false, searchable: false, render: DataTable.render.select() },
+        { data: 'name', width: "20%"},
+        { data: 'parent_category', width: "20%"},
         { data: 'child_categories', width: "40%",orderable: false},
-        { data: 'is_active',orderable: false},
+        { data: 'is_active'},
         { data: 'id'}
       ],
       columnDefs: [

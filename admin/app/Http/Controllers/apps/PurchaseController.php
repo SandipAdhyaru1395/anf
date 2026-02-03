@@ -138,7 +138,7 @@ class PurchaseController extends Controller
         }
 
         // Normalize products array (in case keys are product IDs)
-        $products = array_filter($validated['products'], function($productData) {
+        $products = array_filter($validated['products'], function ($productData) {
             return isset($productData['product_id']);
         });
 
@@ -161,23 +161,23 @@ class PurchaseController extends Controller
             $purchaseItemsForCost = [];
             $subTotal = 0;
             $totalVat = 0;
-            
+
             // Get current warehouse product states BEFORE processing adjustments
             $warehouseProducts = \App\Models\WarehousesProduct::whereIn('product_id', array_column($products, 'product_id'))
                 ->get()
                 ->keyBy('product_id');
-            
+
             // Create purchase items and collect adjustments
             foreach ($products as $productData) {
                 $quantity = (float) $productData['quantity'];
                 $unitCost = (float) ($productData['unit_cost'] ?? 0);
                 $unitVat = (float) ($productData['unit_vat'] ?? 0);
-                
+
                 // Calculate totals
                 $totalCost = round($quantity * $unitCost, 2);
                 $totalVatItem = round($quantity * $unitVat, 2);
                 $subtotal = round($totalCost + $totalVatItem, 2);
-                
+
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $productData['product_id'],
@@ -222,7 +222,7 @@ class PurchaseController extends Controller
 
             // Process all adjustments at once (updates quantity)
             WarehouseProductSyncService::processAdjustments($adjustments);
-            
+
             // Update average cost after quantity adjustments (uses old values to calculate weighted average)
             WarehouseProductSyncService::processAverageCostUpdates($purchaseItemsForCost);
         });
@@ -241,7 +241,7 @@ class PurchaseController extends Controller
 
     public function update(Request $request)
     {
-        
+
         $validated = $request->validate([
             'id' => ['required', 'exists:purchases,id'],
             'supplier_id' => ['required', 'exists:suppliers,id'],
@@ -317,7 +317,7 @@ class PurchaseController extends Controller
         $purchase = Purchase::with('items')->findOrFail($request->id);
 
         // Prepare old adjustments for reversal
-        $oldAdjustments = $purchase->items->map(function($item) {
+        $oldAdjustments = $purchase->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'type' => 'addition',
@@ -358,12 +358,12 @@ class PurchaseController extends Controller
         ]);
 
         // Normalize products array (in case keys are product IDs)
-        $products = array_filter($validated['products'], function($productData) {
+        $products = array_filter($validated['products'], function ($productData) {
             return isset($productData['product_id']);
         });
 
         // Get old purchase items for cost reversion
-        $oldPurchaseItemsForCost = $purchase->items->map(function($item) {
+        $oldPurchaseItemsForCost = $purchase->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'quantity' => (float) $item->quantity,
@@ -377,7 +377,7 @@ class PurchaseController extends Controller
             $warehouseProductsBeforeRevert = \App\Models\WarehousesProduct::whereIn('product_id', array_column($oldPurchaseItemsForCost, 'product_id'))
                 ->get()
                 ->keyBy('product_id');
-            
+
             // Revert average cost updates first (needs current state)
             $oldItemsWithCurrentState = [];
             foreach ($oldPurchaseItemsForCost as $item) {
@@ -391,7 +391,7 @@ class PurchaseController extends Controller
                 ];
             }
             WarehouseProductSyncService::revertAverageCostUpdates($oldItemsWithCurrentState);
-            
+
             // Revert previous stock changes
             WarehouseProductSyncService::revertAdjustments($oldAdjustments);
 
@@ -412,12 +412,12 @@ class PurchaseController extends Controller
                 $quantity = (float) $productData['quantity'];
                 $unitCost = (float) ($productData['unit_cost'] ?? 0);
                 $unitVat = (float) ($productData['unit_vat'] ?? 0);
-                
+
                 // Calculate totals
                 $totalCost = round($quantity * $unitCost, 2);
                 $totalVatItem = round($quantity * $unitVat, 2);
                 $subtotal = round($totalCost + $totalVatItem, 2);
-                
+
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $productData['product_id'],
@@ -448,14 +448,14 @@ class PurchaseController extends Controller
                 $subTotal += $totalCost;
                 $totalVat += $totalVatItem;
             }
-            
+
             // Calculate total amount (shipping_charge + sub_total + vat)
             $shippingCharge = (float) ($validated['shipping_charge'] ?? 0);
             $totalAmount = round($shippingCharge + $subTotal + $totalVat, 2);
 
             // Apply new adjustments (updates quantity)
             WarehouseProductSyncService::processAdjustments($newAdjustments);
-            
+
             // Update average cost after quantity adjustments
             WarehouseProductSyncService::processAverageCostUpdates($newPurchaseItemsForCost);
 
@@ -476,7 +476,7 @@ class PurchaseController extends Controller
         $purchase = Purchase::with('items')->findOrFail($id);
 
         // Prepare adjustments for reversal
-        $adjustments = $purchase->items->map(function($item) {
+        $adjustments = $purchase->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'type' => 'addition',
@@ -485,7 +485,7 @@ class PurchaseController extends Controller
         })->toArray();
 
         // Prepare purchase items for cost reversion
-        $purchaseItemsForCost = $purchase->items->map(function($item) {
+        $purchaseItemsForCost = $purchase->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'quantity' => (float) $item->quantity,
@@ -498,7 +498,7 @@ class PurchaseController extends Controller
             $warehouseProducts = \App\Models\WarehousesProduct::whereIn('product_id', array_column($purchaseItemsForCost, 'product_id'))
                 ->get()
                 ->keyBy('product_id');
-            
+
             // Prepare items with current state for cost reversion
             $itemsWithCurrentState = [];
             foreach ($purchaseItemsForCost as $item) {
@@ -511,10 +511,10 @@ class PurchaseController extends Controller
                     'old_avg_cost' => $wp ? (float) $wp->avg_cost : 0,
                 ];
             }
-            
+
             // Revert average cost updates first
             WarehouseProductSyncService::revertAverageCostUpdates($itemsWithCurrentState);
-            
+
             // Revert stock changes
             WarehouseProductSyncService::revertAdjustments($adjustments);
 
@@ -532,119 +532,189 @@ class PurchaseController extends Controller
 
     public function ajaxList(Request $request)
     {
-        $query = Purchase::with(['user', 'supplier'])
+        $query = Purchase::query()
+            ->with(['user', 'supplier'])
+            ->leftJoin('suppliers', 'suppliers.id', '=', 'purchases.supplier_id')
+            ->leftJoin('users', 'users.id', '=', 'purchases.user_id')
             ->select([
-                'id',
-                'date',
-                'reference_no',
-                'supplier_id',
-                'total_amount',
-                'note',
-                'user_id',
-                'created_at',
-            ])
-            ->orderBy('id', 'desc');
+                'purchases.id',
+                'purchases.date',
+                'purchases.reference_no',
+                'purchases.supplier_id',
+                'purchases.total_amount',
+                'purchases.note',
+                'purchases.user_id',
+                'purchases.created_at',
+            ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Manual Column Mapping (Match JS Indexes)
+        |--------------------------------------------------------------------------
+        */
+        $columns = [
+            0 => 'purchases.id',
+            2 => 'purchases.date',
+            3 => 'purchases.reference_no',
+            4 => 'suppliers.company',
+            5 => 'purchases.total_amount',
+            6 => 'users.name',
+            7 => 'purchases.note',
+        ];
+
+        if ($request->has('order')) {
+            $orderColumnIndex = $request->order[0]['column'];
+            $orderDirection = $request->order[0]['dir'];
+
+            if (isset($columns[$orderColumnIndex])) {
+                $query->orderBy($columns[$orderColumnIndex], $orderDirection);
+            } else {
+                $query->orderByDesc('purchases.id');
+            }
+        } else {
+            $query->orderByDesc('purchases.id');
+        }
 
         return DataTables::eloquent($query)
+
+            // KEEP your existing filter logic unchanged
             ->filter(function ($query) use ($request) {
                 $searchValue = trim($request->get('search')['value'] ?? '');
                 if (!empty($searchValue)) {
                     $query->where(function ($q) use ($searchValue) {
-                        // Check if search starts with #PO or PO (case insensitive)
+
                         $isReferenceNoSearch = preg_match('/^#?PO/i', $searchValue);
-                        
-                        // Remove #PO prefix if present for searching reference_no
                         $refSearchValue = trim(preg_replace('/^#?PO/i', '', $searchValue));
-                        
-                        // Search in reference_no (with or without prefix)
-                        // Only search if we have something to search after removing prefix
+
                         if (!empty($refSearchValue)) {
                             $q->where(function ($refQuery) use ($searchValue, $refSearchValue) {
-                                // Search for the numeric part in reference_no
-                                $refQuery->where('reference_no', 'like', "%{$refSearchValue}%");
-                                // Also search for the full formatted version (e.g., "#PO1" matches "#po1")
-                                if (!empty(trim($searchValue))) {
-                                    $refQuery->orWhereRaw("CONCAT('#PO', reference_no) LIKE ?", ["%" . trim($searchValue) . "%"]);
-                                }
+                                $refQuery->where('purchases.reference_no', 'like', "%{$refSearchValue}%")
+                                    ->orWhereRaw("CONCAT('#PO', purchases.reference_no) LIKE ?", ["%" . trim($searchValue) . "%"]);
                             });
                         } else {
-                            // If search is just "#PO" or "PO", search for all PO references
-                            $q->whereNotNull('reference_no');
+                            $q->whereNotNull('purchases.reference_no');
                         }
-                        
-                        // Only search in other fields if it's NOT a reference number search
-                        // This prevents "#po1" from matching dates with "1" in them
+
                         if (!$isReferenceNoSearch) {
-                            // Search in supplier name
+
                             $q->orWhereHas('supplier', function ($supplierQuery) use ($searchValue) {
                                 $supplierQuery->where('company', 'like', "%{$searchValue}%")
                                     ->orWhere('full_name', 'like', "%{$searchValue}%");
                             })
-                            // Search in date (try to parse date formats)
-                            ->orWhere(function ($dateQuery) use ($searchValue) {
-                                try {
-                                    // Try d/m/Y format first (matches the formatted output)
-                                    if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $searchValue, $matches)) {
-                                        $date = Carbon::createFromFormat('d/m/Y', $matches[0]);
-                                        $dateQuery->whereDate('date', $date->format('Y-m-d'));
-                                    } else {
-                                        // Try to parse as date and search
-                                        $date = Carbon::parse($searchValue);
-                                        $dateQuery->whereDate('date', $date->format('Y-m-d'));
+
+                                ->orWhere(function ($dateQuery) use ($searchValue) {
+
+                                    try {
+
+                                        // Check if it contains time
+                                        if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}(:\d{2})?/', $searchValue)) {
+
+                                            // Format: d/m/Y H:i:s
+                                            $date = Carbon::createFromFormat('d/m/Y H:i:s', $searchValue);
+
+                                            $dateQuery->where('purchases.date', $date->format('Y-m-d H:i:s'));
+
+                                        } elseif (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $searchValue, $matches)) {
+
+                                            // Date only
+                                            $date = Carbon::createFromFormat('d/m/Y', $matches[0]);
+
+                                            $dateQuery->whereDate('purchases.date', $date->format('Y-m-d'));
+
+                                        } else {
+
+                                            // Try generic parsing
+                                            $date = Carbon::parse($searchValue);
+
+                                            $dateQuery->whereDate('purchases.date', $date->format('Y-m-d'));
+                                        }
+
+                                    } catch (\Exception $e) {
+
+                                        $dateQuery->whereRaw(
+                                            "DATE_FORMAT(purchases.date, '%d/%m/%Y %H:%i:%s') LIKE ?",
+                                            ["%{$searchValue}%"]
+                                        );
                                     }
-                                } catch (\Exception $e) {
-                                    // If parsing fails, search in formatted date string
-                                    $dateQuery->whereRaw("DATE_FORMAT(date, '%d/%m/%Y %H:%i') LIKE ?", ["%{$searchValue}%"]);
-                                }
-                            })
-                            // Search in total amount (remove currency symbols and format characters)
-                            ->orWhere(function ($amountQuery) use ($searchValue) {
-                                $amountSearch = preg_replace('/[^0-9.]/', '', $searchValue);
-                                if (!empty($amountSearch)) {
-                                    $amountQuery->where('total_amount', 'like', "%{$amountSearch}%");
-                                }
-                            })
-                            // Search in user name
-                            ->orWhereHas('user', function ($userQuery) use ($searchValue) {
-                                $userQuery->where('name', 'like', "%{$searchValue}%");
-                            })
-                            // Search in note
-                            ->orWhere('note', 'like', "%{$searchValue}%");
+                                })
+
+
+                                ->orWhere(function ($amountQuery) use ($searchValue) {
+                                    $amountSearch = preg_replace('/[^0-9.]/', '', $searchValue);
+                                    if (!empty($amountSearch)) {
+                                        $amountQuery->where('purchases.total_amount', 'like', "%{$amountSearch}%");
+                                    }
+                                })
+
+                                ->orWhereHas('user', function ($userQuery) use ($searchValue) {
+                                    $userQuery->where('name', 'like', "%{$searchValue}%");
+                                })
+
+                                ->orWhere('purchases.note', 'like', "%{$searchValue}%");
                         }
                     });
                 }
             })
-            ->addColumn('reference_no_display', function ($purchase) {
-                return $purchase->reference_no ? '#PO' . $purchase->reference_no : 'N/A';
-            })
+
+            ->addColumn(
+                'reference_no_display',
+                fn($purchase) =>
+                $purchase->reference_no ? '#PO' . $purchase->reference_no : 'N/A'
+            )
+
             ->addColumn('supplier_name', function ($purchase) {
                 if ($purchase->supplier) {
-                    return $purchase->supplier->company ?? $purchase->supplier->full_name ?? 'Supplier #' . $purchase->supplier_id;
+                    return $purchase->supplier->company
+                        ?? $purchase->supplier->full_name
+                        ?? 'Supplier #' . $purchase->supplier_id;
                 }
                 return 'N/A';
             })
-            ->addColumn('total_amount_display', function ($purchase) {
-                return $purchase->total_amount ? number_format($purchase->total_amount, 2) : '0.00';
-            })
-            ->addColumn('user_name', function ($purchase) {
-                return $purchase->user ? $purchase->user->name : 'N/A';
-            })
-            ->addColumn('date_formatted', function ($purchase) {
-                return optional($purchase->date)->format('d/m/Y H:i');
-            })
-            ->addColumn('note_display', function ($purchase) {
-                return $purchase->note ? strip_tags($purchase->note) : '';
-            })
+
+            ->addColumn(
+                'total_amount_display',
+                fn($purchase) =>
+                number_format($purchase->total_amount ?? 0, 2)
+            )
+
+            ->addColumn(
+                'user_name',
+                fn($purchase) =>
+                $purchase->user->name ?? 'N/A'
+            )
+
+            ->addColumn(
+                'date_formatted',
+                fn($purchase) =>
+                optional($purchase->date)->format('d/m/Y H:i')
+            )
+
+            ->addColumn(
+                'note_display',
+                fn($purchase) =>
+                $purchase->note ? strip_tags($purchase->note) : ''
+            )
+
             ->addColumn('actions', function ($purchase) {
                 $editUrl = route('purchase.edit', $purchase->id);
                 return '<div class="d-inline-block text-nowrap">' .
-                       '<a href="' . $editUrl . '" class="rounded-pill waves-effect btn-icon"><button class="btn btn-text-secondary "><i class="icon-base ti tabler-edit icon-22px"></i></button></a> ' .
-                       '<a href="javascript:;" onclick="deletePurchase(' . $purchase->id . ')" class="rounded-pill waves-effect btn-icon"><button class="btn"><i class="icon-base ti tabler-trash icon-22px"></i></button></a>' .
-                       '</div>';
+                    '<a href="' . $editUrl . '" class="rounded-pill waves-effect btn-icon">
+                    <button class="btn btn-text-secondary">
+                        <i class="icon-base ti tabler-edit icon-22px"></i>
+                    </button>
+                </a>
+                <a href="javascript:;" onclick="deletePurchase(' . $purchase->id . ')" class="rounded-pill waves-effect btn-icon">
+                    <button class="btn">
+                        <i class="icon-base ti tabler-trash icon-22px"></i>
+                    </button>
+                </a>
+                </div>';
             })
+
             ->rawColumns(['actions'])
             ->make(true);
     }
+
 
     public function showAjax($id)
     {
@@ -658,11 +728,11 @@ class PurchaseController extends Controller
         $q = trim($request->get('q', ''));
         $limit = (int) $request->get('limit', 10);
 
-        $query = Product::select(['id', 'name', 'sku', 'price','cost_price','image_url','stock_quantity','vat_amount'])
+        $query = Product::select(['id', 'name', 'sku', 'price', 'cost_price', 'image_url', 'stock_quantity', 'vat_amount'])
             ->where('is_active', 1);
 
         if ($q !== '') {
-            $query->where(function($sub) use ($q) {
+            $query->where(function ($sub) use ($q) {
                 $sub->where('name', 'like', "%{$q}%")
                     ->orWhere('sku', 'like', "%{$q}%");
             });
@@ -671,7 +741,7 @@ class PurchaseController extends Controller
         $products = $query->orderBy('id', 'desc')->limit($limit)->get();
 
         return response()->json([
-            'results' => $products->map(function($p) {
+            'results' => $products->map(function ($p) {
                 return [
                     'id' => $p->id,
                     'text' => $p->name . ' (' . $p->sku . ')',
@@ -684,5 +754,5 @@ class PurchaseController extends Controller
             })
         ]);
     }
-    
+
 }
