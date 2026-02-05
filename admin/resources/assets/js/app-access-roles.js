@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
                             Swal.fire({
                               icon: 'success',
                               title: 'Deleted!',
-                              text: response.message ?? 'Selected roles have been deleted.',
+                              text: response.message ?? 'Selected users have been deleted.',
                               customClass: {
                                 confirmButton: 'btn btn-success'
                               }
