@@ -14,10 +14,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
+use App\Services\QuantityAdjustmentDeletionService;
 use Carbon\Carbon;
 
 class QuantityAdjustmentController extends Controller
 {
+    protected $quantityAdjustmentDeletionService;
+
+    public function __construct(
+        QuantityAdjustmentDeletionService $quantityAdjustmentDeletionService
+    ) {
+        $this->quantityAdjustmentDeletionService = $quantityAdjustmentDeletionService;
+    }
+
     public function index()
     {
         $data['total_adjustments_count'] = QuantityAdjustment::all()->count();
@@ -316,34 +325,46 @@ class QuantityAdjustmentController extends Controller
         return redirect()->route('quantity_adjustment.list');
     }
 
+    // public function delete($id)
+    // {
+    //     $adjustment = QuantityAdjustment::with('items')->findOrFail($id);
+
+    //     // Prepare adjustments for reversal
+    //     $adjustments = $adjustment->items->map(function ($item) {
+    //         return [
+    //             'product_id' => $item->product_id,
+    //             'type' => $item->type,
+    //             'quantity' => $item->quantity,
+    //         ];
+    //     })->toArray();
+
+    //     DB::transaction(function () use ($adjustments, $adjustment) {
+    //         // Revert stock changes
+    //         WarehouseProductSyncService::revertAdjustments($adjustments);
+
+    //         // Delete document if exists
+    //         if ($adjustment->document) {
+    //             Storage::disk('public')->delete($adjustment->document);
+    //         }
+
+    //         $adjustment->delete();
+    //     });
+
+    //     Toastr::success('Quantity adjustment deleted successfully!');
+    //     return redirect()->back();
+    // }
+
+
     public function delete($id)
     {
         $adjustment = QuantityAdjustment::with('items')->findOrFail($id);
 
-        // Prepare adjustments for reversal
-        $adjustments = $adjustment->items->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'type' => $item->type,
-                'quantity' => $item->quantity,
-            ];
-        })->toArray();
-
-        DB::transaction(function () use ($adjustments, $adjustment) {
-            // Revert stock changes
-            WarehouseProductSyncService::revertAdjustments($adjustments);
-
-            // Delete document if exists
-            if ($adjustment->document) {
-                Storage::disk('public')->delete($adjustment->document);
-            }
-
-            $adjustment->delete();
-        });
+        $this->quantityAdjustmentDeletionService->delete($adjustment);
 
         Toastr::success('Quantity adjustment deleted successfully!');
         return redirect()->back();
     }
+
 
     public function ajaxList(Request $request)
     {
@@ -509,5 +530,19 @@ class QuantityAdjustmentController extends Controller
             })
         ]);
     }
+
+    public function deleteMultiple(Request $request)
+    {
+        $adjustments = QuantityAdjustment::with('items')
+            ->whereIn('id', $request->ids)
+            ->get();
+
+        foreach ($adjustments as $adjustment) {
+            $this->quantityAdjustmentDeletionService->delete($adjustment);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
 
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\apps;
 
 use App\Http\Controllers\Controller;
+use App\traits\BulkDeletes;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use App\Models\Supplier;
@@ -11,6 +12,10 @@ use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
+    use BulkDeletes;
+
+    protected $model = Supplier::class;
+
     public function index()
     {
         $data['total_suppliers_count'] = Supplier::all()->count();
@@ -42,7 +47,7 @@ class SupplierController extends Controller
             'state' => ['nullable', 'string', 'max:255'],
             'zip_code' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
-            'is_active' => ['nullable','in:0,1'],
+            'is_active' => ['nullable', 'in:0,1'],
         ], [
             'company.required' => 'Company is required',
             'full_name.required' => 'Full Name is required',
@@ -52,7 +57,7 @@ class SupplierController extends Controller
             'phone.unique' => 'This phone already exists',
         ]);
 
-        $validated['is_active'] = (int)($request->get('is_active', 1));
+        $validated['is_active'] = (int) ($request->get('is_active', 1));
 
         Supplier::create($validated);
 
@@ -90,7 +95,7 @@ class SupplierController extends Controller
             'state' => ['nullable', 'string', 'max:255'],
             'zip_code' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
-            'is_active' => ['nullable','in:0,1'],
+            'is_active' => ['nullable', 'in:0,1'],
         ], [
             'company.required' => 'Company is required',
             'full_name.required' => 'Full Name is required',
@@ -100,7 +105,7 @@ class SupplierController extends Controller
             'phone.unique' => 'This phone already exists',
         ]);
 
-        $validated['is_active'] = (int)($request->get('is_active', 1));
+        $validated['is_active'] = (int) ($request->get('is_active', 1));
 
         Supplier::find($request->id)->update($validated);
 
@@ -113,80 +118,80 @@ class SupplierController extends Controller
         return view('content.supplier.add');
     }
 
-   public function ajaxList(Request $request)
-{
-    // Only sortable DB columns (match with JS indexes 2–6)
-    $columns = [
-        2 => 'suppliers.company',
-        3 => 'suppliers.full_name',
-        4 => 'suppliers.email',
-        5 => 'suppliers.phone',
-        6 => 'suppliers.is_active',
-    ];
+    public function ajaxList(Request $request)
+    {
+        // Only sortable DB columns (match with JS indexes 2–6)
+        $columns = [
+            2 => 'suppliers.company',
+            3 => 'suppliers.full_name',
+            4 => 'suppliers.email',
+            5 => 'suppliers.phone',
+            6 => 'suppliers.is_active',
+        ];
 
-    $query = Supplier::select([
-        'suppliers.id',
-        'suppliers.company',
-        'suppliers.full_name',
-        'suppliers.vat_number',
-        'suppliers.email',
-        'suppliers.phone',
-        'suppliers.is_active',
-    ]);
+        $query = Supplier::select([
+            'suppliers.id',
+            'suppliers.company',
+            'suppliers.full_name',
+            'suppliers.vat_number',
+            'suppliers.email',
+            'suppliers.phone',
+            'suppliers.is_active',
+        ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Manual Ordering
-    |--------------------------------------------------------------------------
-    */
-    if ($request->has('order')) {
+        /*
+        |--------------------------------------------------------------------------
+        | Manual Ordering
+        |--------------------------------------------------------------------------
+        */
+        if ($request->has('order')) {
 
-        $orderColumnIndex = $request->order[0]['column'];
-        $orderDirection   = $request->order[0]['dir'];
+            $orderColumnIndex = $request->order[0]['column'];
+            $orderDirection = $request->order[0]['dir'];
 
-        if (isset($columns[$orderColumnIndex])) {
-            $query->orderBy($columns[$orderColumnIndex], $orderDirection);
+            if (isset($columns[$orderColumnIndex])) {
+                $query->orderBy($columns[$orderColumnIndex], $orderDirection);
+            } else {
+                // If user clicks non-sortable column
+                $query->orderByDesc('suppliers.id');
+            }
+
         } else {
-            // If user clicks non-sortable column
+            // Default order
             $query->orderByDesc('suppliers.id');
         }
 
-    } else {
-        // Default order
-        $query->orderByDesc('suppliers.id');
+        return DataTables::eloquent($query)
+
+            // Filtering
+            ->filterColumn('company', function ($query, $keyword) {
+                $query->where('suppliers.company', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('full_name', function ($query, $keyword) {
+                $query->where('suppliers.full_name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('email', function ($query, $keyword) {
+                $query->where('suppliers.email', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('phone', function ($query, $keyword) {
+                $query->where('suppliers.phone', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('is_active', function ($query, $keyword) {
+                $isActive = null;
+
+                if (stripos('active', $keyword) !== false) {
+                    $isActive = 1;
+                } elseif (stripos('inactive', $keyword) !== false) {
+                    $isActive = 0;
+                }
+
+                if ($isActive !== null) {
+                    $query->where('suppliers.is_active', $isActive);
+                }
+            })
+
+            ->make(true);
     }
-
-    return DataTables::eloquent($query)
-
-        // Filtering
-        ->filterColumn('company', function($query, $keyword) {
-            $query->where('suppliers.company', 'like', "%{$keyword}%");
-        })
-        ->filterColumn('full_name', function($query, $keyword) {
-            $query->where('suppliers.full_name', 'like', "%{$keyword}%");
-        })
-        ->filterColumn('email', function($query, $keyword) {
-            $query->where('suppliers.email', 'like', "%{$keyword}%");
-        })
-        ->filterColumn('phone', function($query, $keyword) {
-            $query->where('suppliers.phone', 'like', "%{$keyword}%");
-        })
-        ->filterColumn('is_active', function($query, $keyword) {
-            $isActive = null;
-
-            if (stripos('active', $keyword) !== false) {
-                $isActive = 1;
-            } elseif (stripos('inactive', $keyword) !== false) {
-                $isActive = 0;
-            }
-
-            if ($isActive !== null) {
-                $query->where('suppliers.is_active', $isActive);
-            }
-        })
-
-        ->make(true);
-}
 
 
 
@@ -201,8 +206,8 @@ class SupplierController extends Controller
     public function checkEmail(Request $request)
     {
         $request->validate([
-            'email' => ['nullable','string'],
-            'id' => ['nullable','integer']
+            'email' => ['nullable', 'string'],
+            'id' => ['nullable', 'integer']
         ]);
 
         $email = trim((string) $request->email);
@@ -211,7 +216,8 @@ class SupplierController extends Controller
         }
 
         $exists = Supplier::where('email', $email)
-            ->when(!empty($request->id), function($q) use ($request) { $q->where('id', '!=', $request->id); })
+            ->when(!empty($request->id), function ($q) use ($request) {
+                $q->where('id', '!=', $request->id); })
             ->exists();
 
         return response()->json(['valid' => !$exists]);
@@ -220,8 +226,8 @@ class SupplierController extends Controller
     public function checkPhone(Request $request)
     {
         $request->validate([
-            'phone' => ['nullable','string'],
-            'id' => ['nullable','integer']
+            'phone' => ['nullable', 'string'],
+            'id' => ['nullable', 'integer']
         ]);
 
         $phone = trim((string) $request->phone);
@@ -230,7 +236,8 @@ class SupplierController extends Controller
         }
 
         $exists = Supplier::where('phone', $phone)
-            ->when(!empty($request->id), function($q) use ($request) { $q->where('id', '!=', $request->id); })
+            ->when(!empty($request->id), function ($q) use ($request) {
+                $q->where('id', '!=', $request->id); })
             ->exists();
 
         return response()->json(['valid' => !$exists]);

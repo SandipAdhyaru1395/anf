@@ -9,16 +9,25 @@ use App\Models\PurchaseItem;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Services\WarehouseProductSyncService;
+use App\traits\BulkDeletes;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
+use App\Services\PurchaseDeletionService;
 use Carbon\Carbon;
 
 class PurchaseController extends Controller
 {
+    protected $purchaseDeletionService;
+
+    public function __construct(PurchaseDeletionService $purchaseDeletionService)
+    {
+        $this->purchaseDeletionService = $purchaseDeletionService;
+    }
+
     public function index()
     {
         $data['total_purchases_count'] = Purchase::all()->count();
@@ -471,60 +480,70 @@ class PurchaseController extends Controller
         return redirect()->route('purchase.list');
     }
 
+    // public function delete($id)
+    // {
+    //     $purchase = Purchase::with('items')->findOrFail($id);
+
+    //     // Prepare adjustments for reversal
+    //     $adjustments = $purchase->items->map(function ($item) {
+    //         return [
+    //             'product_id' => $item->product_id,
+    //             'type' => 'addition',
+    //             'quantity' => $item->quantity,
+    //         ];
+    //     })->toArray();
+
+    //     // Prepare purchase items for cost reversion
+    //     $purchaseItemsForCost = $purchase->items->map(function ($item) {
+    //         return [
+    //             'product_id' => $item->product_id,
+    //             'quantity' => (float) $item->quantity,
+    //             'unit_cost' => (float) $item->unit_cost,
+    //         ];
+    //     })->toArray();
+
+    //     DB::transaction(function () use ($adjustments, $purchaseItemsForCost, $purchase) {
+    //         // Get current warehouse product states BEFORE reverting
+    //         $warehouseProducts = \App\Models\WarehousesProduct::whereIn('product_id', array_column($purchaseItemsForCost, 'product_id'))
+    //             ->get()
+    //             ->keyBy('product_id');
+
+    //         // Prepare items with current state for cost reversion
+    //         $itemsWithCurrentState = [];
+    //         foreach ($purchaseItemsForCost as $item) {
+    //             $wp = $warehouseProducts->get($item['product_id']);
+    //             $itemsWithCurrentState[] = [
+    //                 'product_id' => $item['product_id'],
+    //                 'quantity' => $item['quantity'],
+    //                 'unit_cost' => $item['unit_cost'],
+    //                 'old_quantity' => $wp ? (float) $wp->quantity : 0,
+    //                 'old_avg_cost' => $wp ? (float) $wp->avg_cost : 0,
+    //             ];
+    //         }
+
+    //         // Revert average cost updates first
+    //         WarehouseProductSyncService::revertAverageCostUpdates($itemsWithCurrentState);
+
+    //         // Revert stock changes
+    //         WarehouseProductSyncService::revertAdjustments($adjustments);
+
+    //         // Delete document if exists
+    //         if ($purchase->document) {
+    //             Storage::disk('public')->delete($purchase->document);
+    //         }
+
+    //         $purchase->delete();
+    //     });
+
+    //     Toastr::success('Purchase deleted successfully!');
+    //     return redirect()->back();
+    // }
+
     public function delete($id)
     {
         $purchase = Purchase::with('items')->findOrFail($id);
 
-        // Prepare adjustments for reversal
-        $adjustments = $purchase->items->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'type' => 'addition',
-                'quantity' => $item->quantity,
-            ];
-        })->toArray();
-
-        // Prepare purchase items for cost reversion
-        $purchaseItemsForCost = $purchase->items->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'quantity' => (float) $item->quantity,
-                'unit_cost' => (float) $item->unit_cost,
-            ];
-        })->toArray();
-
-        DB::transaction(function () use ($adjustments, $purchaseItemsForCost, $purchase) {
-            // Get current warehouse product states BEFORE reverting
-            $warehouseProducts = \App\Models\WarehousesProduct::whereIn('product_id', array_column($purchaseItemsForCost, 'product_id'))
-                ->get()
-                ->keyBy('product_id');
-
-            // Prepare items with current state for cost reversion
-            $itemsWithCurrentState = [];
-            foreach ($purchaseItemsForCost as $item) {
-                $wp = $warehouseProducts->get($item['product_id']);
-                $itemsWithCurrentState[] = [
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_cost' => $item['unit_cost'],
-                    'old_quantity' => $wp ? (float) $wp->quantity : 0,
-                    'old_avg_cost' => $wp ? (float) $wp->avg_cost : 0,
-                ];
-            }
-
-            // Revert average cost updates first
-            WarehouseProductSyncService::revertAverageCostUpdates($itemsWithCurrentState);
-
-            // Revert stock changes
-            WarehouseProductSyncService::revertAdjustments($adjustments);
-
-            // Delete document if exists
-            if ($purchase->document) {
-                Storage::disk('public')->delete($purchase->document);
-            }
-
-            $purchase->delete();
-        });
+        $this->purchaseDeletionService->delete($purchase);
 
         Toastr::success('Purchase deleted successfully!');
         return redirect()->back();
@@ -754,5 +773,19 @@ class PurchaseController extends Controller
             })
         ]);
     }
+
+    public function deleteMultiple(Request $request)
+    {
+        $purchases = Purchase::with('items')
+            ->whereIn('id', $request->ids)
+            ->get();
+
+        foreach ($purchases as $purchase) {
+            $this->purchaseDeletionService->delete($purchase);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
 
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\apps;
 use App\Http\Controllers\Controller;
 use App\Models\ProductBrand;
 use App\Services\WarehouseProductSyncService;
+use App\traits\BulkDeletes;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use App\Models\Product;
@@ -23,6 +24,10 @@ use App\Models\Unit;
 
 class ProductController extends Controller
 {
+   use BulkDeletes;
+  
+    protected $model = Product::class;
+  
   public function index()
   {
     $data['total_products_count'] = Product::all()->count();

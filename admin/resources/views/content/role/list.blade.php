@@ -9,10 +9,15 @@
 @endsection
 
 @section('vendor-script')
-@vite(['resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
-'resources/assets/vendor/libs/cleave-zen/cleave-zen.js','resources/assets/vendor/libs/select2/select2.js',
-'resources/assets/vendor/libs/@form-validation/popular.js','resources/assets/vendor/libs/@form-validation/bootstrap5.js','resources/assets/vendor/libs/@form-validation/auto-focus.js',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+  @vite([
+    'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+    'resources/assets/vendor/libs/cleave-zen/cleave-zen.js',
+    'resources/assets/vendor/libs/select2/select2.js',
+    'resources/assets/vendor/libs/@form-validation/popular.js',
+    'resources/assets/vendor/libs/@form-validation/bootstrap5.js',
+    'resources/assets/vendor/libs/@form-validation/auto-focus.js',
+    'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'
+  ])
 @endsection
 
 @section('page-script')
@@ -20,30 +25,70 @@
   <script>
     $(document).ready(function () {
 
-      $('#editRoleModal').on('show.bs.modal', function (e) {
+      // $('#editRoleModal').on('show.bs.modal', function (e) {
 
-        var id = $(e.relatedTarget).data('id');
+      //   var id = $(e.relatedTarget).data('id');
 
-        $.ajax({
-          url: "{{ route('role.show') }}",
-          type: 'GET',
-          data: { id: id },
-          success: function (response) {
-            $('#editRoleForm').find('input[type="checkbox"]').prop('checked', false);
-            $('#editRoleForm').find('#role_id').val(response.id);
-            $('#editRoleForm').find('#modalRoleName').val(response.role_name);
+      //   $.ajax({
+      //     url: "{{ route('role.show') }}",
+      //     type: 'GET',
+      //     data: { id: id },
+      //     success: function (response) {
+      //       $('#editRoleForm').find('input[type="checkbox"]').prop('checked', false);
+      //       $('#editRoleForm').find('#role_id').val(response.id);
+      //       $('#editRoleForm').find('#modalRoleName').val(response.role_name);
+
+      //       if (response.menus) {
+
+      //         Object.keys(response.menus).forEach(function (key) {
+      //           Object.keys(response.menus[key]).forEach(function (action) {
+      //             $('#editRoleForm').find('#edit_' + key + '_' + action).prop('checked', true);
+      //           });
+      //         });
+      //       }
+      //     }
+      //   });
+      // });
+
+      $(document).on('click', '.role-edit-modal', function () {
+
+    var id = $(this).data('id');
+
+    // Optional: show loader or disable button
+    $.ajax({
+        url: "{{ route('role.show') }}",
+        type: 'GET',
+        data: { id: id },
+        success: function (response) {
+
+            let form = $('#editRoleForm');
+
+            form.find('input[type="checkbox"]').prop('checked', false);
+            form.find('#role_id').val(response.id);
+            form.find('#modalRoleName').val(response.role_name);
 
             if (response.menus) {
-
-              Object.keys(response.menus).forEach(function (key) {
-                Object.keys(response.menus[key]).forEach(function (action) {
-                  $('#editRoleForm').find('#edit_' + key + '_' + action).prop('checked', true);
+                Object.keys(response.menus).forEach(function (key) {
+                    Object.keys(response.menus[key]).forEach(function (action) {
+                        form.find('#edit_' + key + '_' + action).prop('checked', true);
+                    });
                 });
-              });
             }
-          }
-        });
-      });
+
+            // Show modal AFTER data is ready
+            $('#editRoleModal').modal('show');
+        },
+        error: function (xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: xhr.responseJSON?.message ?? 'Something went wrong'
+            });
+        }
+    });
+
+});
+
 
       $('#addRoleModal').on('show.bs.modal', function (e) {
 
@@ -103,7 +148,7 @@
           },
           buttonsStyling: false
         }).then(function (result) {
-          if(result.isConfirmed){
+          if (result.isConfirmed) {
             window.location.href = baseUrl + 'user/delete/' + id;
           }
         });
@@ -168,7 +213,7 @@
               <div class="d-flex justify-content-between align-items-end">
                 <div class="role-heading">
                   <h5 class="mb-1">{{ $role->name }}</h5>
-                  <a href="javascript:;" data-id="{{ $role->id }}" data-bs-toggle="modal" data-bs-target="#editRoleModal"
+                  <a href="javascript:;" data-id="{{ $role->id }}"
                     class="role-edit-modal"><span>Edit Role</span></a>
                 </div>
                 <a href="javascript:void(0);" data-id="{{ $role->id }}" data-bs-toggle="modal"

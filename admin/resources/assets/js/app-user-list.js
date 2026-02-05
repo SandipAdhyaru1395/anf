@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
   var select2 = $('.select2');
 
   if (select2.length) {
-    
+
     select2.each(function () {
       var $this = $(this);
 
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         // columns according to JSON
         { data: 'id' },
         { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'full_name',  },
+        { data: 'full_name', },
         { data: 'role', width: '15%' },
         { data: 'status', width: '15%' },
         { data: 'action', width: '15%' }
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
             //   "Administrator": '<span class="me-2"><i class="icon-base ti tabler-crown icon-22px text-primary"></i></span>'
             // };
             return (
-              "<span class='d-flex align-items-center'>" 
+              "<span class='d-flex align-items-center'>"
               + role +
               '</span>'
             );
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         }
       ],
       select: {
-        style: 'multi',
+        style: 'multi+shift',
         selector: 'td:nth-child(2)'
       },
       order: [[2, 'desc']],
@@ -198,6 +198,83 @@ document.addEventListener('DOMContentLoaded', function (e) {
                 menu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 text: '_MENU_'
               }
+            },
+            {
+              buttons: [
+                {
+                  text: '<i class="icon-base ti tabler-trash me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Delete Selected</span>',
+                  className: 'btn btn-danger',
+                  enabled: false,
+                  action: function (e, dt, node, config) {
+
+                    let selectedRows = dt.rows({ selected: true }).data();
+                    let ids = [];
+
+                    selectedRows.each(function (row) {
+                      ids.push(row.id);
+                    });
+
+                    if (ids.length === 0) return;
+
+                    Swal.fire({
+                      title: 'Are you sure?',
+                      text: "You won't be able to revert this!",
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Yes, delete them!',
+                      cancelButtonText: 'Cancel',
+                      customClass: {
+                        confirmButton: 'btn btn-danger me-3',
+                        cancelButton: 'btn btn-label-secondary'
+                      },
+                      buttonsStyling: false
+                    }).then(function (result) {
+                      if (result.isConfirmed) {
+                        $.ajax({
+                          url: baseUrl + 'user/delete-multiple',
+                          type: 'POST',
+                          data: {
+                            ids: ids,
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                          },
+                          success: function (response) {
+
+                            dt.ajax.reload();
+                            dt.button(0).enable(false);
+
+                            Swal.fire({
+                              icon: 'success',
+                              title: 'Deleted!',
+                              text: response.message ?? 'Selected users have been deleted.',
+                              customClass: {
+                                confirmButton: 'btn btn-success'
+                              }
+                            });
+                          },
+                          error: function (xhr) {
+
+                            let message = 'Something went wrong.';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                              message = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Error!',
+                              text: message,
+                              customClass: {
+                                confirmButton: 'btn btn-danger'
+                              }
+                            });
+                          }
+                        });
+                      }
+                    });
+
+                  }
+                }
+              ],
             }
           ]
         },
@@ -556,6 +633,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
       }
     });
 
+    dt_user.on('select deselect', function () {
+      let selectedCount = dt_user.rows({ selected: true }).count();
+      dt_user.button(0).enable(selectedCount > 0);
+    });
     //? The 'delete-record' class is necessary for the functionality of the following code.
     function deleteRecord(event) {
       let row = document.querySelector('.dtr-expanded');
@@ -663,76 +744,76 @@ document.addEventListener('DOMContentLoaded', function (e) {
   }
   // Add New User Form Validation
   if (addNewUserForm) {
-  const fv = FormValidation.formValidation(addNewUserForm, {
-    fields: {
-      modalAddUserName: {
-        validators: {
-          notEmpty: {
-            message: 'Please enter name '
+    const fv = FormValidation.formValidation(addNewUserForm, {
+      fields: {
+        modalAddUserName: {
+          validators: {
+            notEmpty: {
+              message: 'Please enter name '
+            }
           }
-        }
-      },
-      modalAddUserEmail: {
-        validators: {
-          notEmpty: {
-            message: 'Please enter email'
-          },
-          emailAddress: {
-            message: 'The value is not a valid email address'
-          }
-        }
-      },
-      newPassword: {
-        validators: {
-          notEmpty: {
-            message: 'Please enter new password'
-          },
-          stringLength: {
-            min: 6,
-            message: 'Password must be more than 6 characters'
-          }
-        }
-      },
-      confirmPassword: {
-        validators: {
-          notEmpty: {
-            message: 'Please confirm new password'
-          },
-          identical: {
-            compare: function () {
-              return document.getElementById('addNewUserForm').querySelector('[name="newPassword"]').value;
+        },
+        modalAddUserEmail: {
+          validators: {
+            notEmpty: {
+              message: 'Please enter email'
             },
-            message: 'The password and its confirm are not the same'
-          },
-          stringLength: {
-            min: 6,
-            message: 'Password must be more than 6 characters'
+            emailAddress: {
+              message: 'The value is not a valid email address'
+            }
+          }
+        },
+        newPassword: {
+          validators: {
+            notEmpty: {
+              message: 'Please enter new password'
+            },
+            stringLength: {
+              min: 6,
+              message: 'Password must be more than 6 characters'
+            }
+          }
+        },
+        confirmPassword: {
+          validators: {
+            notEmpty: {
+              message: 'Please confirm new password'
+            },
+            identical: {
+              compare: function () {
+                return document.getElementById('addNewUserForm').querySelector('[name="newPassword"]').value;
+              },
+              message: 'The password and its confirm are not the same'
+            },
+            stringLength: {
+              min: 6,
+              message: 'Password must be more than 6 characters'
+            }
           }
         }
+      },
+      plugins: {
+        trigger: new FormValidation.plugins.Trigger(),
+        bootstrap5: new FormValidation.plugins.Bootstrap5({
+          // Use this for enabling/changing valid/invalid class
+          eleValidClass: '',
+          rowSelector: function (field, ele) {
+            // field is the field name & ele is the field element
+            return '.form-control-validation';
+          }
+        }),
+        submitButton: new FormValidation.plugins.SubmitButton(),
+        // Submit the form when all fields are valid
+        defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
+        autoFocus: new FormValidation.plugins.AutoFocus()
+      },
+      init: instance => {
+        instance.on('plugins.message.placed', function (e) {
+          if (e.element.parentElement.classList.contains('input-group')) {
+            e.element.parentElement.insertAdjacentElement('afterend', e.messageElement);
+          }
+        });
       }
-    },
-    plugins: {
-      trigger: new FormValidation.plugins.Trigger(),
-      bootstrap5: new FormValidation.plugins.Bootstrap5({
-        // Use this for enabling/changing valid/invalid class
-        eleValidClass: '',
-        rowSelector: function (field, ele) {
-          // field is the field name & ele is the field element
-          return '.form-control-validation';
-        }
-      }),
-      submitButton: new FormValidation.plugins.SubmitButton(),
-      // Submit the form when all fields are valid
-      defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-      autoFocus: new FormValidation.plugins.AutoFocus()
-    },
-    init: instance => {
-      instance.on('plugins.message.placed', function (e) {
-        if (e.element.parentElement.classList.contains('input-group')) {
-          e.element.parentElement.insertAdjacentElement('afterend', e.messageElement);
-        }
-      });
-    }
-  });
+    });
   }
 });

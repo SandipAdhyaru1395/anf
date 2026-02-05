@@ -10,8 +10,10 @@ use App\Models\Branch;
 use App\Models\WalletTransaction;
 use App\Models\OrderRef;
 use App\Services\WarehouseProductSyncService;
+use App\traits\BulkDeletes;
 use Illuminate\Http\Request;
 use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -19,9 +21,17 @@ use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use App\Services\OrderDeletionService;
 
 class OrderController extends Controller
 {
+  protected $orderDeletionService;
+
+    public function __construct(OrderDeletionService $orderDeletionService)
+    {
+        $this->orderDeletionService = $orderDeletionService;
+    }
+  
   public function index()
   {
     $customers = \App\Models\Customer::where('is_active', 1)
@@ -351,7 +361,7 @@ class OrderController extends Controller
             WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
           } catch (\Exception $e) {
             // Log error but don't fail the transaction
-            \Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
+            Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
           }
         }
       }
@@ -575,7 +585,7 @@ class OrderController extends Controller
             WarehouseProductSyncService::adjustQuantity($oldProductId, 'addition', $oldQuantity);
           } catch (\Exception $e) {
             // Log error but don't fail the transaction
-            \Log::error("Failed to restore product quantity for product {$oldProductId}: " . $e->getMessage());
+            Log::error("Failed to restore product quantity for product {$oldProductId}: " . $e->getMessage());
           }
         }
       }
@@ -758,7 +768,7 @@ class OrderController extends Controller
             WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
           } catch (\Exception $e) {
             // Log error but don't fail the transaction
-            \Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
+            Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
           }
         }
       }
@@ -1267,189 +1277,201 @@ class OrderController extends Controller
     }
   }
 
-  public function delete($id)
-  {
-    $order = Order::with(['items', 'creditNotes', 'payments', 'customer'])->findOrFail($id);
+  // public function delete($id)
+  // {
+  //   $order = Order::with(['items', 'creditNotes', 'payments', 'customer'])->findOrFail($id);
 
-    DB::transaction(function () use ($order) {
-      // Handle credit note deletion separately
-      if ($order->type === 'CN') {
-        // Get customer for credit balance adjustment
-        $customer = $order->customer;
+  //   DB::transaction(function () use ($order) {
+  //     // Handle credit note deletion separately
+  //     if ($order->type === 'CN') {
+  //       // Get customer for credit balance adjustment
+  //       $customer = $order->customer;
 
-        // Calculate wallet credit that was added when credit note was created
-        // This needs to be reversed (subtracted) when credit note is deleted
-        $walletCreditToReverse = 0;
+  //       // Calculate wallet credit that was added when credit note was created
+  //       // This needs to be reversed (subtracted) when credit note is deleted
+  //       $walletCreditToReverse = 0;
 
-        if ($order->parent_order_id) {
-          $parentOrder = Order::with('items')->find($order->parent_order_id);
-          if ($parentOrder) {
-            // Calculate wallet credit for returned items in credit note
-            foreach ($order->items as $creditNoteItem) {
-              $returnedQty = (float) ($creditNoteItem->quantity ?? 0);
-              $productId = (int) ($creditNoteItem->product_id ?? 0);
+  //       if ($order->parent_order_id) {
+  //         $parentOrder = Order::with('items')->find($order->parent_order_id);
+  //         if ($parentOrder) {
+  //           // Calculate wallet credit for returned items in credit note
+  //           foreach ($order->items as $creditNoteItem) {
+  //             $returnedQty = (float) ($creditNoteItem->quantity ?? 0);
+  //             $productId = (int) ($creditNoteItem->product_id ?? 0);
 
-              // Find corresponding item in parent order
-              $parentOrderItem = $parentOrder->items->firstWhere('product_id', $productId);
-              if ($parentOrderItem) {
-                $originalQty = (float) ($parentOrderItem->quantity ?? 1);
-                if ($originalQty > 0) {
-                  // Calculate proportional wallet credit earned for returned items
-                  $proportionalWalletCredit = ($parentOrderItem->wallet_credit_earned ?? 0) * ($returnedQty / $originalQty);
-                  $walletCreditToReverse += round($proportionalWalletCredit, 2);
-                }
-              }
-            }
-          }
-        }
+  //             // Find corresponding item in parent order
+  //             $parentOrderItem = $parentOrder->items->firstWhere('product_id', $productId);
+  //             if ($parentOrderItem) {
+  //               $originalQty = (float) ($parentOrderItem->quantity ?? 1);
+  //               if ($originalQty > 0) {
+  //                 // Calculate proportional wallet credit earned for returned items
+  //                 $proportionalWalletCredit = ($parentOrderItem->wallet_credit_earned ?? 0) * ($returnedQty / $originalQty);
+  //                 $walletCreditToReverse += round($proportionalWalletCredit, 2);
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
 
-        // Reverse the wallet credit that was added when credit note was created
-        if ($walletCreditToReverse > 0 && $customer) {
-          $customer->refresh();
-          $currentBalance = (float) ($customer->credit_balance ?? 0);
+  //       // Reverse the wallet credit that was added when credit note was created
+  //       if ($walletCreditToReverse > 0 && $customer) {
+  //         $customer->refresh();
+  //         $currentBalance = (float) ($customer->credit_balance ?? 0);
 
-          // Subtract the wallet credit (reverse what was added)
-          $customer->credit_balance = $currentBalance - $walletCreditToReverse;
-          $customer->save();
+  //         // Subtract the wallet credit (reverse what was added)
+  //         $customer->credit_balance = $currentBalance - $walletCreditToReverse;
+  //         $customer->save();
 
-          // Create wallet transaction to record the reversal
-          WalletTransaction::create([
-            'customer_id' => $customer->id,
-            'order_id' => $order->id,
-            'amount' => $walletCreditToReverse,
-            'type' => 'debit',
-            'description' => 'Wallet credit reversed due to credit note deletion',
-            'balance_after' => $customer->credit_balance,
-          ]);
-        }
+  //         // Create wallet transaction to record the reversal
+  //         WalletTransaction::create([
+  //           'customer_id' => $customer->id,
+  //           'order_id' => $order->id,
+  //           'amount' => $walletCreditToReverse,
+  //           'type' => 'debit',
+  //           'description' => 'Wallet credit reversed due to credit note deletion',
+  //           'balance_after' => $customer->credit_balance,
+  //         ]);
+  //       }
 
-        // Delete credit note items and decrease product quantities
-        // When credit note is deleted, we need to reverse the addition that was done when it was created
-        // So we subtract (decrease) the quantity
-        foreach ($order->items as $item) {
-          $quantity = (float) ($item->quantity ?? 0);
-          $productId = (int) ($item->product_id ?? 0);
-          if ($productId > 0 && $quantity > 0) {
-            try {
-              WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
-            } catch (\Exception $e) {
-              \Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
-            }
-          }
-        }
-      }
+  //       // Delete credit note items and decrease product quantities
+  //       // When credit note is deleted, we need to reverse the addition that was done when it was created
+  //       // So we subtract (decrease) the quantity
+  //       foreach ($order->items as $item) {
+  //         $quantity = (float) ($item->quantity ?? 0);
+  //         $productId = (int) ($item->product_id ?? 0);
+  //         if ($productId > 0 && $quantity > 0) {
+  //           try {
+  //             WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
+  //           } catch (\Exception $e) {
+  //             Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
+  //           }
+  //         }
+  //       }
+  //     }
 
-      // Delete all credit notes associated with this order (if SO order)
-      if ($order->type === 'SO') {
-        foreach ($order->creditNotes as $creditNote) {
-          // Get customer for credit balance adjustment
-          $customer = $creditNote->customer;
+  //     // Delete all credit notes associated with this order (if SO order)
+  //     if ($order->type === 'SO') {
+  //       foreach ($order->creditNotes as $creditNote) {
+  //         // Get customer for credit balance adjustment
+  //         $customer = $creditNote->customer;
 
-          // Calculate wallet credit that was added when credit note was created
-          $walletCreditToReverse = 0;
+  //         // Calculate wallet credit that was added when credit note was created
+  //         $walletCreditToReverse = 0;
 
-          if ($creditNote->parent_order_id) {
-            $parentOrder = Order::with('items')->find($creditNote->parent_order_id);
-            if ($parentOrder) {
-              // Calculate wallet credit for returned items in credit note
-              foreach ($creditNote->items as $creditNoteItem) {
-                $returnedQty = (float) ($creditNoteItem->quantity ?? 0);
-                $productId = (int) ($creditNoteItem->product_id ?? 0);
+  //         if ($creditNote->parent_order_id) {
+  //           $parentOrder = Order::with('items')->find($creditNote->parent_order_id);
+  //           if ($parentOrder) {
+  //             // Calculate wallet credit for returned items in credit note
+  //             foreach ($creditNote->items as $creditNoteItem) {
+  //               $returnedQty = (float) ($creditNoteItem->quantity ?? 0);
+  //               $productId = (int) ($creditNoteItem->product_id ?? 0);
 
-                // Find corresponding item in parent order
-                $parentOrderItem = $parentOrder->items->firstWhere('product_id', $productId);
-                if ($parentOrderItem) {
-                  $originalQty = (float) ($parentOrderItem->quantity ?? 1);
-                  if ($originalQty > 0) {
-                    // Calculate proportional wallet credit earned for returned items
-                    $proportionalWalletCredit = ($parentOrderItem->wallet_credit_earned ?? 0) * ($returnedQty / $originalQty);
-                    $walletCreditToReverse += round($proportionalWalletCredit, 2);
-                  }
-                }
-              }
-            }
-          }
+  //               // Find corresponding item in parent order
+  //               $parentOrderItem = $parentOrder->items->firstWhere('product_id', $productId);
+  //               if ($parentOrderItem) {
+  //                 $originalQty = (float) ($parentOrderItem->quantity ?? 1);
+  //                 if ($originalQty > 0) {
+  //                   // Calculate proportional wallet credit earned for returned items
+  //                   $proportionalWalletCredit = ($parentOrderItem->wallet_credit_earned ?? 0) * ($returnedQty / $originalQty);
+  //                   $walletCreditToReverse += round($proportionalWalletCredit, 2);
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
 
-          // Reverse the wallet credit that was added when credit note was created
-          if ($walletCreditToReverse > 0 && $customer) {
-            $customer->refresh();
-            $currentBalance = (float) ($customer->credit_balance ?? 0);
+  //         // Reverse the wallet credit that was added when credit note was created
+  //         if ($walletCreditToReverse > 0 && $customer) {
+  //           $customer->refresh();
+  //           $currentBalance = (float) ($customer->credit_balance ?? 0);
 
-            // Subtract the wallet credit (reverse what was added)
-            $customer->credit_balance = $currentBalance - $walletCreditToReverse;
-            $customer->save();
+  //           // Subtract the wallet credit (reverse what was added)
+  //           $customer->credit_balance = $currentBalance - $walletCreditToReverse;
+  //           $customer->save();
 
-            // Create wallet transaction to record the reversal
-            WalletTransaction::create([
-              'customer_id' => $customer->id,
-              'order_id' => $creditNote->id,
-              'amount' => $walletCreditToReverse,
-              'type' => 'debit',
-              'description' => 'Wallet credit reversed due to credit note deletion',
-              'balance_after' => $customer->credit_balance,
-            ]);
-          }
+  //           // Create wallet transaction to record the reversal
+  //           WalletTransaction::create([
+  //             'customer_id' => $customer->id,
+  //             'order_id' => $creditNote->id,
+  //             'amount' => $walletCreditToReverse,
+  //             'type' => 'debit',
+  //             'description' => 'Wallet credit reversed due to credit note deletion',
+  //             'balance_after' => $customer->credit_balance,
+  //           ]);
+  //         }
 
-          // Delete credit note items and decrease product quantities
-          // When credit note is deleted, we need to reverse the addition that was done when it was created
-          // So we subtract (decrease) the quantity
-          foreach ($creditNote->items as $item) {
-            $quantity = (float) ($item->quantity ?? 0);
-            $productId = (int) ($item->product_id ?? 0);
-            if ($productId > 0 && $quantity > 0) {
-              try {
-                WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
-              } catch (\Exception $e) {
-                \Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
-              }
-            }
-          }
-          // Delete credit note payments
-          $creditNote->payments()->delete();
-          // Delete credit note items
-          $creditNote->items()->delete();
-          // Delete credit note status histories
-          $creditNote->statusHistories()->delete();
-          // Delete credit note
-          $creditNote->delete();
-        }
-      }
+  //         // Delete credit note items and decrease product quantities
+  //         // When credit note is deleted, we need to reverse the addition that was done when it was created
+  //         // So we subtract (decrease) the quantity
+  //         foreach ($creditNote->items as $item) {
+  //           $quantity = (float) ($item->quantity ?? 0);
+  //           $productId = (int) ($item->product_id ?? 0);
+  //           if ($productId > 0 && $quantity > 0) {
+  //             try {
+  //               WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
+  //             } catch (\Exception $e) {
+  //               Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
+  //             }
+  //           }
+  //         }
+  //         // Delete credit note payments
+  //         $creditNote->payments()->delete();
+  //         // Delete credit note items
+  //         $creditNote->items()->delete();
+  //         // Delete credit note status histories
+  //         $creditNote->statusHistories()->delete();
+  //         // Delete credit note
+  //         $creditNote->delete();
+  //       }
+  //     }
 
-      // Delete all payments for this order
-      $order->payments()->delete();
+  //     // Delete all payments for this order
+  //     $order->payments()->delete();
 
-      // Restore product quantities before deleting items (skip CN and EST orders)
-      // CN orders are handled above, EST orders should not affect quantities
-      if ($order->type !== 'CN' && $order->type !== 'EST') {
-        foreach ($order->items as $item) {
-          $quantity = (float) ($item->quantity ?? 0);
-          $productId = (int) ($item->product_id ?? 0);
-          if ($productId > 0 && $quantity > 0) {
-            try {
-              WarehouseProductSyncService::adjustQuantity($productId, 'addition', $quantity);
-            } catch (\Exception $e) {
-              // Log error but don't fail the transaction
-              \Log::error("Failed to restore product quantity for product {$productId}: " . $e->getMessage());
-            }
-          }
-        }
-      }
+  //     // Restore product quantities before deleting items (skip CN and EST orders)
+  //     // CN orders are handled above, EST orders should not affect quantities
+  //     if ($order->type !== 'CN' && $order->type !== 'EST') {
+  //       foreach ($order->items as $item) {
+  //         $quantity = (float) ($item->quantity ?? 0);
+  //         $productId = (int) ($item->product_id ?? 0);
+  //         if ($productId > 0 && $quantity > 0) {
+  //           try {
+  //             WarehouseProductSyncService::adjustQuantity($productId, 'addition', $quantity);
+  //           } catch (\Exception $e) {
+  //             // Log error but don't fail the transaction
+  //             Log::error("Failed to restore product quantity for product {$productId}: " . $e->getMessage());
+  //           }
+  //         }
+  //       }
+  //     }
 
-      // Delete order items
-      $order->items()->delete();
-      // Delete status histories
-      $order->statusHistories()->delete();
-      // Delete the order
-      $order->delete();
-    });
+  //     // Delete order items
+  //     $order->items()->delete();
+  //     // Delete status histories
+  //     $order->statusHistories()->delete();
+  //     // Delete the order
+  //     $order->delete();
+  //   });
 
-    Toastr::success('Order deleted successfully');
-    return redirect()->back();
-  }
+  //   Toastr::success('Order deleted successfully');
+  //   return redirect()->back();
+  // }
 
   /**
    * Create a new order item
    */
+
+  public function delete($id)
+{
+    $order = Order::findOrFail($id);
+
+    $this->orderDeletionService->delete($order);
+
+    Toastr::success('Order deleted successfully');
+
+    return redirect()->back();
+}
+
   public function createItem(Request $request)
   {
     try {
@@ -2257,7 +2279,7 @@ class OrderController extends Controller
           try {
             WarehouseProductSyncService::adjustQuantity($productId, 'addition', $returnedQty);
           } catch (\Exception $e) {
-            \Log::error("Failed to restore product quantity for product {$productId}: " . $e->getMessage());
+            Log::error("Failed to restore product quantity for product {$productId}: " . $e->getMessage());
           }
         }
       }
@@ -2304,5 +2326,18 @@ class OrderController extends Controller
 
     Toastr::success('Credit note created successfully!');
     return redirect()->route('order.list');
+  }
+
+  public function deleteMultiple(Request $request){
+
+    DB::transaction(function () use ($request) {
+
+        $orders = Order::whereIn('id', $request->ids)->get();
+
+        foreach ($orders as $order) {
+            $this->orderDeletionService->delete($order);
+        }
+    });
+     return response()->json(['success' => true]);
   }
 }

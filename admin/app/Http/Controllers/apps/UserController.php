@@ -7,10 +7,19 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Services\UserDeletionService;
 
 class UserController extends Controller
 {
+  protected $userDeletionService;
+
+  public function __construct(UserDeletionService $userDeletionService)
+  {
+    $this->userDeletionService = $userDeletionService;
+  }
+
   public function index()
   {
     $data['users'] = User::with('role')
@@ -19,8 +28,8 @@ class UserController extends Controller
         $q->where('role_id', '!=', 1)
           ->orWhereNull('role_id');
       })->orderBy('id', 'desc')->get();
-    
-    $data['roles'] = Role::where('id','!=',1)->get();
+
+    $data['roles'] = Role::where('id', '!=', 1)->get();
 
     $all_users_count = User::where(function ($q) {
       $q->where('role_id', '!=', 1)
@@ -34,7 +43,7 @@ class UserController extends Controller
       $q->where('role_id', '!=', 1)
         ->orWhereNull('role_id');
     })->where('status', 'inactive')->count();
-    
+
     $data['all_users_count'] = $all_users_count;
     $data['active_users_count'] = $active_users_count;
     $data['inactive_users_count'] = $inactive_users_count;
@@ -46,7 +55,7 @@ class UserController extends Controller
 
     $users = User::with('role')
       ->select('id', 'name', 'role_id', 'email', 'status', 'image')
-       ->where(function ($q) {
+      ->where(function ($q) {
         $q->where('role_id', '!=', 1)
           ->orWhereNull('role_id');
       })->orderBy('id', 'desc')->get();
@@ -162,7 +171,7 @@ class UserController extends Controller
       'modalAddUserPhone' => 'nullable|unique:users,phone|digits:10',
       'modalAddUserStatus' => 'required',
       'newPassword' => 'required',
-    ],[
+    ], [
       'modalAddUserName.required' => 'Name is required',
       'modalAddUserEmail.required' => 'Email is required',
       'modalAddUserEmail.email' => 'Must be valid email',
@@ -174,7 +183,7 @@ class UserController extends Controller
     ]);
 
     if ($validator->fails()) {
-      return redirect()->back()->withErrors($validator,'addModal')->withInput();
+      return redirect()->back()->withErrors($validator, 'addModal')->withInput();
     }
 
     User::create([
@@ -190,45 +199,92 @@ class UserController extends Controller
     return redirect()->back();
   }
 
+  // public function delete($id)
+  // {
+  //   $user = User::findOrFail($id);
+
+  //   // Prevent deleting Super Admin
+  //   if ($user->role_id == 1) {
+  //     Toastr::error('Super Admin cannot be deleted.');
+  //     return redirect()->back();
+  //   }
+
+  //   // Prevent deleting yourself
+  //   if ($user->id == auth()->id()) {
+  //     Toastr::error('You cannot delete your own account.');
+  //     return redirect()->back();
+  //   }
+
+  //   $user->delete();
+
+  //   Toastr::success('User deleted successfully!');
+  //   return redirect()->back();
+  // }
+
   public function delete($id)
   {
     $user = User::findOrFail($id);
 
-    if ($user->role_id != 1) {
-      $user->delete();
+    try {
+      $this->userDeletionService->delete($user);
+      Toastr::success('User deleted successfully!');
+    } catch (\Exception $e) {
+      Toastr::error($e->getMessage());
     }
 
-    Toastr::success('User deleted successfully!');
     return redirect()->back();
   }
 
-  public function viewAccount($id){
+
+  public function viewAccount($id)
+  {
 
     $data['user'] = User::findOrFail($id);
-    $data['roles'] = Role::where('id','!=',1)->get();
-    
-    return view('content.user.account',$data);
+    $data['roles'] = Role::where('id', '!=', 1)->get();
+
+    return view('content.user.account', $data);
   }
 
-  public function viewSecurity($id){
+  public function viewSecurity($id)
+  {
     $data['user'] = User::findOrFail($id);
-     $data['roles'] = Role::where('id','!=',1)->get();
+    $data['roles'] = Role::where('id', '!=', 1)->get();
 
-    return view('content.user.security',$data);
+    return view('content.user.security', $data);
   }
- 
 
-  public function viewNotifications($id){
+
+  public function viewNotifications($id)
+  {
     $data['user'] = User::findOrFail($id);
-    $data['roles'] = Role::where('id','!=',1)->get();
+    $data['roles'] = Role::where('id', '!=', 1)->get();
 
-    return view('content.user.notifications',$data);
+    return view('content.user.notifications', $data);
   }
 
-  public function viewConnections($id){
+  public function viewConnections($id)
+  {
     $data['user'] = User::findOrFail($id);
-    $data['roles'] = Role::where('id','!=',1)->get();
+    $data['roles'] = Role::where('id', '!=', 1)->get();
 
-    return view('content.user.connections',$data);
+    return view('content.user.connections', $data);
   }
+
+  public function deleteMultiple(Request $request)
+  {
+    DB::transaction(function () use ($request) {
+
+      $users = User::whereIn('id', $request->ids)->get();
+
+      foreach ($users as $user) {
+        $this->userDeletionService->delete($user);
+      }
+    });
+
+    return response()->json([
+      'success' => true,
+      'message' => 'Users deleted successfully.'
+    ]);
+  }
+
 }

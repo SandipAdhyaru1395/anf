@@ -17,39 +17,87 @@ class PermissionMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next,$permission=null): Response
+    // public function handle(Request $request, Closure $next,$permission=null): Response
+    // {
+    //     $default_permission=[
+    //         'dashboard.read',
+    //         'profile-user.read'
+    //     ];
+
+    //     if (auth()->user()->role_id != 1) {
+
+    //         if (auth()->user()->role_id == null) {
+
+    //             if (!in_array($permission, $default_permission)) {
+    //                 Toastr::error('Permission denied!');
+    //                 return redirect()->back();
+    //             }
+
+    //         } else {
+
+    //             if (!in_array($permission, $default_permission)) {
+
+    //                 $hasPermission = Permission::where('role_id', auth()->user()->role_id)
+    //                     ->where('route', $permission)->exists();
+
+    //                 if (!$hasPermission) {
+
+    //                     Toastr::error('Permission denied!');
+    //                     return redirect()->back();
+    //                 }
+    //             }
+    //         }
+    //     }
+
+
+    //     return $next($request);
+    // }
+
+    public function handle(Request $request, Closure $next, $permission = null): Response
     {
-        $default_permission=[
+        $default_permission = [
             'dashboard.read',
             'profile-user.read'
         ];
 
-        if (auth()->user()->role_id != 1) {
+        $user = auth()->user();
 
-            if (auth()->user()->role_id == null) {
+        if ($user->role_id != 1) {
+
+            if ($user->role_id == null) {
 
                 if (!in_array($permission, $default_permission)) {
-                    Toastr::error('Permission denied!');
-                    return redirect()->back();
+                    return $this->deny($request);
                 }
 
             } else {
 
                 if (!in_array($permission, $default_permission)) {
-                    
-                    $hasPermission = Permission::where('role_id', auth()->user()->role_id)
-                        ->where('route', $permission)->exists();
+
+                    $hasPermission = Permission::where('role_id', $user->role_id)
+                        ->where('route', $permission)
+                        ->exists();
 
                     if (!$hasPermission) {
-
-                        Toastr::error('Permission denied!');
-                        return redirect()->back();
+                        return $this->deny($request);
                     }
                 }
             }
         }
 
-        
         return $next($request);
     }
+
+    private function deny(Request $request)
+    {
+        if ($request->ajax()) {
+            return response()->json([
+                'message' => 'Permission denied.'
+            ], 403);
+        }
+
+        Toastr::error('Permission denied!');
+        return redirect()->back();
+    }
+
 }

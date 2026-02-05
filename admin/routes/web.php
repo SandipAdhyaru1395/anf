@@ -48,6 +48,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     Route::middleware('permission:category.write')->group(function () {
         Route::post('/category/update', [CategoryController::class, 'update'])->name('category.update');
         Route::get('/category/delete/{id}', [CategoryController::class, 'delete'])->name('category.delete');
+        Route::post('/category/delete-multiple', [CategoryController::class, 'deleteMultiple']);
     });
 
 
@@ -61,6 +62,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     Route::middleware('permission:brand.write')->group(function () {
          Route::post('/brand/update', [BrandController::class, 'update'])->name('brand.update');
          Route::get('/brand/delete/{id}', [BrandController::class, 'delete'])->name('brand.delete');
+        Route::post('/brand/delete-multiple', [BrandController::class, 'deleteMultiple']);
     });
 
     Route::middleware('permission:brand.create')->group(function () {
@@ -88,6 +90,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     Route::middleware('permission:product.write')->group(function () {
         Route::post('/product/update', [ProductController::class, 'update'])->name('product.update');
         Route::get('/product/delete/{id}', [ProductController::class, 'delete'])->name('product.delete');
+        Route::post('/product/delete-multiple', [ProductController::class, 'deleteMultiple']);
     });
 
     // Quantity Adjustments
@@ -107,6 +110,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     Route::middleware('permission:quantity-adjustment.write')->group(function () {
         Route::post('/quantity-adjustment/update', [QuantityAdjustmentController::class, 'update'])->name('quantity_adjustment.update');
         Route::get('/quantity-adjustment/delete/{id}', [QuantityAdjustmentController::class, 'delete'])->name('quantity_adjustment.delete');
+        Route::post('/quantity-adjustment/delete-multiple', [QuantityAdjustmentController::class, 'deleteMultiple']);
     });
 
     // Supplier
@@ -126,6 +130,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     Route::middleware('permission:supplier.write')->group(function () {
         Route::post('/supplier/update', [SupplierController::class, 'update'])->name('supplier.update');
         Route::get('/supplier/delete/{id}', [SupplierController::class, 'delete'])->name('supplier.delete');
+        Route::post('/supplier/delete-multiple', [SupplierController::class, 'deleteMultiple']);
     });
 
     //Order
@@ -160,6 +165,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/order/payment/add', [OrderController::class, 'addPayment'])->name('order.payment.add');
         Route::get('/order/payments/{orderId}', [OrderController::class, 'getPayments'])->name('order.payments');
         Route::delete('/order/payment/delete/{paymentId}', [OrderController::class, 'deletePayment'])->name('order.payment.delete');
+        Route::post('/order/delete-multiple', [OrderController::class, 'deleteMultiple']);
     });
 
 
@@ -181,6 +187,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/customer/update', [CustomerController::class, 'update'])->name('customer.update');
         Route::post('/customer/branch/update', [BranchController::class, 'update'])->name('customer.branch.update');
         Route::get('/customer/branch/{branch}/delete', [BranchController::class, 'destroy'])->name('customer.branch.delete');
+        Route::post('/customer/delete-multiple', [CustomerController::class, 'deleteMultiple']);
     });
     
     Route::middleware('permission:customer.create')->group(function () {
@@ -205,6 +212,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     Route::middleware('permission:purchase.write')->group(function () {
         Route::post('/purchase/update', [PurchaseController::class, 'update'])->name('purchase.update');
         Route::get('/purchase/delete/{id}', [PurchaseController::class, 'delete'])->name('purchase.delete');
+        Route::post('/purchase/delete-multiple', [PurchaseController::class, 'deleteMultiple']);
     });
 
 
@@ -231,6 +239,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/user/update/password', [UserController::class, 'updatePassword'])->name('user.update-password');
         Route::get('user/change/status/{id}', [UserController::class, 'changeStatus'])->name('user.change-status');
         Route::get('/user/delete/{id}', [UserController::class, 'delete'])->name('user.delete');
+        Route::post('/user/delete-multiple', [UserController::class, 'deleteMultiple']);
     });
 
     Route::middleware('permission:user.create')->group(function () {

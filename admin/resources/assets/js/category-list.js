@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
   // Variable declaration for table
   const dt_category_table = document.querySelector('.datatables-categories'),
     categoryAdd = baseUrl + 'category/add',
-     categoryEdit = baseUrl + 'category/edit',
-     publishedObj = {
-       0 : { title: 'Inactive', class: 'bg-label-danger' },
-        1 : { title: 'Active', class: 'bg-label-success' }
+    categoryEdit = baseUrl + 'category/edit',
+    publishedObj = {
+      0: { title: 'Inactive', class: 'bg-label-danger' },
+      1: { title: 'Active', class: 'bg-label-success' }
     };
 
   // E-commerce Products datatable
@@ -33,13 +33,13 @@ document.addEventListener('DOMContentLoaded', function (e) {
       ajax: baseUrl + 'category/list/ajax',
       columns: [
         // columns according to JSON
-        { data: 'id',orderable: false, searchable: false },
+        { data: 'id', orderable: false, searchable: false },
         { data: 'id', orderable: false, searchable: false, render: DataTable.render.select() },
-        { data: 'name', width: "20%"},
-        { data: 'parent_category', width: "20%"},
-        { data: 'child_categories', width: "40%",orderable: false},
-        { data: 'is_active'},
-        { data: 'id'}
+        { data: 'name', width: "20%" },
+        { data: 'parent_category', width: "20%" },
+        { data: 'child_categories', width: "40%", orderable: false },
+        { data: 'is_active' },
+        { data: 'id' }
       ],
       columnDefs: [
         {
@@ -75,18 +75,18 @@ document.addEventListener('DOMContentLoaded', function (e) {
               image = full['image'];
 
             let output;
-            
-            if(image){
+
+            if (image) {
               output = `<img src="${baseUrl}storage/${image}" alt="Product-${id}" class="rounded">`;
-            }else{
-               // For Avatar badge
+            } else {
+              // For Avatar badge
               const stateNum = Math.floor(Math.random() * 6) + 1;
               const states = ['success', 'danger', 'warning', 'info', 'dark', 'primary', 'secondary'];
               const state = states[stateNum];
               const initials = (name.match(/\b\w/g) || []).slice(0, 2).join('').toUpperCase();
               output = `<span class="avatar-initial rounded-circle bg-label-${state}">${initials}</span>`;
             }
-             
+
             let rowOutput = `
               <div class="d-flex justify-content-start align-items-center product-name">
                 <div class="avatar-wrapper">
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
           render: function (data, type, full, meta) {
             const is_active = full['is_active'];
 
-             return (
+            return (
               '<span class="badge ' +
               publishedObj[is_active].class +
               '" text-capitalized>' +
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         }
       ],
       select: {
-        style: 'multi',
+        style: 'multi+shift',
         selector: 'td:nth-child(2)'
       },
       // order: [0, 'desc'],
@@ -166,6 +166,86 @@ document.addEventListener('DOMContentLoaded', function (e) {
                 placeholder: 'Search Category',
                 text: '_INPUT_'
               }
+            },
+            {
+              buttons: [
+                {
+                  text: '<i class="icon-base ti tabler-trash me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Delete Selected</span>',
+                  className: 'btn btn-danger',
+                  enabled: false,
+                  action: function (e, dt, node, config) {
+
+                    let selectedRows = dt.rows({ selected: true }).data();
+                    let ids = [];
+
+                    selectedRows.each(function (row) {
+                      ids.push(row.id);
+                    });
+
+                    if (ids.length === 0) return;
+
+                    Swal.fire({
+                      title: 'Are you sure?',
+                      text: "You won't be able to revert this!",
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Yes, delete them!',
+                      cancelButtonText: 'Cancel',
+                      customClass: {
+                        confirmButton: 'btn btn-danger me-3',
+                        cancelButton: 'btn btn-label-secondary'
+                      },
+                      buttonsStyling: false
+                    }).then(function (result) {
+                      if (result.isConfirmed) {
+
+                        $.ajax({
+                          url: baseUrl + 'category/delete-multiple',
+                          type: 'POST',
+                          data: {
+                            ids: ids,
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                          },
+                          success: function (response) {
+                            
+                            dt.ajax.reload();
+
+                            dt.button(0).enable(false);
+
+                            Swal.fire({
+                              icon: 'success',
+                              title: 'Deleted!',
+                              text: 'Selected categories have been deleted.',
+                              customClass: {
+                                confirmButton: 'btn btn-success'
+                              }
+                            });
+                          },
+                          error: function (xhr) {
+
+                            let message = 'Something went wrong.';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                              message = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Error!',
+                              text: message,
+                              customClass: {
+                                confirmButton: 'btn btn-danger'
+                              }
+                            });
+                          }
+                        });
+
+                      }
+                    });
+
+                  }
+                }
+              ],
             }
           ]
         },
@@ -416,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
                   action: function () {
                     window.location.href = categoryAdd;
                   }
-                }
+                },
               ]
             }
           ]
@@ -474,8 +554,13 @@ document.addEventListener('DOMContentLoaded', function (e) {
       },
       initComplete: function () {
         const api = this.api();
-        
+
       }
+    });
+
+    dt_products.on('select deselect', function () {
+      let selectedCount = dt_products.rows({ selected: true }).count();
+      dt_products.button(0).enable(selectedCount > 0);
     });
   }
 

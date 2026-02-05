@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         }
       ],
       select: {
-        style: 'multi',
+        style: 'multi+shift',
         selector: 'td:nth-child(2)'
       },
       order: [0, 'desc'],
@@ -147,6 +147,86 @@ document.addEventListener('DOMContentLoaded', function (e) {
                 placeholder: 'Search Purchase',
                 text: '_INPUT_'
               }
+            },
+            {
+              buttons: [
+                {
+                  text: '<i class="icon-base ti tabler-trash me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Delete Selected</span>',
+                  className: 'btn btn-danger',
+                  enabled: false,
+                  action: function (e, dt, node, config) {
+
+                    let selectedRows = dt.rows({ selected: true }).data();
+                    let ids = [];
+
+                    selectedRows.each(function (row) {
+                      ids.push(row.id);
+                    });
+
+                    if (ids.length === 0) return;
+
+                    Swal.fire({
+                      title: 'Are you sure?',
+                      text: "You won't be able to revert this!",
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Yes, delete them!',
+                      cancelButtonText: 'Cancel',
+                      customClass: {
+                        confirmButton: 'btn btn-danger me-3',
+                        cancelButton: 'btn btn-label-secondary'
+                      },
+                      buttonsStyling: false
+                    }).then(function (result) {
+                      if (result.isConfirmed) {
+
+                        $.ajax({
+                          url: baseUrl + 'purchase/delete-multiple',
+                          type: 'POST',
+                          data: {
+                            ids: ids,
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                          },
+                          success: function (response) {
+                            
+                            dt.ajax.reload();
+
+                            dt.button(0).enable(false);
+
+                            Swal.fire({
+                              icon: 'success',
+                              title: 'Deleted!',
+                              text: 'Selected purchases have been deleted.',
+                              customClass: {
+                                confirmButton: 'btn btn-success'
+                              }
+                            });
+                          },
+                          error: function (xhr) {
+
+                            let message = 'Something went wrong.';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                              message = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Error!',
+                              text: message,
+                              customClass: {
+                                confirmButton: 'btn btn-danger'
+                              }
+                            });
+                          }
+                        });
+
+                      }
+                    });
+
+                  }
+                }
+              ],
             }
           ]
         },
@@ -372,6 +452,11 @@ document.addEventListener('DOMContentLoaded', function (e) {
             .catch(function () { /* ignore */ });
         });
       }
+    });
+
+    dt_purchases.on('select deselect',function(){
+      let selectedCount = dt_purchases.rows({ selected: true }).count();
+      dt_purchases.button(0).enable(selectedCount > 0);
     });
   }
 

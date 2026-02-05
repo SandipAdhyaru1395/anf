@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
             return `<span class='text-truncate d-flex align-items-center'>${role}</span>`;
           }
         },
-        
+
         {
           // User Status
           targets: 4,
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         }
       ],
       select: {
-        style: 'multi',
+        style: 'multi+shift',
         selector: 'td:nth-child(2)'
       },
       order: [[2, 'desc']],
@@ -177,6 +177,83 @@ document.addEventListener('DOMContentLoaded', function (e) {
                 menu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 text: '_MENU_'
               }
+            },
+            {
+              buttons: [
+                {
+                  text: '<i class="icon-base ti tabler-trash me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Delete Selected</span>',
+                  className: 'btn btn-danger',
+                  enabled: false,
+                  action: function (e, dt, node, config) {
+
+                    let selectedRows = dt.rows({ selected: true }).data();
+                    let ids = [];
+
+                    selectedRows.each(function (row) {
+                      ids.push(row.id);
+                    });
+
+                    if (ids.length === 0) return;
+
+                    Swal.fire({
+                      title: 'Are you sure?',
+                      text: "You won't be able to revert this!",
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Yes, delete them!',
+                      cancelButtonText: 'Cancel',
+                      customClass: {
+                        confirmButton: 'btn btn-danger me-3',
+                        cancelButton: 'btn btn-label-secondary'
+                      },
+                      buttonsStyling: false
+                    }).then(function (result) {
+                      if (result.isConfirmed) {
+                        $.ajax({
+                          url: baseUrl + 'user/delete-multiple',
+                          type: 'POST',
+                          data: {
+                            ids: ids,
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                          },
+                          success: function (response) {
+
+                            dt.ajax.reload();
+                            dt.button(0).enable(false);
+
+                            Swal.fire({
+                              icon: 'success',
+                              title: 'Deleted!',
+                              text: response.message ?? 'Selected roles have been deleted.',
+                              customClass: {
+                                confirmButton: 'btn btn-success'
+                              }
+                            });
+                          },
+                          error: function (xhr) {
+
+                            let message = 'Something went wrong.';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                              message = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Error!',
+                              text: message,
+                              customClass: {
+                                confirmButton: 'btn btn-danger'
+                              }
+                            });
+                          }
+                        });
+                      }
+                    });
+
+                  }
+                }
+              ],
             }
           ]
         },
@@ -477,6 +554,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
       }
     });
 
+    dt_User.on('select deselect', function () {
+      let selectedCount = dt_User.rows({ selected: true }).count();
+      dt_User.button(0).enable(selectedCount > 0);
+    });
     //? The 'delete-record' class is necessary for the functionality of the following code.
 
 

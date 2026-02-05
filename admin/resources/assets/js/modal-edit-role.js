@@ -33,12 +33,30 @@ document.addEventListener('DOMContentLoaded', function (e) {
     });
 
     // Select All checkbox click
-    const selectAll = document.querySelector('#selectAll'),
-      checkboxList = document.querySelectorAll('[type="checkbox"]');
-    selectAll.addEventListener('change', t => {
-      checkboxList.forEach(e => {
-        e.checked = t.target.checked;
-      });
+    // const selectAll = document.querySelector('#selectAll'),
+    //   checkboxList = document.querySelectorAll('[type="checkbox"]');
+    // selectAll.addEventListener('change', t => {
+    //   checkboxList.forEach(e => {
+    //     e.checked = t.target.checked;
+    //   });
+    // });
+    const modal = document.getElementById('editRoleModal');
+
+    modal.addEventListener('change', function (e) {
+
+      // If selectAll checkbox changed
+      if (e.target && e.target.id === 'selectAll') {
+
+        const isChecked = e.target.checked;
+
+        const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
+
+        checkboxes.forEach(function (checkbox) {
+          if (checkbox !== e.target) {
+            checkbox.checked = isChecked;
+          }
+        });
+      }
     });
   })();
 });

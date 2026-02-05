@@ -43,11 +43,15 @@ document.addEventListener('DOMContentLoaded', function (e) {
         // columns according to JSON
         { data: '' },
         { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'customer' },
-        { data: 'phone' },
-        { data: 'credit_balance' },
-        { data: 'order' },
-        { data: 'total_spent' },
+        { data: 'customer', name: 'customers.email' },
+
+        { data: 'phone', name: 'customers.phone' },
+
+        { data: 'credit_balance', name: 'customers.credit_balance' },
+
+        { data: 'orders_count', name: 'order_stats.orders_count' },
+
+        { data: 'total_spent', name: 'order_stats.total_spent' },
         { data: 'actions', orderable: false, searchable: false }
       ],
       columnDefs: [
@@ -81,15 +85,15 @@ document.addEventListener('DOMContentLoaded', function (e) {
           responsivePriority: 1,
           render: function (data, type, full, meta) {
             // const name = full['customer'];
-            const email = full['email'];
+            const email = full['customer'];
 
             // Creates full output for customer name and email
             const rowOutput = `
-              <div class="d-flex justify-content-start align-items-center customer-name">
-                <div class="d-flex flex-column">
-                  <small>${email}</small>
-                </div>
-              </div>`;
+                <div class="d-flex justify-content-start align-items-center customer-name">
+                  <div class="d-flex flex-column">
+                    <small>${email}</small>
+                  </div>
+                </div>`;
             return rowOutput;
           }
         },
@@ -113,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
           // customer Status
           targets: 5,
           render: function (data, type, full, meta) {
-            const status = full['order'];
+            const status = full['orders_count'];
 
             return '<span>' + status + '</span>';
           }
@@ -136,20 +140,20 @@ document.addEventListener('DOMContentLoaded', function (e) {
             const id = full['id'];
             const editUrl = baseUrl + 'customer/' + id + '/overview';
             return `
-              <div class="d-flex justify-content-center">
-                <button class="btn btn-text-secondary rounded-pill waves-effect btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                  <i class="icon-base ti tabler-dots-vertical"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-end m-0">
-                  <a href="${editUrl}" class="dropdown-item">Edit</a>
-                  <a href="javascript:void(0);" class="dropdown-item delete-record" data-id="${id}">Delete</a>
-                </div>
-              </div>`;
+                <div class="d-flex justify-content-center">
+                  <button class="btn btn-text-secondary rounded-pill waves-effect btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                    <i class="icon-base ti tabler-dots-vertical"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-end m-0">
+                    <a href="${editUrl}" class="dropdown-item">Edit</a>
+                    <a href="javascript:void(0);" class="dropdown-item delete-record" data-id="${id}">Delete</a>
+                  </div>
+                </div>`;
           }
         }
       ],
       select: {
-        style: 'multi',
+        style: 'multi+shift',
         selector: 'td:nth-child(2)'
       },
       // order: [[2, 'desc']],
@@ -162,6 +166,84 @@ document.addEventListener('DOMContentLoaded', function (e) {
                 placeholder: 'Search Order',
                 text: '_INPUT_'
               }
+            },
+            {
+              buttons: [
+                {
+                  text: '<i class="icon-base ti tabler-trash me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Delete Selected</span>',
+                  className: 'btn btn-danger',
+                  enabled: false,
+                  action: function (e, dt, node, config) {
+
+                    let selectedRows = dt.rows({ selected: true }).data();
+                    let ids = [];
+
+                    selectedRows.each(function (row) {
+                      ids.push(row.id);
+                    });
+
+                    if (ids.length === 0) return;
+
+                    Swal.fire({
+                      title: 'Are you sure?',
+                      text: "You won't be able to revert this!",
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Yes, delete them!',
+                      cancelButtonText: 'Cancel',
+                      customClass: {
+                        confirmButton: 'btn btn-danger me-3',
+                        cancelButton: 'btn btn-label-secondary'
+                      },
+                      buttonsStyling: false
+                    }).then(function (result) {
+                      if (result.isConfirmed) {
+
+                        $.ajax({
+                          url: baseUrl + 'customer/delete-multiple',
+                          type: 'POST',
+                          data: {
+                            ids: ids,
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                          },
+                          success: function (response) {
+                            
+                            dt.ajax.reload();
+                            
+                            dt.button(0).enable(false);
+
+                            Swal.fire({
+                              icon: 'success',
+                              title: 'Deleted!',
+                              text: 'Selected customers have been deleted.',
+                              customClass: {
+                                confirmButton: 'btn btn-success'
+                              }
+                            });
+                          },
+                          error: function (xhr) {
+
+                            let message = 'Something went wrong.';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                              message = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Error!',
+                              text: message,
+                              customClass: {
+                                confirmButton: 'btn btn-danger'
+                              }
+                            });
+                          }
+                        });
+                      }
+                    });
+                  }
+                }
+              ],
             }
           ]
         },
@@ -423,9 +505,9 @@ document.addEventListener('DOMContentLoaded', function (e) {
               .map(function (col) {
                 return col.title !== '' // Do not show row in modal popup if title is blank (for check box)
                   ? `<tr data-dt-row="${col.rowIndex}" data-dt-column="${col.columnIndex}">
-                      <td>${col.title}:</td>
-                      <td>${col.data}</td>
-                    </tr>`
+                        <td>${col.title}:</td>
+                        <td>${col.data}</td>
+                      </tr>`
                   : '';
               })
               .join('');
@@ -445,6 +527,11 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         }
       }
+    });
+
+    dt_customer.on('select deselect', function () {
+      let selectedCount = dt_customer.rows({ selected: true }).count();
+      dt_customer.button(0).enable(selectedCount > 0);
     });
   }
 

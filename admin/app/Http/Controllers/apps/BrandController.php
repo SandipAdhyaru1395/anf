@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\BrandCategory;
 use App\Models\BrandTag;
 use App\Models\Tag;
+use App\traits\BulkDeletes;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use Brian2694\Toastr\Facades\Toastr;
@@ -17,6 +18,10 @@ use Yajra\DataTables\Facades\DataTables;
 
 class BrandController extends Controller
 {
+  use BulkDeletes;
+  
+  protected $model = Brand::class;
+  
   public function index()
   {
     $data['total_brands_count'] = Brand::all()->count();
