@@ -273,6 +273,32 @@ class SettingController extends Controller
     return redirect()->route('settings.customerGroup');
   }
 
+  public function customerGroupDelete($id)
+  {
+    $group = CustomerGroup::withCount('customers')->find($id);
+
+    if (!$group) {
+      return response()->json([
+        'status' => false,
+        'message' => 'Customer group not found.'
+      ], 404);
+    }
+
+    if ($group->customers_count > 0) {
+      return response()->json([
+        'status' => false,
+        'message' => 'This group cannot be deleted because customers are assigned to it.'
+      ], 400);
+    }
+
+    $group->delete();
+
+    return response()->json([
+      'status' => true,
+      'message' => 'Customer group deleted successfully.'
+    ]);
+  }
+
   public function vatMethodListAjax()
   {
     $methods = VatMethod::orderBy('id', 'desc')->get(['id', 'name', 'type', 'amount', 'status']);

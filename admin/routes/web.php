@@ -300,7 +300,6 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/settings/groups/edit/{id}', [SettingController::class, 'customerGroupEdit'])->name('settings.customerGroup.edit');
 
         Route::get('/settings/groups/check-name', [SettingController::class, 'checkGroupName'])->name('settings.customerGroup.checkName');
-
     });
 
     Route::middleware('permission:settings.update')->group(function () {
@@ -322,9 +321,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
 
         Route::post('/settings/groups/store', [SettingController::class, 'customerGroupStore'])->name('settings.customerGroup.store');
         Route::post('/settings/groups/update', [SettingController::class, 'customerGroupUpdate'])->name('settings.customerGroup.update');
-        Route::get('/settings/groups/delete/{id}', [SettingController::class, 'customerGroupDelete'])->name('settings.customerGroup.delete');
-
-        
+        Route::delete('/settings/groups/delete/{id}', [SettingController::class, 'customerGroupDelete'])->name('settings.customerGroup.delete');
     });
 
     Route::middleware('permission:settings.write')->group(function () {

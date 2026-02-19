@@ -57,9 +57,14 @@ $(function () {
           render: function (data, type, full) {
             return `
           <div class="d-inline-block text-nowrap">
-            <a class="btn btn-text-secondary rounded-pill waves-effect" href="${baseUrl}settings/groups/edit/${full.id}">
+            <a  href="${baseUrl}settings/groups/edit/${full.id}">
+              <button class="btn btn-text-secondary rounded-pill waves-effect">
               <i class="ti tabler-edit icon-base icon-22px"></i>
+              </button>  
             </a>
+            <button class="btn rounded-pill waves-effect btn-delete-customer-group" data-id="${full.id}">
+              <i class="ti tabler-trash icon-base icon-22px"></i>
+            </button>
           </div>`;
           }
         }
@@ -71,22 +76,80 @@ $(function () {
 
     // Delete handler
     $(dt_table).on('click', '.btn-delete-customer-group', function () {
+
       var id = $(this).data('id');
       if (!id) return;
+
       Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it!',
-        customClass: { confirmButton: 'btn btn-primary me-3', cancelButton: 'btn btn-label-secondary' },
+        customClass: {
+          confirmButton: 'btn btn-primary me-3',
+          cancelButton: 'btn btn-label-secondary'
+        },
         buttonsStyling: false
       }).then(function (result) {
+
         if (result.isConfirmed) {
-          window.location.href = baseUrl + 'settings/groups/delete/' + id;
+
+          $.ajax({
+            url: baseUrl + 'settings/groups/delete/' + id,
+            type: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function (response) {
+
+              if (response.status) {
+
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Deleted!',
+                  text: response.message,
+                  customClass: {
+                    confirmButton: 'btn btn-success'
+                  }
+                }).then(() => {
+                  dt_table.DataTable().ajax.reload();
+                });
+
+              } else {
+
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Cannot Delete',
+                  text: response.message,
+                  customClass: {
+                    confirmButton: 'btn btn-danger'
+                  }
+                });
+              }
+            },
+            error: function (xhr) {
+
+              let message = 'Something went wrong.';
+
+              if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+              }
+
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                customClass: {
+                  confirmButton: 'btn btn-danger'
+                }
+              });
+            }
+          });
         }
       });
     });
+
 
     // Refresh after submit
     $('#ajaxEditCustomerGroupForm, #addCustomerGroupForm').on('submit', function () {
@@ -123,7 +186,7 @@ $(function () {
     });
   });
 
-    document.querySelectorAll('.parent-category').forEach(parent => {
+  document.querySelectorAll('.parent-category').forEach(parent => {
     parent.addEventListener('change', function () {
       const row = this.closest('tr');
       const children = row.querySelectorAll('.brand-checkbox');
