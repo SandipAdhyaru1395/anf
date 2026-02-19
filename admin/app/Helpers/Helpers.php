@@ -349,11 +349,6 @@ CSS;
 
     public static function getCustomerGroups(){
         
-        $customer_groups = CustomerGroup::all();
-
-        if($customer_groups?->isNotEmpty()){
-          return $customer_groups;
-        }
-        return null;
+        return CustomerGroup::all();
     }
 }
