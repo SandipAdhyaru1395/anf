@@ -291,6 +291,16 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/settings/unit', [SettingController::class, 'viewUnit'])->name('settings.unit');
         Route::get('/settings/unit/list/ajax', [SettingController::class, 'unitListAjax'])->name('settings.unit.list.ajax');
         Route::get('/settings/unit/ajax/show', [SettingController::class, 'unitShow'])->name('settings.unit.ajax.show');
+        
+        Route::get('/settings/groups', [SettingController::class, 'viewCustomerGroup'])->name('settings.customerGroup');
+        Route::get('/settings/groups/list/ajax', [SettingController::class, 'customerGroupListAjax'])->name('settings.customerGroup.list.ajax');
+        
+        Route::get('/settings/price-list', [SettingController::class, 'viewPriceList'])->name('settings.priceList');
+
+        Route::get('/settings/groups/edit/{id}', [SettingController::class, 'customerGroupEdit'])->name('settings.customerGroup.edit');
+
+        Route::get('/settings/groups/check-name', [SettingController::class, 'checkGroupName'])->name('settings.customerGroup.checkName');
+
     });
 
     Route::middleware('permission:settings.update')->group(function () {
@@ -309,6 +319,16 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/settings/unit/store', [SettingController::class, 'unitStore'])->name('settings.unit.store');
         Route::post('/settings/unit/update', [SettingController::class, 'unitUpdate'])->name('settings.unit.update');
         Route::get('/settings/unit/delete/{id}', [SettingController::class, 'unitDelete'])->name('settings.unit.delete');
+
+        Route::post('/settings/groups/store', [SettingController::class, 'customerGroupStore'])->name('settings.customerGroup.store');
+        Route::post('/settings/groups/update', [SettingController::class, 'customerGroupUpdate'])->name('settings.customerGroup.update');
+        Route::get('/settings/groups/delete/{id}', [SettingController::class, 'customerGroupDelete'])->name('settings.customerGroup.delete');
+
+        
+    });
+
+    Route::middleware('permission:settings.write')->group(function () {
+        Route::get('/settings/groups/add/', [SettingController::class, 'customerGroupAdd'])->name('settings.customerGroup.add');
     });
 });
 

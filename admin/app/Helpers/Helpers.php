@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Models\CustomerGroup;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
@@ -343,6 +344,16 @@ CSS;
           return $sales_persons;
         }
         return $sales_persons;
+        return null;
+    }
+
+    public static function getCustomerGroups(){
+        
+        $customer_groups = CustomerGroup::all();
+
+        if($customer_groups->isNotEmpty()){
+          return $customer_groups;
+        }
         return null;
     }
 }

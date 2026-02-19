@@ -34,7 +34,8 @@ class Customer extends Model
         'company_address_line2',
         'company_city',
         'company_zip_code',
-        'rep_id'
+        'rep_id',
+        'customer_group_id'
     ];
 
     protected $casts = [
@@ -55,12 +56,19 @@ class Customer extends Model
         return $this->hasMany(Branch::class);
     }
 
-    public function approvedBy(){
-        return $this->belongsTo(User::class,'approved_by','id');
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by', 'id');
     }
 
-    public function salesPerson(){
-        return $this->belongsTo(User::class,'rep_id','id');
+    public function salesPerson()
+    {
+        return $this->belongsTo(User::class, 'rep_id', 'id');
+    }
+
+    public function customerGroup()
+    {
+        return $this->belongsTo(CustomerGroup::class);
     }
 }
 

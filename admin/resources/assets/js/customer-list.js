@@ -18,17 +18,27 @@ document.addEventListener('DOMContentLoaded', function (e) {
 
   $(function () {
     const select2 = $('.select2');
-
+    
     // Select2 Country
     if (select2.length) {
       select2.each(function () {
         var $this = $(this);
-        $this.wrap('<div class="position-relative"></div>').select2({
-          placeholder: 'Select value',
-          dropdownParent: $this.parent()
-        });
+
+        if ($this.attr('id') == 'customer_group_id') {
+          $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: 'Select value',
+            dropdownParent: $this.parent(),
+            allowClear: true
+          });
+        }else{
+          $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: 'Select value',
+            dropdownParent: $this.parent()
+          });
+        }
       });
     }
+
   });
 
   // customers datatable
@@ -207,9 +217,9 @@ document.addEventListener('DOMContentLoaded', function (e) {
                             _token: $('meta[name="csrf-token"]').attr('content')
                           },
                           success: function (response) {
-                            
+
                             dt.ajax.reload();
-                            
+
                             dt.button(0).enable(false);
 
                             Swal.fire({
@@ -242,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
                       }
                     });
                   }
-                }
+                },
               ],
             }
           ]

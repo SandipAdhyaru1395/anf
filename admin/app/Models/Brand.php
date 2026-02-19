@@ -33,4 +33,12 @@ class Brand extends Model
     {
         return $this->belongsToMany(Tag::class, 'brand_tag', 'brand_id', 'tag_id');
     }
+
+    public function customerGroups()
+    {
+        return $this->morphToMany(
+            CustomerGroup::class,
+            'customer_groupable'
+        );
+    }
 }

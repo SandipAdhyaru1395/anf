@@ -26,8 +26,9 @@ class CustomerController extends Controller
   public function index()
   {
     $sales_persons = Helpers::getSalesPersons();
+    $customer_groups = Helpers::getCustomerGroups();
 
-    return view('content.customer.list', compact('sales_persons'));
+    return view('content.customer.list', compact('sales_persons','customer_groups'));
   }
 
   private function init($id = null)
@@ -59,6 +60,8 @@ class CustomerController extends Controller
   public function overview($id = null)
   {
     $data = $this->init($id);
+    $data['customer_groups'] = Helpers::getCustomerGroups();
+
     return view('content.customer.overview', $data);
   }
 
@@ -331,7 +334,6 @@ class CustomerController extends Controller
       'mobile.required' => 'Please enter mobile number',
       'mobile.digits' => 'Mobile number must be 10 digits',
       'mobile.unique' => 'Mobile number already exists',
-      'companyName.required' => 'Please enter company name',
       'addressLine1.required' => 'Please enter address line 1',
       'city.required' => 'Please enter city',
       'zip_code.required' => 'Please enter postcode'
@@ -357,7 +359,8 @@ class CustomerController extends Controller
         'company_city' => $request->city,
         'company_country' => $request->country,
         'company_zip_code' => $request->zip_code,
-        'rep_id' => $request->rep_id ?? null
+        'rep_id' => $request->rep_id ?? null,
+        'customer_group_id' => $request->customer_group_id ?? null
       ]);
 
       DB::commit();
@@ -414,7 +417,8 @@ class CustomerController extends Controller
       'company_city' => $request->city,
       'company_country' => $request->country,
       'company_zip_code' => $request->zip_code,
-      'rep_id' => $request->rep_id ?? null
+      'rep_id' => $request->rep_id ?? null,
+      'customer_group_id' => $request->customer_group_id ?? null
     ];
 
     if ($request->password) {

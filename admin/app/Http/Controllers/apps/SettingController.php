@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\apps;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CustomerGroupRequest;
+use App\Models\Category;
+use App\Models\CustomerGroup;
 use App\Models\DeliveryMethod;
 use App\Models\Permission;
 use App\Models\Setting;
@@ -23,7 +26,7 @@ class SettingController extends Controller
     $setting = Setting::all()->pluck('value', 'key');
     return view('content.settings.general', compact('setting'));
   }
-  
+
   public function viewDeliveryMethod()
   {
     // $delivery_methods = DeliveryMethod::all();
@@ -40,6 +43,15 @@ class SettingController extends Controller
     return view('content.settings.unit');
   }
 
+  public function viewCustomerGroup()
+  {
+    return view('content.settings.customer_group');
+  }
+
+  public function viewPriceList()
+  {
+    return view('content.settings.price_list');
+  }
   public function deliveryMethodListAjax()
   {
     $methods = DeliveryMethod::orderBy('id', 'desc')->get(['id', 'name', 'time', 'rate', 'status']);
@@ -54,6 +66,211 @@ class SettingController extends Controller
     }
 
     return response()->json(['data' => $data]);
+  }
+
+  public function checkGroupName(Request $request)
+  {
+    $name = $request->query('name');
+    $id = $request->query('id'); // optional for edit
+
+    $existsQuery = CustomerGroup::where('name', $name);
+
+    // If editing, exclude current record
+    if ($id) {
+      $existsQuery->whereNot('id', $id);
+    }
+
+    $exists = $existsQuery->exists();
+
+    return response()->json([
+      'valid' => !$exists // true if not exists, false if already exists
+    ]);
+  }
+
+  // public function customerGroupAdd()
+  // {
+
+  //   $categories = Category::with('children')->whereNull('parent_id')->get();
+  //   return view('content.settings.customer_group_add', compact('categories'));
+  // }
+  public function customerGroupAdd()
+  {
+    // $categories = Category::with([
+    //     'children',
+    //     'brands'
+    // ])
+    // ->whereNull('parent_id')
+    // ->get();
+    $categories = Category::with([
+      'children' => function ($q) {
+        $q->where('is_active', 1);
+      },
+      'brands' => function ($q) {
+        $q->where('is_active', 1);
+      }
+    ])
+      ->whereNull('parent_id')
+      ->where('is_active', 1) // optional: only active parents
+      ->get();
+
+    return view('content.settings.customer_group_add', compact('categories'));
+  }
+
+  public function customerGroupStore(CustomerGroupRequest $request)
+  {
+    // Validate the request
+    $validated = $request->validate([
+      'name' => 'required|string|max:255',
+      'restrict_categories' => 'required|boolean',
+      // categories optional depending on restrict flag
+      'categories' => 'nullable|array',
+      'categories.*' => 'integer|exists:categories,id',
+
+      // brands optional
+      'brands' => 'nullable|array',
+      'brands.*' => 'integer|exists:brands,id',
+    ]);
+
+
+    DB::transaction(function () use ($validated) {
+
+      $customerGroup = CustomerGroup::create([
+        'name' => $validated['name'],
+        'restrict_categories' => $validated['restrict_categories'],
+      ]);
+
+      if ($validated['restrict_categories']) {
+
+        // Sync categories (child categories)
+        if (!empty($validated['categories'])) {
+          $customerGroup->categories()->sync($validated['categories']);
+        }
+
+        // Sync brands (if selected where no child exists)
+        if (!empty($validated['brands'])) {
+          $customerGroup->brands()->sync($validated['brands']);
+        }
+      }
+    });
+
+    Toastr::success('Customer Group created successfully');
+    return redirect()->route('settings.customerGroup');
+  }
+
+
+  public function customerGroupListAjax()
+  {
+
+    $customerGroups = CustomerGroup::withCount('customers')
+      // ->orderBy('id', 'desc')
+      ->get(['id', 'name', 'restrict_categories']);
+
+    $data = [];
+    foreach ($customerGroups as $key => $customerGroup) {
+      $data[$key]['id'] = $customerGroup->id;
+      $data[$key]['name'] = $customerGroup->name;
+      $data[$key]['restrict_categories'] = $customerGroup->restrict_categories;
+      $data[$key]['customers_count'] = $customerGroup->customers_count; // New field
+    }
+
+    return response()->json(['data' => $data]);
+  }
+
+  public function customerGroupEdit($id)
+  {
+    $customerGroup = CustomerGroup::with('categories')->findOrFail($id);
+
+    // $categories = Category::with('children')->whereNull('parent_id')->get();
+    // $categories = Category::with([
+    //     'children',
+    //     'brands'
+    // ])
+    // ->whereNull('parent_id')
+    // ->get();
+    $categories = Category::with([
+      'children' => function ($q) {
+        $q->where('is_active', 1);
+      },
+      'brands' => function ($q) {
+        $q->where('is_active', 1);
+      }
+    ])
+      ->whereNull('parent_id')
+      ->where('is_active', 1) // optional: only active parents
+      ->get();
+
+    return view('content.settings.customer_group_edit', compact('customerGroup', 'categories'));
+  }
+
+
+  //   public function customerGroupUpdate(CustomerGroupRequest $request)
+// {
+//     // Find the Customer Group
+//     $customerGroup = CustomerGroup::findOrFail($request->id);
+
+  //     // Manual validation
+//     $validator = Validator::make($request->all(), [
+//         'name' => 'required|string|max:255',
+//         'restrict_categories' => 'required|boolean',
+//         'categories' => 'required_if:restrict_categories,1|array',
+//         'categories.*' => 'integer|exists:categories,id',
+//     ]);
+
+  //     // If validation fails, show only the first error in Toastr
+//     if ($validator->fails()) {
+//         $firstError = $validator->errors()->first();
+//         Toastr::error($firstError, 'Validation Error');
+//         return redirect()->back()->withInput();
+//     }
+
+  //     $validated = $validator->validated();
+
+  //     // Update the Customer Group
+//     $customerGroup->update([
+//         'name' => $validated['name'],
+//         'restrict_categories' => $validated['restrict_categories'],
+//     ]);
+
+  //     // Sync categories if restrict_categories is Yes (1)
+//     if ($validated['restrict_categories']) {
+//         $categoryIds = $validated['categories'];
+//         $customerGroup->categories()->sync($categoryIds);
+//     } else {
+//         // Remove all categories if restrictions disabled
+//         $customerGroup->categories()->sync([]);
+//     }
+
+  //     Toastr::success('Customer Group updated successfully');
+//     return redirect()->route('settings.customerGroup');
+// }
+
+  public function customerGroupUpdate(CustomerGroupRequest $request)
+  {
+    $customerGroup = CustomerGroup::findOrFail($request->id);
+
+    $validated = $request->validated();
+
+    $customerGroup->update([
+      'name' => $validated['name'],
+      'restrict_categories' => $validated['restrict_categories'],
+    ]);
+
+    // Clear old relations
+    $customerGroup->categories()->detach();
+    $customerGroup->brands()->detach();
+
+    if ($validated['restrict_categories'] == 1) {
+
+      $categoryIds = $request->input('categories', []);
+      $brandIds = $request->input('brands', []);
+
+      $customerGroup->categories()->sync($categoryIds);
+      $customerGroup->brands()->sync($brandIds);
+    }
+
+    Toastr::success('Customer Group updated successfully');
+
+    return redirect()->route('settings.customerGroup');
   }
 
   public function vatMethodListAjax()
@@ -121,7 +338,7 @@ class SettingController extends Controller
       'dmPrice' => 'required|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
       'dmSortOrder' => 'nullable|integer',
-    ],[
+    ], [
       'dmName.required' => 'Delivery Name is required.',
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
@@ -152,7 +369,7 @@ class SettingController extends Controller
       'vatType' => 'required|in:Percentage,Fixed',
       'vatAmount' => 'required|numeric|min:0',
       'vatStatus' => 'required|in:Active,Inactive',
-    ],[
+    ], [
       'vatName.required' => 'VAT Name is required.',
       'vatType.required' => 'VAT Type is required.',
       'vatAmount.required' => 'VAT Amount is required.',
@@ -179,7 +396,7 @@ class SettingController extends Controller
     $validator = Validator::make($request->all(), [
       'unitName' => 'required|string|max:255|unique:units,name',
       'unitStatus' => 'required|in:Active,Inactive',
-    ],[
+    ], [
       'unitName.required' => 'Unit Name is required.',
       'unitName.unique' => 'This unit already exists.',
       'unitStatus.required' => 'Unit Status is required.',
@@ -207,7 +424,7 @@ class SettingController extends Controller
       'dmPrice' => 'required|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
       'dmSortOrder' => 'nullable|integer',
-    ],[
+    ], [
       'dmName.required' => 'Delivery Name is required.',
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
@@ -239,7 +456,7 @@ class SettingController extends Controller
       'vatType' => 'required|in:Percentage,Fixed',
       'vatAmount' => 'required|numeric|min:0',
       'vatStatus' => 'required|in:Active,Inactive',
-    ],[
+    ], [
       'vatName.required' => 'VAT Name is required.',
       'vatType.required' => 'VAT Type is required.',
       'vatAmount.required' => 'VAT Amount is required.',
@@ -267,7 +484,7 @@ class SettingController extends Controller
       'id' => 'required|exists:units,id',
       'unitName' => 'required|string|max:255|unique:units,name,' . $request->id,
       'unitStatus' => 'required|in:Active,Inactive',
-    ],[
+    ], [
       'unitName.required' => 'Unit Name is required.',
       'unitName.unique' => 'This unit already exists.',
       'unitStatus.required' => 'Unit Status is required.',
@@ -324,8 +541,8 @@ class SettingController extends Controller
     if ($request->hasFile('companyLogo')) {
       $file = $request->file('companyLogo');
       $image = Setting::where('key', 'company_logo')->first()->value;
-      
-      if($image){
+
+      if ($image) {
         Storage::disk('public')->delete($image);
       }
 
@@ -353,9 +570,9 @@ class SettingController extends Controller
     if ($request->hasFile('bannerImage')) {
       $file = $request->file('bannerImage');
       $existingBanner = Setting::where('key', 'banner')->first();
-      
+
       // Delete existing banner if it exists
-      if($existingBanner && $existingBanner->value){
+      if ($existingBanner && $existingBanner->value) {
         Storage::disk('public')->delete($existingBanner->value);
       }
 
@@ -474,7 +691,10 @@ class SettingController extends Controller
       DB::statement('SET FOREIGN_KEY_CHECKS=1');
       Toastr::success('Data truncated successfully');
     } catch (\Throwable $e) {
-      try { DB::statement('SET FOREIGN_KEY_CHECKS=1'); } catch (\Throwable $e2) {}
+      try {
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+      } catch (\Throwable $e2) {
+      }
       Toastr::error('Failed to truncate data: ' . $e->getMessage());
     }
 

@@ -11,10 +11,19 @@ $(function () {
   if (select2.length) {
     select2.each(function () {
       var $this = $(this);
-      $this.wrap('<div class="position-relative"></div>').select2({
-        placeholder: 'Select value',
-        dropdownParent: $this.parent()
-      });
+      
+      if ($this.attr('id') == 'customer_group_id') {
+          $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: 'Select value',
+            dropdownParent: $this.parent(),
+            allowClear: true
+          });
+        }else{
+          $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: 'Select value',
+            dropdownParent: $this.parent()
+          });
+        }
     });
   }
 });

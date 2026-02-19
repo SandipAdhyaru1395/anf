@@ -47,4 +47,12 @@ class Category extends Model
     {
         return $this->belongsToMany(Brand::class, 'brand_category', 'category_id', 'brand_id');
     }
+
+   public function customerGroups()
+    {
+        return $this->morphToMany(
+            CustomerGroup::class,
+            'customer_groupable'
+        );
+    }
 }

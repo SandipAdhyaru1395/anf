@@ -79,6 +79,19 @@
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="customer_group_id">Customer Group</label>
+                                <select class="form-select select2" id="customer_group_id" name="customer_group_id">
+                                    @if ($customer_groups->isNotEmpty())
+                                        <option value="" selected>Select customer group</option>
+                                    @endif
+                                    @forelse($customer_groups as $customerGroup)
+                                        <option value="{{ $customerGroup->id }}" @selected(old('customer_group_id') == $customerGroup->id) @selected($customer->customer_group_id == $customerGroup->id)>{{ $customerGroup->name }}</option>
+                                    @empty
+                                        <option value="">No customer group found</option>
+                                    @endforelse
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6 border-start">
                             <div class="mb-6 form-control-validation">
