@@ -82,7 +82,7 @@
                             <div class="mb-6">
                                 <label class="form-label" for="customer_group_id">Customer Group</label>
                                 <select class="form-select select2" id="customer_group_id" name="customer_group_id">
-                                    @if ($customer_groups->isNotEmpty())
+                                    @if ($customer_groups?->isNotEmpty())
                                         <option value="" selected>Select customer group</option>
                                     @endif
                                     @forelse($customer_groups as $customerGroup)

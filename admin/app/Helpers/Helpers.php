@@ -351,7 +351,7 @@ CSS;
         
         $customer_groups = CustomerGroup::all();
 
-        if($customer_groups->isNotEmpty()){
+        if($customer_groups?->isNotEmpty()){
           return $customer_groups;
         }
         return null;
