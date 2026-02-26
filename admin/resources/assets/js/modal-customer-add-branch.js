@@ -5,20 +5,20 @@
 'use strict';
 
 // Select2 (jquery)
-$(function () {
-  const select2 = $('.select2');
+// $(function () {
+//   const select2 = $('.select2');
 
-  // Select2 Country
-  if (select2.length) {
-    select2.each(function () {
-      var $this = $(this);
-      $this.select2({
-        placeholder: 'Select value',
-        dropdownParent: $this.parent()
-      });
-    });
-  }
-});
+//   // Select2 Country
+//   if (select2.length) {
+//     select2.each(function () {
+//       var $this = $(this);
+//       $this.select2({
+//         placeholder: 'Select value',
+//         dropdownParent: $this.parent()
+//       });
+//     });
+//   }
+// });
 
 // Add New Branch form validation
 document.addEventListener('DOMContentLoaded', function () {

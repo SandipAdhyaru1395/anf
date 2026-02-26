@@ -119,7 +119,7 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
                       </div>
                       <div className="flex justify-between">
                         <span className="text-black">Total Paid:</span>
-                        <span className="text-black">
+                        <span className="text-black" dir="ltr">
                           {o.currency_symbol}
                           {o.total_paid.toFixed(2)}
                         </span>

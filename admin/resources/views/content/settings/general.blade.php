@@ -19,7 +19,7 @@
   @include('content/settings/sidebar')
 
   <!-- Options -->
-  <div class="col-12 col-lg-9 pt-6 pt-lg-0">
+  <div class="col-12 col-lg-12 pt-6 pt-lg-0">
     <div class="tab-content p-0">
       <!-- Store Details Tab -->
       <div class="tab-pane fade show active" id="general" role="tabpanel">
@@ -89,11 +89,17 @@
                     </span>
                   @enderror
                 </div>
-                <div class="col-12 col-md-6">
-                  <label class="form-label mb-1" for="currency-symbol">Currency Symbol</label>
-                  <input type="text" class="form-control" id="currency-symbol" placeholder="£"
-                    name="currencySymbol" value="{{ $setting['currency_symbol'] ?? '' }}"/>
-                  @error('currencySymbol')
+                <div class="col-12 col-md-6 form-control-validation">
+                  <label class="form-label mb-1" for="default_currency_id">Default Currency</label>
+                  <select class="form-select" id="default_currency_id" name="default_currency_id">
+                    <option value="">Select currency</option>
+                    @foreach ($currencies as $c)
+                      <option value="{{ $c->id }}" {{ ($setting['default_currency_id'] ?? '') == $c->id ? 'selected' : '' }}>
+                        {{ $c->currency_code }} - {{ $c->currency_name }} ({{ $c->symbol }})
+                      </option>
+                    @endforeach
+                  </select>
+                  @error('default_currency_id')
                   <span class="text-danger text-center mb-5" role="alert">
                       <strong>{{ $message }}</strong>
                   </span>

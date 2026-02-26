@@ -4,10 +4,12 @@ namespace App\Http\Controllers\apps;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CustomerGroupRequest;
+use App\Http\Requests\PriceListRequest;
 use App\Models\Category;
 use App\Models\CustomerGroup;
 use App\Models\DeliveryMethod;
 use App\Models\Permission;
+use App\Models\PriceList;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use App\Models\Role;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 use App\Models\VatMethod;
 use App\Models\Unit;
+use App\Models\Currency;
 use Illuminate\Support\Facades\DB;
 
 class SettingController extends Controller
@@ -24,7 +27,15 @@ class SettingController extends Controller
   public function viewGeneralSettings()
   {
     $setting = Setting::all()->pluck('value', 'key');
-    return view('content.settings.general', compact('setting'));
+    $currencies = Currency::orderBy('currency_code')->get(['id', 'currency_code', 'currency_name', 'symbol']);
+    // Preselect default currency when only currency_symbol exists (e.g. after migration)
+    if (empty($setting['default_currency_id']) && !empty($setting['currency_symbol'])) {
+      $match = Currency::where('symbol', $setting['currency_symbol'])->first();
+      if ($match) {
+        $setting->put('default_currency_id', (string) $match->id);
+      }
+    }
+    return view('content.settings.general', compact('setting', 'currencies'));
   }
 
   public function viewDeliveryMethod()
@@ -87,33 +98,165 @@ class SettingController extends Controller
     ]);
   }
 
-  // public function customerGroupAdd()
-  // {
-
-  //   $categories = Category::with('children')->whereNull('parent_id')->get();
-  //   return view('content.settings.customer_group_add', compact('categories'));
-  // }
-  public function customerGroupAdd()
+  public function checkPriceListName(Request $request)
   {
-    // $categories = Category::with([
-    //     'children',
-    //     'brands'
-    // ])
-    // ->whereNull('parent_id')
-    // ->get();
-    $categories = Category::with([
-      'children' => function ($q) {
-        $q->where('is_active', 1);
-      },
-      'brands' => function ($q) {
-        $q->where('is_active', 1);
-      }
+    $name = $request->query('name');
+    $id = $request->query('id'); // optional for edit
+
+    $existsQuery = PriceList::where('name', $name);
+
+    // If editing, exclude current record
+    if ($id) {
+      $existsQuery->whereNot('id', $id);
+    }
+
+    $exists = $existsQuery->exists();
+
+    return response()->json([
+      'valid' => !$exists // true if not exists, false if already exists
+    ]);
+  }
+  /**
+   * Build path rows for column-per-level UI: one row per branch (root → leaf).
+   * Returns pathRows (each has 'path' => [categories], 'brands' => collection) and maxDepth.
+   */
+  private function buildCategoryPathRows()
+  {
+    $withChildren = function ($q) use (&$withChildren) {
+      $q->where('is_active', 1)
+        ->orderBy('is_special', 'desc')
+        ->orderBy('sort_order', 'asc')
+        ->with([
+          'children' => $withChildren,
+          'brands' => fn ($q) => $q->where('is_active', 1),
+        ]);
+    };
+
+    $roots = Category::with([
+      'children' => $withChildren,
+      'brands' => fn ($q) => $q->where('is_active', 1),
     ])
       ->whereNull('parent_id')
-      ->where('is_active', 1) // optional: only active parents
+      ->where('is_active', 1)
+      ->orderBy('is_special', 'desc')
+      ->orderBy('sort_order', 'asc')
       ->get();
 
-    return view('content.settings.customer_group_add', compact('categories'));
+    $pathRows = $this->collectPathsToLeaves($roots, []);
+    $rawMax = $pathRows->isEmpty() ? 0 : $pathRows->max(fn ($row) => count($row['path']));
+    $maxDepth = (int) max(2, $rawMax); // at least 2 columns: Category | Sub Category / Brands
+
+    // Group by root (path[0]) so parent appears once with rowspan
+    $groupedByRoot = $pathRows->groupBy(fn ($row) => $row['path'][0]->id)->values()->map(function ($paths) {
+      return [
+        'root' => $paths->first()['path'][0],
+        'paths' => $paths->values(),
+      ];
+    });
+
+    return [
+      'groupedByRoot' => $groupedByRoot,
+      'maxDepth' => $maxDepth,
+    ];
+  }
+
+  /**
+   * Collect all paths from root to leaf (category with no children). Each path = ['path' => [cat1, ...], 'brands' => collection].
+   */
+  private function collectPathsToLeaves($categories, $prefix)
+  {
+    $rows = collect();
+    foreach ($categories as $cat) {
+      $path = array_merge($prefix, [$cat]);
+      if (!$cat->children || $cat->children->isEmpty()) {
+        $rows->push([
+          'path' => $path,
+          'brands' => $cat->brands ?? collect(),
+        ]);
+      } else {
+        $rows = $rows->merge(
+          $this->collectPathsToLeaves($cat->children->values(), $path)
+        );
+      }
+    }
+    return $rows;
+  }
+
+  /**
+   * @deprecated Use buildCategoryPathRows() for column-per-level UI.
+   */
+  private function buildCategoryTreeRows()
+  {
+    $withChildren = function ($q) use (&$withChildren) {
+      $q->where('is_active', 1)
+        ->orderBy('is_special', 'desc')
+        ->orderBy('sort_order', 'asc')
+        ->with([
+          'children' => $withChildren,
+          'brands' => fn ($q) => $q->where('is_active', 1),
+        ]);
+    };
+
+    $roots = Category::with([
+      'children' => $withChildren,
+      'brands' => fn ($q) => $q->where('is_active', 1),
+    ])
+      ->whereNull('parent_id')
+      ->where('is_active', 1)
+      ->orderBy('is_special', 'desc')
+      ->orderBy('sort_order', 'asc')
+      ->get();
+
+    return $this->flattenCategoryRows($roots, 0);
+  }
+
+  private function flattenCategoryRows($categories, $depth)
+  {
+    $rows = [];
+    foreach ($categories as $cat) {
+      $rows[] = [
+        'category' => $cat,
+        'depth' => $depth,
+        'children' => $cat->children ?? collect(),
+        'brands' => $cat->brands ?? collect(),
+      ];
+      if ($cat->children && $cat->children->isNotEmpty()) {
+        $rows = array_merge(
+          $rows,
+          $this->flattenCategoryRows($cat->children->values(), $depth + 1)
+        );
+      }
+    }
+    return $rows;
+  }
+
+  public function customerGroupAdd()
+  {
+    $data = $this->buildCategoryPathRows();
+
+    return view('content.settings.customer_group_add', [
+      'groupedByRoot' => $data['groupedByRoot'],
+      'maxDepth' => $data['maxDepth'],
+    ]);
+  }
+
+  public function priceListAdd()
+  {
+    return view('content.settings.price_list_add');
+  }
+
+  public function priceListStore(PriceListRequest $request)
+  {
+
+    PriceList::create([
+      'name' => $request->name,
+      'conversion_rate' => $request->conversion_rate,
+      'price_list_type' => $request->price_list_type,
+    ]);
+
+    return redirect()
+      ->route('settings.priceList')
+      ->with('success', 'Price List created successfully.');
   }
 
   public function customerGroupStore(CustomerGroupRequest $request)
@@ -176,33 +319,44 @@ class SettingController extends Controller
     return response()->json(['data' => $data]);
   }
 
+  public function priceListAjax()
+  {
+
+    $priceLists = PriceList::withCount('customers')
+      ->get(['id', 'name', 'price_list_type']);
+
+    $data = [];
+    foreach ($priceLists as $key => $priceList) {
+      $data[$key]['id'] = $priceList->id;
+      $data[$key]['name'] = $priceList->name;
+      $data[$key]['price_list_type'] = $priceList->price_list_type == 1 ? 'Wholesale and Retail Prices' : 'Wholesale Prices';
+      $data[$key]['customers_count'] = $priceList->customers_count;
+    }
+
+    return response()->json(['data' => $data]);
+  }
+
   public function customerGroupEdit($id)
   {
-    $customerGroup = CustomerGroup::with('categories')->findOrFail($id);
+    $customerGroup = CustomerGroup::with('categories', 'brands')->findOrFail($id);
 
-    // $categories = Category::with('children')->whereNull('parent_id')->get();
-    // $categories = Category::with([
-    //     'children',
-    //     'brands'
-    // ])
-    // ->whereNull('parent_id')
-    // ->get();
-    $categories = Category::with([
-      'children' => function ($q) {
-        $q->where('is_active', 1);
-      },
-      'brands' => function ($q) {
-        $q->where('is_active', 1);
-      }
-    ])
-      ->whereNull('parent_id')
-      ->where('is_active', 1) // optional: only active parents
-      ->get();
+    $data = $this->buildCategoryPathRows();
 
-    return view('content.settings.customer_group_edit', compact('customerGroup', 'categories'));
+    return view('content.settings.customer_group_edit', [
+      'customerGroup' => $customerGroup,
+      'groupedByRoot' => $data['groupedByRoot'],
+      'maxDepth' => $data['maxDepth'],
+    ]);
   }
 
 
+  public function priceListEdit($id)
+  {
+    $priceList = PriceList::findOrFail($id);
+    return view('content.settings.price_list_edit', [
+      'priceList' => $priceList,
+    ]);
+  }
   //   public function customerGroupUpdate(CustomerGroupRequest $request)
 // {
 //     // Find the Customer Group
@@ -273,6 +427,23 @@ class SettingController extends Controller
     return redirect()->route('settings.customerGroup');
   }
 
+  public function priceListUpdate(PriceListRequest $request)
+  {
+    $priceList = PriceList::findOrFail($request->id);
+
+    $validated = $request->validated();
+
+    $priceList->update([
+      'name' => $validated['name'],
+      'conversion_rate' => $validated['conversion_rate'],
+      'price_list_type' => $validated['price_list_type'],
+    ]);
+
+    Toastr::success('Price list updated successfully');
+
+    return redirect()->route('settings.priceList');
+  }
+
   public function customerGroupDelete($id)
   {
     $group = CustomerGroup::withCount('customers')->find($id);
@@ -296,6 +467,32 @@ class SettingController extends Controller
     return response()->json([
       'status' => true,
       'message' => 'Customer group deleted successfully.'
+    ]);
+  }
+
+  public function priceListDelete($id)
+  {
+    $price_list = PriceList::withCount('customers')->find($id);
+
+    if (!$price_list) {
+      return response()->json([
+        'status' => false,
+        'message' => 'Price list not found.'
+      ], 404);
+    }
+
+    if ($price_list->customers_count > 0) {
+      return response()->json([
+        'status' => false,
+        'message' => 'This price list cannot be deleted because customers are assigned to it.'
+      ], 400);
+    }
+
+    $price_list->delete();
+
+    return response()->json([
+      'status' => true,
+      'message' => 'Price list deleted successfully.'
     ]);
   }
 
@@ -354,6 +551,36 @@ class SettingController extends Controller
       ->first();
 
     return response()->json($unit);
+  }
+
+  public function viewCurrency()
+  {
+    return view('content.settings.currency');
+  }
+
+  public function currencyListAjax()
+  {
+    $currencies = Currency::orderBy('id', 'desc')->get(['id', 'currency_code', 'currency_name', 'symbol', 'exchange_rate']);
+
+    $data = [];
+    foreach ($currencies as $key => $currency) {
+      $data[$key]['id'] = $currency->id;
+      $data[$key]['currency_code'] = $currency->currency_code;
+      $data[$key]['currency_name'] = $currency->currency_name;
+      $data[$key]['symbol'] = $currency->symbol;
+      $data[$key]['exchange_rate'] = $currency->exchange_rate;
+    }
+
+    return response()->json(['data' => $data]);
+  }
+
+  public function currencyShow(Request $request)
+  {
+    $currency = Currency::select('id', 'currency_code', 'currency_name', 'symbol', 'exchange_rate')
+      ->where('id', $request->id)
+      ->first();
+
+    return response()->json($currency);
   }
 
   public function deliveryMethodStore(Request $request)
@@ -529,6 +756,96 @@ class SettingController extends Controller
     return redirect()->back();
   }
 
+  public function currencyStore(Request $request)
+  {
+    $validator = Validator::make($request->all(), [
+      'currency_code' => 'required|string|max:10|unique:currencies,currency_code',
+      'currency_name' => 'required|string|max:255',
+      'symbol' => 'required|string|max:20',
+      'exchange_rate' => 'required|numeric|min:0',
+    ], [
+      'currency_code.required' => 'Currency Code is required.',
+      'currency_code.unique' => 'This currency code already exists.',
+      'currency_name.required' => 'Currency Name is required.',
+      'symbol.required' => 'Symbol is required.',
+      'exchange_rate.required' => 'Exchange Rate is required.',
+    ]);
+
+    if ($validator->fails()) {
+      return redirect()->back()->withErrors($validator, 'addCurrencyModal')->withInput();
+    }
+
+    Currency::create([
+      'currency_code' => $request->currency_code,
+      'currency_name' => $request->currency_name,
+      'symbol' => $request->symbol,
+      'exchange_rate' => $request->exchange_rate,
+    ]);
+
+    Toastr::success('Currency added successfully!');
+    return redirect()->back();
+  }
+
+  public function currencyUpdate(Request $request)
+  {
+    $validator = Validator::make($request->all(), [
+      'id' => 'required|exists:currencies,id',
+      'currency_code' => 'required|string|max:10|unique:currencies,currency_code,' . $request->id,
+      'currency_name' => 'required|string|max:255',
+      'symbol' => 'required|string|max:20',
+      'exchange_rate' => 'required|numeric|min:0',
+    ], [
+      'currency_code.required' => 'Currency Code is required.',
+      'currency_code.unique' => 'This currency code already exists.',
+      'currency_name.required' => 'Currency Name is required.',
+      'symbol.required' => 'Symbol is required.',
+      'exchange_rate.required' => 'Exchange Rate is required.',
+    ]);
+
+    if ($validator->fails()) {
+      return redirect()->back()->withErrors($validator, 'editCurrencyModal')->withInput();
+    }
+
+    $currency = Currency::findOrFail($request->id);
+    $currency->currency_code = $request->currency_code;
+    $currency->currency_name = $request->currency_name;
+    $currency->symbol = $request->symbol;
+    $currency->exchange_rate = $request->exchange_rate;
+    $currency->save();
+
+    Toastr::success('Currency updated successfully!');
+    return redirect()->back();
+  }
+
+  public function currencyDelete($id)
+  {
+    $currency = Currency::find($id);
+    if (!$currency) {
+      if (request()->ajax() || request()->wantsJson()) {
+        return response()->json(['success' => false, 'message' => 'Currency not found.'], 404);
+      }
+      Toastr::error('Currency not found.');
+      return redirect()->back();
+    }
+    $defaultCurrencyId = Setting::where('key', 'default_currency_id')->value('value');
+    if ($defaultCurrencyId !== null && $defaultCurrencyId !== '' && (int) $defaultCurrencyId === (int) $currency->id) {
+      if (request()->ajax() || request()->wantsJson()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Cannot delete the default currency. Change the default currency in General Settings first.'
+        ], 422);
+      }
+      Toastr::error('Cannot delete the default currency. Change the default currency in General Settings first.');
+      return redirect()->back();
+    }
+    $currency->delete();
+    if (request()->ajax() || request()->wantsJson()) {
+      return response()->json(['success' => true, 'message' => 'Currency deleted successfully!']);
+    }
+    Toastr::success('Currency deleted successfully!');
+    return redirect()->back();
+  }
+
   public function updateGeneralSettings(Request $request)
   {
     $validated = $request->validate([
@@ -539,12 +856,20 @@ class SettingController extends Controller
       'companyEmail' => 'nullable|email|max:255',
       'companyPhone' => 'nullable|string|max:50',
       'sessionTimeout' => 'nullable|integer|min:1',
-      'currencySymbol' => 'nullable|string|max:10',
+      'default_currency_id' => 'nullable|exists:currencies,id',
       'accountName' => 'nullable|string|max:255',
       'bank' => 'nullable|string|max:255',
       'sortCode' => 'nullable|string|max:20',
       'accountNo' => 'nullable|string|max:50'
     ]);
+
+    $currencySymbol = '';
+    if (!empty($validated['default_currency_id'])) {
+      $defaultCurrency = Currency::find($validated['default_currency_id']);
+      if ($defaultCurrency) {
+        $currencySymbol = $defaultCurrency->symbol;
+      }
+    }
 
     $map = [
       'company_title' => $validated['companyTitle'],
@@ -553,7 +878,8 @@ class SettingController extends Controller
       'company_email' => $validated['companyEmail'] ?? '',
       'company_phone' => $validated['companyPhone'] ?? '',
       'session_timeout' => $validated['sessionTimeout'] ?? '',
-      'currency_symbol' => $validated['currencySymbol'] ?? '',
+      'default_currency_id' => $validated['default_currency_id'] ?? '',
+      'currency_symbol' => $currencySymbol,
       'account_name' => $validated['accountName'] ?? '',
       'bank' => $validated['bank'] ?? '',
       'sort_code' => $validated['sortCode'] ?? '',

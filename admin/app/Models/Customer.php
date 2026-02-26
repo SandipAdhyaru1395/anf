@@ -35,7 +35,8 @@ class Customer extends Model
         'company_city',
         'company_zip_code',
         'rep_id',
-        'customer_group_id'
+        'customer_group_id',
+        'price_list_id',
     ];
 
     protected $casts = [

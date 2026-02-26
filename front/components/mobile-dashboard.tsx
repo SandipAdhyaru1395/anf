@@ -239,7 +239,7 @@ export function MobileDashboard({ onNavigate, onOpenOrder }: MobileDashboardProp
                       </div>
                       <div className="flex justify-between font-semibold">
                         <span className="text-black">Total Paid:</span>
-                        <span className="text-black">
+                        <span dir="ltr" className="text-black">
                           {o.currency_symbol}
                           {o.total_paid.toFixed(2)}
                         </span>

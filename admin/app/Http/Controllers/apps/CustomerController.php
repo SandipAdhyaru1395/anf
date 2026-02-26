@@ -27,8 +27,9 @@ class CustomerController extends Controller
   {
     $sales_persons = Helpers::getSalesPersons();
     $customer_groups = Helpers::getCustomerGroups();
+    $price_lists = Helpers::getPriceLists();
 
-    return view('content.customer.list', compact('sales_persons','customer_groups'));
+    return view('content.customer.list', compact('sales_persons','customer_groups','price_lists'));
   }
 
   private function init($id = null)
@@ -48,79 +49,25 @@ class CustomerController extends Controller
     $settings = Helpers::setting();
     $currencySymbol = $settings['currency_symbol'] ?? '$';
     $sales_persons = Helpers::getSalesPersons();
+    $customer_groups = Helpers::getCustomerGroups();
+    $price_lists = Helpers::getPriceLists();
 
     return [
       'customer' => $customer,
       'ordersCount' => (int) ($orderAgg->orders_count ?? 0),
       'totalSpent' => (float) ($orderAgg->total_spent ?? 0),
       'currencySymbol' => $currencySymbol,
-      'sales_persons' => $sales_persons
+      'sales_persons' => $sales_persons,
+      'customer_groups' => $customer_groups,
+      'price_lists' => $price_lists
     ];
   }
   public function overview($id = null)
   {
     $data = $this->init($id);
-    $data['customer_groups'] = Helpers::getCustomerGroups();
 
     return view('content.customer.overview', $data);
   }
-
-  //   public function ajaxList(Request $request)
-// {
-//     $columns = [
-//         2 => 'customers.email',
-//         3 => 'customers.phone',
-//         4 => 'customers.credit_balance',
-//         5 => 'orders_count',
-//         6 => 'total_spent',
-//     ];
-
-  //     $query = Customer::query()
-//         ->leftJoin('orders', 'orders.customer_id', '=', 'customers.id')
-//         ->groupBy(
-//             'customers.id',
-//             'customers.email',
-//             'customers.phone',
-//             'customers.credit_balance'
-//         )
-//         ->selectRaw('
-//             customers.id,
-//             customers.email,
-//             customers.phone,
-//             customers.credit_balance,
-//             COUNT(orders.id) as orders_count,
-//             COALESCE(SUM(orders.total_amount), 0) as total_spent
-//         ');
-
-  //     // Apply sorting
-//     if ($request->has('order')) {
-//         $orderColumnIndex = $request->order[0]['column'];
-//         $orderDirection = $request->order[0]['dir'];
-
-  //         if (isset($columns[$orderColumnIndex])) {
-//             $query->orderBy($columns[$orderColumnIndex], $orderDirection);
-//         }
-//     } else {
-//         $query->orderBy('customers.id', 'desc');
-//     }
-
-  //     $customerStats = $query->get();
-
-  //     $data = $customerStats->map(function ($row) {
-//         return [
-//             'id' => (int) $row->id,
-//             'customer' => $row->name ?? '',
-//             'email' => $row->email ?? '',
-//             'phone' => $row->phone ?? '',
-//             'credit_balance' => number_format((float) $row->credit_balance, 2, '.', ''),
-//             'order' => (int) $row->orders_count,
-//             'total_spent' => number_format((float) $row->total_spent, 2, '.', ''),
-//         ];
-//     });
-
-  //     return response()->json(['data' => $data]);
-// }
-
 
   public function ajaxList(Request $request)
   {
@@ -219,7 +166,6 @@ class CustomerController extends Controller
 
       ->make(true);
   }
-
 
   public function ordersAjax(Request $request, $id)
   {
@@ -360,7 +306,8 @@ class CustomerController extends Controller
         'company_country' => $request->country,
         'company_zip_code' => $request->zip_code,
         'rep_id' => $request->rep_id ?? null,
-        'customer_group_id' => $request->customer_group_id ?? null
+        'customer_group_id' => $request->customer_group_id ?? null,
+        'price_list_id' => $request->price_list_id ?? null
       ]);
 
       DB::commit();
@@ -395,7 +342,6 @@ class CustomerController extends Controller
       'mobile.required' => 'Please enter mobile number',
       'mobile.digits' => 'Mobile number must be 10 digits',
       'mobile.unique' => 'Mobile number already exists',
-      'companyName.required' => 'Please enter company name',
       'addressLine1.required' => 'Please enter address line 1',
       'city.required' => 'Please enter city',
       'zip_code.required' => 'Please enter postcode'
@@ -418,7 +364,8 @@ class CustomerController extends Controller
       'company_country' => $request->country,
       'company_zip_code' => $request->zip_code,
       'rep_id' => $request->rep_id ?? null,
-      'customer_group_id' => $request->customer_group_id ?? null
+      'customer_group_id' => $request->customer_group_id ?? null,
+      'price_list_id' => $request->price_list_id ?? null
     ];
 
     if ($request->password) {

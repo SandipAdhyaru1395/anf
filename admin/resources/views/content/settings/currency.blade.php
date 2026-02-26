@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Units Settings')
+@section('title', 'Currencies Settings')
 
 @section('vendor-style')
 @vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.scss','resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss','resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss','resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss','resources/assets/vendor/libs/select2/select2.scss','resources/assets/vendor/libs/@form-validation/form-validation.scss'])
@@ -11,57 +11,51 @@
 @endsection
 
 @section('page-script')
-@vite('resources/assets/js/settings-unit.js')
+@vite('resources/assets/js/settings-currency.js')
 <script>
   document.addEventListener('DOMContentLoaded', function(){
-    @if ($errors->addUnitModal->any())
-      let addUnit = new bootstrap.Offcanvas(document.getElementById('offcanvasAddUnit'));
-      addUnit.show();
+    @if ($errors->hasBag('addCurrencyModal') && $errors->getBag('addCurrencyModal')->any())
+      $('#modalAddCurrency').modal('show');
     @endif
-    @if ($errors->editUnitModal->any())
-      $('#ajaxEditUnitModal').modal('show');
+    @if ($errors->hasBag('editCurrencyModal') && $errors->getBag('editCurrencyModal')->any())
+      $('#ajaxEditCurrencyModal').modal('show');
     @endif
   });
-  </script>
+</script>
 @endsection
 
 @section('content')
 <div class="row g-6">
   @include('content/settings/sidebar')
-  <!-- Options -->
   <div class="col-12 col-lg-12 pt-6 pt-lg-0">
     <div class="tab-content p-0">
-      <!-- Units Tab -->
-      <div class="tab-pane fade show active" id="units" role="tabpanel">
-        <div id="unitSettingsForm">
-          <div class="card mb-6">
-            <div class="card-body">
-              <div class="row text-end mb-2">
-                <div class="col">
-                    <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddUnit">Add Unit</button>
-                </div>
+      <div class="tab-pane fade show active" id="currencies" role="tabpanel">
+        <div class="card mb-6">
+          <div class="card-body">
+            <div class="row text-end mb-2">
+              <div class="col">
+                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalAddCurrency">Add Currency</button>
               </div>
-              <div class="card-datatable">
-                <table class="datatables-units table">
-                  <thead class="border-top">
-                    <tr>
-                      <th>Name</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                </table>
-              </div>
+            </div>
+            <div class="card-datatable">
+              <table class="datatables-currencies table">
+                <thead class="border-top">
+                  <tr>
+                    <th>Currency Code</th>
+                    <th>Currency Name</th>
+                    <th>Symbol</th>
+                    <th>Exchange Rate</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+              </table>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <!-- /Options-->
 </div>
-@include('_partials._offcanvas.offcanvas-add-unit')
-@include('_partials._modals.modal-ajax-edit-unit')
+@include('_partials._modals.modal-add-currency')
+@include('_partials._modals.modal-edit-currency')
 @endsection
-
-

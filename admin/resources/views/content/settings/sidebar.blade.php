@@ -1,208 +1,229 @@
-<!-- Sidebar Navigation -->
-<div class="col-12 col-lg-3">
-  <div class="sidebar-wrapper d-flex flex-column p-3 shadow-sm rounded">
-    <h5 class="mb-4 text-uppercase fw-bold">Settings</h5>
+<!-- Responsive Settings Navigation -->
+<div class="col-12 mb-4">
+  <div class="settings-wrapper shadow-sm rounded p-3 bg-white">
 
-    <div class="sidebar-scrollable flex-grow-1">
-      <ul class="nav flex-column sidebar-menu">
+    <!-- DESKTOP MENU -->
+    <ul class="nav nav-pills d-none d-md-flex flex-row gap-2">
 
-        <!-- General Links -->
-        <li class="nav-item mb-1">
-          <a class="nav-link {{ request()->routeIs('settings.general') ? 'active' : '' }}"
-            href="{{ route('settings.general') }}">
-            <i class="menu-icon icon-base ti tabler-building-store me-2"></i> General
-          </a>
-        </li>
-        <li class="nav-item mb-1">
-          <a class="nav-link {{ request()->routeIs('settings.banner') ? 'active' : '' }}"
-            href="{{ route('settings.banner') }}">
-            <i class="menu-icon icon-base ti tabler-photo me-2"></i> Banner
-          </a>
-        </li>
-        <li class="nav-item mb-1">
-          <a class="nav-link {{ request()->routeIs('settings.maintenance') ? 'active' : '' }}"
-            href="{{ route('settings.maintenance') }}">
-            <i class="menu-icon icon-base ti tabler-tools me-2"></i> Maintenance
-          </a>
-        </li>
-        <li class="nav-item mb-1">
-          <a class="nav-link {{ request()->routeIs('settings.deliveryMethod') ? 'active' : '' }}"
-            href="{{ route('settings.deliveryMethod') }}">
-            <i class="menu-icon icon-base ti tabler-truck-delivery me-2"></i> Delivery Methods
-          </a>
-        </li>
+      <!-- General -->
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.general') ? 'active' : '' }}"
+           href="{{ route('settings.general') }}">
+          <i class="ti tabler-building-store me-1"></i> General
+        </a>
+      </li>
 
-        <!-- Customer Options -->
-        @php
-          $groupRoutes = [
-            'settings.customerGroup',
-            'settings.customerGroup.*',
-            'settings.priceList',
-            'settings.priceList.*',
-          ];
+      <!-- Banner -->
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.banner') ? 'active' : '' }}"
+           href="{{ route('settings.banner') }}">
+          <i class="ti tabler-photo me-1"></i> Banner
+        </a>
+      </li>
 
-          $customerActive = request()->routeIs($groupRoutes);
-        @endphp
+      <!-- Maintenance -->
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.maintenance') ? 'active' : '' }}"
+           href="{{ route('settings.maintenance') }}">
+          <i class="ti tabler-tools me-1"></i> Maintenance
+        </a>
+      </li>
 
-        <li class="nav-item mb-1">
-          <a class="nav-link d-flex justify-content-between align-items-center {{ $customerActive ? '' : 'collapsed' }}"
-            data-bs-toggle="collapse" href="#customerGroup" role="button"
-            aria-expanded="{{ $customerActive ? 'true' : 'false' }}" aria-controls="customerGroup">
+      <!-- Delivery -->
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.deliveryMethod') ? 'active' : '' }}"
+           href="{{ route('settings.deliveryMethod') }}">
+          <i class="ti tabler-truck-delivery me-1"></i> Delivery
+        </a>
+      </li>
 
-            <span>
-              <i class="menu-icon icon-base ti tabler-users me-2"></i>
-              Groups & Price Lists
-            </span>
+      @php
+        $groupRoutes = [
+          'settings.customerGroup',
+          'settings.customerGroup.*',
+          'settings.priceList',
+          'settings.priceList.*',
+        ];
+        $customerActive = request()->routeIs($groupRoutes);
+      @endphp
 
-            <i class="menu-icon icon-base ti tabler-chevron-down"></i>
-          </a>
+      <!-- Desktop Dropdown - Customer -->
+      <li class="nav-item dropdown position-relative">
+        <a class="nav-link dropdown-toggle {{ $customerActive ? 'active' : '' }}"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+          <i class="ti tabler-users me-1"></i> Customer Groups & Price Lists
+        </a>
 
-          <ul class="collapse nav flex-column sidebar-child {{ $customerActive ? 'show' : '' }}" id="customerGroup">
+        <ul class="dropdown-menu shadow-sm w-100">
+          <li>
+            <a class="dropdown-item {{ request()->routeIs('settings.customerGroup*') ? 'active' : '' }}"
+               href="{{ route('settings.customerGroup') }}">
+              Customer Groups
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item {{ request()->routeIs('settings.priceList*') ? 'active' : '' }}"
+               href="{{ route('settings.priceList') }}">
+              Price Lists
+            </a>
+          </li>
+        </ul>
+      </li>
 
-            <li class="nav-item mb-1">
-              <a class="nav-link {{ request()->routeIs('settings.customerGroup*') ? 'active' : '' }}"
-                href="{{ route('settings.customerGroup') }}">
-                Customer Groups
-              </a>
-            </li>
+      @php
+        $taxActive = request()->routeIs('settings.vatMethod') || request()->routeIs('settings.unit') || request()->routeIs('settings.currency');
+      @endphp
 
-            <li class="nav-item mb-1">
-              <a class="nav-link {{ request()->routeIs('settings.priceList*') ? 'active' : '' }}"
-                href="{{ route('settings.priceList') }}">
-                Price Lists
-              </a>
-            </li>
+      <!-- Desktop Dropdown - Tax & Currency -->
+      <li class="nav-item dropdown position-relative">
+        <a class="nav-link dropdown-toggle {{ $taxActive ? 'active' : '' }}"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+          <i class="ti tabler-scale me-1"></i> VAT Methods & Units
+        </a>
 
-          </ul>
-        </li>
+        <ul class="dropdown-menu shadow-sm w-100">
+          <li>
+            <a class="dropdown-item {{ request()->routeIs('settings.vatMethod') ? 'active' : '' }}"
+               href="{{ route('settings.vatMethod') }}">
+              VAT Methods
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item {{ request()->routeIs('settings.unit') ? 'active' : '' }}"
+               href="{{ route('settings.unit') }}">
+              Units
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item {{ request()->routeIs('settings.currency') ? 'active' : '' }}"
+               href="{{ route('settings.currency') }}">
+              Currencies
+            </a>
+          </li>
+        </ul>
+      </li>
+
+    </ul>
 
 
-        <!-- Tax & Units -->
-        @php
-          $taxActive = request()->routeIs('settings.vatMethod') || request()->routeIs('settings.unit');
-        @endphp
-        <li class="nav-item mb-1">
-          <a class="nav-link d-flex justify-content-between align-items-center {{ $taxActive ? '' : 'collapsed' }}"
-            data-bs-toggle="collapse" href="#taxUnitGroup" role="button"
-            aria-expanded="{{ $taxActive ? 'true' : 'false' }}" aria-controls="taxUnitGroup">
-            <span><i class="menu-icon icon-base ti tabler-scale me-2"></i> Tax & Units</span>
-            <i class="menu-icon icon-base ti tabler-chevron-down"></i>
-          </a>
-          <ul class="collapse nav flex-column sidebar-child {{ $taxActive ? 'show' : '' }}" id="taxUnitGroup">
-            <li class="nav-item mb-1">
-              <a class="nav-link {{ request()->routeIs('settings.vatMethod') ? 'active' : '' }}"
-                href="{{ route('settings.vatMethod') }}">
-                VAT Methods
-              </a>
-            </li>
-            <li class="nav-item mb-1">
-              <a class="nav-link {{ request()->routeIs('settings.unit') ? 'active' : '' }}"
-                href="{{ route('settings.unit') }}">
-                Units
-              </a>
-            </li>
-          </ul>
-        </li>
+    <!-- MOBILE MENU -->
+    <ul class="nav flex-column d-md-none sidebar-mobile-menu mt-2">
 
-      </ul>
-    </div>
+      <li class="nav-item mb-1">
+        <a class="nav-link {{ request()->routeIs('settings.general') ? 'active' : '' }}"
+           href="{{ route('settings.general') }}">
+          General
+        </a>
+      </li>
+
+      <li class="nav-item mb-1">
+        <a class="nav-link {{ request()->routeIs('settings.banner') ? 'active' : '' }}"
+           href="{{ route('settings.banner') }}">
+          Banner
+        </a>
+      </li>
+
+      <li class="nav-item mb-1">
+        <a class="nav-link {{ request()->routeIs('settings.maintenance') ? 'active' : '' }}"
+           href="{{ route('settings.maintenance') }}">
+          Maintenance
+        </a>
+      </li>
+
+      <li class="nav-item mb-1">
+        <a class="nav-link {{ request()->routeIs('settings.deliveryMethod') ? 'active' : '' }}"
+           href="{{ route('settings.deliveryMethod') }}">
+          Delivery
+        </a>
+      </li>
+
+      <!-- Mobile Collapse Groups -->
+      <li class="nav-item mb-1">
+        <a class="nav-link d-flex justify-content-between align-items-center collapsed"
+           data-bs-toggle="collapse"
+           href="#mobileGroupMenu"
+           aria-expanded="false">
+          Customer Groups & Price Lists
+          <i class="ti tabler-chevron-down"></i>
+        </a>
+
+        <ul class="collapse nav flex-column ps-3" id="mobileGroupMenu">
+          <li>
+            <a class="nav-link {{ request()->routeIs('settings.customerGroup*') ? 'active' : '' }}"
+               href="{{ route('settings.customerGroup') }}">
+              Customer Groups
+            </a>
+          </li>
+          <li>
+            <a class="nav-link {{ request()->routeIs('settings.priceList*') ? 'active' : '' }}"
+               href="{{ route('settings.priceList') }}">
+              Price Lists
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- Mobile Collapse Tax -->
+      <li class="nav-item mb-1">
+        <a class="nav-link d-flex justify-content-between align-items-center collapsed"
+           data-bs-toggle="collapse"
+           href="#mobileTaxMenu"
+           aria-expanded="false">
+          Tax
+          <i class="ti tabler-chevron-down"></i>
+        </a>
+
+        <ul class="collapse nav flex-column ps-3" id="mobileTaxMenu">
+          <li>
+            <a class="nav-link {{ request()->routeIs('settings.vatMethod') ? 'active' : '' }}"
+               href="{{ route('settings.vatMethod') }}">
+              VAT Methods
+            </a>
+          </li>
+          <li>
+            <a class="nav-link {{ request()->routeIs('settings.unit') ? 'active' : '' }}"
+               href="{{ route('settings.unit') }}">
+              Units
+            </a>
+          </li>
+          <li>
+            <a class="nav-link {{ request()->routeIs('settings.currency') ? 'active' : '' }}"
+               href="{{ route('settings.currency') }}">
+              Currencies
+            </a>
+          </li>
+        </ul>
+      </li>
+
+    </ul>
+
   </div>
 </div>
 
 <style>
-  /* Sidebar wrapper */
-  .sidebar-wrapper {
-    background-color: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  }
+/* Active Link */
+.settings-wrapper .nav-link.active {
+  background-color: var(--logo-color);
+  color: #fff !important;
+  border-radius: 6px;
+}
 
-  /* Sidebar scrollable */
-  .sidebar-scrollable {
-    overflow-y: auto;
-    max-height: 75vh;
-    height: auto;
-    padding-right: 0.25rem;
-  }
+/* Desktop dropdown full width fix */
+.settings-wrapper .nav-item.dropdown {
+  position: relative;
+}
 
-  /* Custom scrollbar */
-  .sidebar-scrollable::-webkit-scrollbar {
-    width: 6px;
-  }
+.settings-wrapper .dropdown-menu {
+  min-width: 100% !important;
+  left: 0;
+  right: 0;
+}
 
-  .sidebar-scrollable::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 3px;
-  }
-
-  .sidebar-scrollable::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  /* Menu links */
-  .sidebar-menu .nav-link {
-    color: #495057;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    transition: all 0.2s;
-  }
-
-  .sidebar-menu .nav-link:hover {
-    background-color: #f1f3f5;
-    color: #212529;
-  }
-
-  .sidebar-menu .nav-link.active {
-    background-color: var(--logo-color);
-    color: #f8f9fa;
-    font-weight: 600;
-  }
-
-  /* Child links */
-  .sidebar-menu .sidebar-child {
-    padding-left: 0 !important;
-    margin-left: 0 !important;
-  }
-
-  .sidebar-menu .sidebar-child .nav-link {
-    padding-left: 4.25rem;
-    display: flex;
-    align-items: center;
-  }
-
-  .sidebar-menu .sidebar-child .nav-link:hover {
-    background-color: #f8f9fa;
-  }
-
-  .sidebar-menu .sidebar-child .nav-link.active {
-    background-color: var(--logo-color);
-    color: #f8f9fa;
-  }
-
-  /* Icons */
-  .sidebar-menu i.menu-icon {
-    font-size: 1.1rem;
-  }
-
-  /* Override Bootstrap hover/focus for active links */
-  .sidebar-menu .nav-link.active,
-  .sidebar-menu .nav-link.active:hover,
-  .sidebar-menu .nav-link.active:focus {
-    color: #f8f9fa !important;
-    background-color: var(--logo-color) !important;
-  }
-
-  /* Collapsible arrows */
-  .nav-link[data-bs-toggle="collapse"] i.tabler-chevron-down {
-    transition: transform 0.3s ease;
-  }
-
-  .nav-link[data-bs-toggle="collapse"].collapsed i.tabler-chevron-down {
-    transform: rotate(0deg);
-  }
-
-  .nav-link[data-bs-toggle="collapse"]:not(.collapsed) i.tabler-chevron-down {
-    transform: rotate(180deg);
-  }
+/* Mobile arrow rotation */
+.sidebar-mobile-menu .nav-link[aria-expanded="true"] i {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
 </style>

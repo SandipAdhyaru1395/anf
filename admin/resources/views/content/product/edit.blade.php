@@ -120,23 +120,44 @@
 
 @section('content')
     <div class="app-ecommerce">
-        <!-- Add Product -->
+        <!-- Edit Product -->
         <form id="editProductForm" method="POST" action="{{ route('product.update') }}" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="id" value="{{ $product->id }}">
+            {{-- Keep per-price-list values in sync when saving from Details --}}
+            @foreach ($priceLists ?? [] as $pl)
+                @php
+                    $pivot = $productPriceByList[$pl->id] ?? null;
+                    $unitPrice = $pivot ? ($pivot->unit_price ?? '') : '';
+                    $rrpVal = $pivot ? ($pivot->rrp ?? '') : '';
+                @endphp
+                <input type="hidden" name="price_list[{{ $pl->id }}][unit_price]" value="{{ $unitPrice }}">
+                <input type="hidden" name="price_list[{{ $pl->id }}][rrp]" value="{{ $rrpVal }}">
+            @endforeach
             <div style="background: var(--bs-body-bg);"
                 class="py-5 px-2 card-header sticky-element d-flex justify-content-sm-between align-items-sm-center flex-column flex-sm-row">
                 <div class="d-flex flex-column justify-content-center">
-                    <h4 class="mb-1">Edit Product</h4>
+                    <h4 class="mb-1">Edit Product - Details</h4>
                 </div>
                 <div class="d-flex align-content-center flex-wrap gap-4">
                     <div class="d-flex gap-4">
                         <a href="{{ route('product.list') }}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
                     </div>
                 </div>
             </div>
 
+            <ul class="nav nav-tabs mb-4 px-2" role="tablist">
+                <li class="nav-item">
+                    <span class="nav-link active">Details</span>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('product.edit.pricing', $product->id) }}" class="nav-link">Pricing</a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="tab-details" role="tabpanel">
             <div class="row">
                 <!-- First column-->
                 <div class="col-12 col-lg-8">
@@ -183,7 +204,7 @@
 
                             </div>
                             <div class="row">
-                                <!-- Base Price -->
+                                <!-- Selling Price -->
                                 <div class="col-lg-4 mb-5 form-control-validation">
                                     <label class="form-label" for="ecommerce-product-price">Selling Price <span
                                             class="text-danger">*</span></label>
@@ -203,6 +224,11 @@
                                     <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)"
                                         class="form-control" id="cost-price" placeholder="Cost Price" name="costPrice"
                                         aria-label="Cost price" value="{{ $product->cost_price }}" autocomplete="off" />
+                                    @error('costPrice')
+                                        <span class="text-danger" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
                                 </div>
                                 <!-- Wallet Credit -->
                                 <div class="col-lg-4 mb-5 form-control-validation">
@@ -221,6 +247,7 @@
                                         <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
                                     @enderror
                                 </div>
+                                <!-- RRP -->
                                 <div class="col-lg-4 mb-5 form-control-validation">
                                     <label class="form-label" for="rrp">RRP</label>
                                     <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" class="form-control" id="rrp" placeholder="RRP" name="rrp" value="{{ $product->rrp }}" autocomplete="off" />
@@ -421,6 +448,9 @@
                     <!-- /Organize Card -->
                 </div>
                 <!-- /Second column -->
+            </div>
+                </div>
+                <!-- /Details tab -->
             </div>
         </form>
     </div>

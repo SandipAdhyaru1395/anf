@@ -56,7 +56,7 @@
   </div>
   <!-- /Navigation -->
   <!-- Options -->
-  <div class="col-12 col-lg-8 pt-6 pt-lg-0">
+  <div class="col-12 col-lg-12 pt-6 pt-lg-0">
     <div class="tab-content p-0">
       <!-- Payments Tab -->
       <div class="tab-pane fade show active" id="payments" role="tabpanel">

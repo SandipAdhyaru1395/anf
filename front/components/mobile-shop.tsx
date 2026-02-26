@@ -23,6 +23,7 @@ interface ProductItem {
   name: string;
   image: string;
   price: string;
+  rrp?: string;
   discount?: string;
   step_quantity?: number;
   wallet_credit?: number;
@@ -601,7 +602,7 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
                 const stock = Number((product as any)?.quantity ?? (product as any)?.stock_quantity ?? 0);
                 const isOut = stock <= 0;
                 return (
-                  <div key={product.id} className={`bg-white border-b relative pb-2 offer-plus-sign z-10 w-[113px] ${isOut ? 'opacity-60' : ''}`}>
+                  <div key={product.id} className={`group bg-white border-b relative pb-2 offer-plus-sign z-10 w-[113px] ${isOut ? 'opacity-60' : ''}`}>
                     {(() => {
                       if (isOut) {
                         return (
@@ -648,9 +649,10 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
                   </div>
 
                   <div className="space-y-1">
-                    <div>
+                    <div className="relative">
+                      {/* Current price */}
                       <span className="font-bold p-[2px] bg-[#f0f5f1] flex justify-between offer-product-price gap-3">
-                        {product.price}
+                      {symbol}{product.price}
                         {typeof product.wallet_credit === "number" && (
                           <span className="inline-flex items-center text-green-600 text-xs font-semibold">
                             <Wallet className="w-3 h-3 mr-1" />
@@ -661,6 +663,12 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
                           </span>
                         )}
                       </span>
+                      {/* Custom tooltip with RRP on hover */}
+                      {product.rrp && (
+                        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-6 bg-black text-white text-[10px] px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap">
+                          RRP: {product.rrp}
+                        </div>
+                      )}
                     </div>
                     <div className="text-left offer-product-name p-1">
                       <span className="text-sm text-black">{product.name}</span>

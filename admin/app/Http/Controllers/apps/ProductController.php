@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\apps;
 
 use App\Http\Controllers\Controller;
+use App\Models\PriceList;
 use App\Models\ProductBrand;
+use App\Models\ProductPriceList;
 use App\Services\WarehouseProductSyncService;
 use App\traits\BulkDeletes;
 use Brian2694\Toastr\Facades\Toastr;
@@ -24,28 +26,28 @@ use App\Models\Unit;
 
 class ProductController extends Controller
 {
-   use BulkDeletes;
-  
-    protected $model = Product::class;
-  
+  use BulkDeletes;
+
+  protected $model = Product::class;
+
   public function index()
   {
     $data['total_products_count'] = Product::all()->count();
-    $data['active_products_count'] = Product::where('is_active',1)->count();
-    $data['inactive_products_count'] = Product::where('is_active',0)->count();
+    $data['active_products_count'] = Product::where('is_active', 1)->count();
+    $data['inactive_products_count'] = Product::where('is_active', 0)->count();
 
-    return view('content.product.list',$data);
+    return view('content.product.list', $data);
   }
 
   public function create(Request $request)
   {
-   
+
     $validated = $request->validate([
       'brands' => ['required'],
       'step' => ['required', 'numeric', 'min:1'],
       'productTitle' => ['required'],
-      'productSku' => ['required','unique:products,sku'],
-      'productUnitSku' => ['required','unique:products,product_unit_sku'],
+      'productSku' => ['required', 'unique:products,sku'],
+      'productUnitSku' => ['required', 'unique:products,product_unit_sku'],
       'productPrice' => ['required', 'numeric', 'min:0'],
       'productImage' => [
         'nullable',
@@ -85,13 +87,13 @@ class ProductController extends Controller
           }
         },
       ],
-      'vat_method_id' => ['nullable','exists:vat_methods,id'],
-      'unit_id' => ['nullable','exists:units,id'],
+      'vat_method_id' => ['nullable', 'exists:vat_methods,id'],
+      'unit_id' => ['nullable', 'exists:units,id'],
       'costPrice' => ['nullable', 'numeric', 'min:0'],
-      'weight' => ['nullable','numeric'],
-      'rrp' => ['nullable','numeric'],
-      'expiry_date' => ['nullable','date_format:d/m/Y'],
-    ],[
+      'weight' => ['nullable', 'numeric'],
+      'rrp' => ['nullable', 'numeric'],
+      'expiry_date' => ['nullable', 'date_format:d/m/Y'],
+    ], [
       'brands.required' => 'Brand is required',
       'step.required' => 'Step quantity is required',
       'step.numeric' => 'Must be valid number',
@@ -121,22 +123,26 @@ class ProductController extends Controller
       $imageUrl = $request->productImageUrl;
     }
     $price = $validated['productPrice'];
-    $vatAmount = 0; $vatPercentage = 0; $vatMethodId = null; $vatMethodName = null; $vatMethodType = null;
+    $vatAmount = 0;
+    $vatPercentage = 0;
+    $vatMethodId = null;
+    $vatMethodName = null;
+    $vatMethodType = null;
     if ($request->vat_method_id) {
-        $vatMethod = \App\Models\VatMethod::findOrFail($request->vat_method_id);
-        $vatMethodId = $vatMethod->id;
-        if ($vatMethod->type == 'Percentage') {
-            $vatPercentage = $vatMethod->amount;
-            $vatAmount = $price * $vatMethod->amount / 100;
-        } else {
-            // For Fixed type, calculate percentage: (fixed_amount / price) * 100
-            $vatAmount = $vatMethod->amount;
-            if ($price > 0) {
-                $vatPercentage = ($vatMethod->amount / $price) * 100;
-            }
+      $vatMethod = \App\Models\VatMethod::findOrFail($request->vat_method_id);
+      $vatMethodId = $vatMethod->id;
+      if ($vatMethod->type == 'Percentage') {
+        $vatPercentage = $vatMethod->amount;
+        $vatAmount = $price * $vatMethod->amount / 100;
+      } else {
+        // For Fixed type, calculate percentage: (fixed_amount / price) * 100
+        $vatAmount = $vatMethod->amount;
+        if ($price > 0) {
+          $vatPercentage = ($vatMethod->amount / $price) * 100;
         }
-        $vatMethodName = $vatMethod->name;
-        $vatMethodType = $vatMethod->type;
+      }
+      $vatMethodName = $vatMethod->name;
+      $vatMethodType = $vatMethod->type;
     }
     $expiryDate = null;
     if ($request->expiry_date) {
@@ -181,7 +187,7 @@ class ProductController extends Controller
 
       // Sync warehouse product
       WarehouseProductSyncService::sync($product->id, $quantity, $costPrice);
-      
+
       return $product;
     });
 
@@ -189,8 +195,9 @@ class ProductController extends Controller
     return redirect()->route('product.list');
   }
 
-  public function edit($id){
-    
+  public function edit($id)
+  {
+
     $data['product'] = Product::findOrFail($id);
     $data['brands'] = Brand::all();
 
@@ -199,21 +206,83 @@ class ProductController extends Controller
     $data['units'] = Unit::where('status', 'Active')->orderBy('name')->get();
     $settings = Setting::all()->pluck('value', 'key');
     $data['currencySymbol'] = $settings['currency_symbol'] ?? '₱';
+    $data['priceLists'] = PriceList::orderBy('name')->get();
+    $data['productPriceByList'] = ProductPriceList::where('product_id', $id)
+      ->get()
+      ->keyBy('price_list_id');
 
-    return view('content.product.edit',$data);
+    return view('content.product.edit', $data);
   }
-  
-  public function update(Request $request){
-    
+
+  public function editPricing($id)
+  {
+    $product = Product::findOrFail($id);
+    $settings = Setting::all()->pluck('value', 'key');
+    $data = [
+      'product' => $product,
+      'currencySymbol' => $settings['currency_symbol'] ?? '₱',
+      'priceLists' => PriceList::orderBy('name')->get(),
+      'productPriceByList' => ProductPriceList::where('product_id', $id)->get()->keyBy('price_list_id'),
+    ];
+    return view('content.product.edit-pricing', $data);
+  }
+
+  public function updatePricing(Request $request)
+  {
+    $validated = $request->validate([
+      'id' => ['required', 'exists:products,id'],
+      'productPrice' => ['required', 'numeric', 'min:0'],
+      'rrp' => ['nullable', 'numeric', 'min:0'],
+      'price_list' => ['nullable', 'array'],
+      'price_list.*.unit_price' => ['nullable', 'numeric', 'min:0'],
+      'price_list.*.rrp' => ['nullable', 'numeric', 'min:0'],
+    ], [
+      'productPrice.required' => 'Unit price is required.',
+      'productPrice.numeric' => 'Unit price must be a valid number.',
+      'productPrice.min' => 'Unit price cannot be less than 0.',
+      'rrp.numeric' => 'RRP must be a valid number.',
+      'rrp.min' => 'RRP cannot be less than 0.',
+      'price_list.*.unit_price.numeric' => 'Unit price must be a valid number.',
+      'price_list.*.unit_price.min' => 'Unit price cannot be less than 0.',
+      'price_list.*.rrp.numeric' => 'RRP must be a valid number.',
+      'price_list.*.rrp.min' => 'RRP cannot be less than 0.',
+    ]);
+
+    $product = Product::findOrFail($request->id);
+    $product->update([
+      'price' => (float) $validated['productPrice'],
+      'rrp' => $request->filled('rrp') ? (float) $request->rrp : null,
+    ]);
+
+    foreach ($request->price_list ?? [] as $priceListId => $row) {
+      $priceListId = (int) $priceListId;
+      if (!PriceList::where('id', $priceListId)->exists()) {
+        continue;
+      }
+      $unitPrice = isset($row['unit_price']) && $row['unit_price'] !== '' ? (float) $row['unit_price'] : null;
+      $rrp = isset($row['rrp']) && $row['rrp'] !== '' ? (float) $row['rrp'] : null;
+      ProductPriceList::updateOrCreate(
+        ['product_id' => $request->id, 'price_list_id' => $priceListId],
+        ['unit_price' => $unitPrice, 'rrp' => $rrp]
+      );
+    }
+
+    Toastr::success('Pricing updated successfully.');
+    return redirect()->route('product.edit.pricing', $product->id);
+  }
+
+  public function update(Request $request)
+  {
+
     $product = Product::findOrFail($request->id);
     $hasExistingImage = !empty($product->image_url);
-    
+
     $validated = $request->validate([
       'brands' => ['required'],
       'step' => ['required', 'numeric', 'min:1'],
       'productTitle' => ['required'],
-      'productSku' => ['required','unique:products,sku,'.$request->id],
-      'productUnitSku' => ['required','unique:products,product_unit_sku,'.$request->id],
+      'productSku' => ['required', 'unique:products,sku,' . $request->id],
+      'productUnitSku' => ['required', 'unique:products,product_unit_sku,' . $request->id],
       'productPrice' => ['required', 'numeric', 'min:0'],
       'productImage' => [
         'nullable',
@@ -253,13 +322,13 @@ class ProductController extends Controller
           }
         },
       ],
-      'vat_method_id' => ['nullable','exists:vat_methods,id'],
-      'unit_id' => ['nullable','exists:units,id'],
+      'vat_method_id' => ['nullable', 'exists:vat_methods,id'],
+      'unit_id' => ['nullable', 'exists:units,id'],
       'costPrice' => ['nullable', 'numeric', 'min:0'],
-      'weight' => ['nullable','numeric'],
-      'rrp' => ['nullable','numeric'],
-      'expiry_date' => ['nullable','date_format:d/m/Y'],
-    ],[
+      'weight' => ['nullable', 'numeric'],
+      'rrp' => ['nullable', 'numeric'],
+      'expiry_date' => ['nullable', 'date_format:d/m/Y'],
+    ], [
       'brands.required' => 'Brand is required',
       'step.required' => 'Step quantity is required',
       'step.numeric' => 'Must be valid number',
@@ -279,34 +348,38 @@ class ProductController extends Controller
       'rrp.numeric' => 'RRP must be a number',
       'expiry_date.date_format' => 'Expiry date must be in dd/mm/yyyy format',
     ]);
-     
+
 
     // Determine image URL: prioritize uploaded file, then URL input, then keep existing
     $imageUrl = $product->image_url; // Default to existing image
 
-    if($request->hasFile('productImage')){
+    if ($request->hasFile('productImage')) {
       $path = $request->file('productImage')->store('products', 'public');
       $imageUrl = asset('storage/' . $path);
-    } elseif(!empty($request->productImageUrl)){
+    } elseif (!empty($request->productImageUrl)) {
       $imageUrl = $request->productImageUrl;
     }
     $price = $validated['productPrice'];
-    $vatAmount = 0; $vatPercentage = 0; $vatMethodId = null; $vatMethodName = null; $vatMethodType = null;
+    $vatAmount = 0;
+    $vatPercentage = 0;
+    $vatMethodId = null;
+    $vatMethodName = null;
+    $vatMethodType = null;
     if ($request->vat_method_id) {
-        $vatMethod = \App\Models\VatMethod::findOrFail($request->vat_method_id);
-        $vatMethodId = $vatMethod->id;
-        if ($vatMethod->type == 'Percentage') {
-            $vatPercentage = $vatMethod->amount;
-            $vatAmount = $price * $vatMethod->amount / 100;
-        } else {
-            // For Fixed type, calculate percentage: (fixed_amount / price) * 100
-            $vatAmount = $vatMethod->amount;
-            if ($price > 0) {
-                $vatPercentage = ($vatMethod->amount / $price) * 100;
-            }
+      $vatMethod = \App\Models\VatMethod::findOrFail($request->vat_method_id);
+      $vatMethodId = $vatMethod->id;
+      if ($vatMethod->type == 'Percentage') {
+        $vatPercentage = $vatMethod->amount;
+        $vatAmount = $price * $vatMethod->amount / 100;
+      } else {
+        // For Fixed type, calculate percentage: (fixed_amount / price) * 100
+        $vatAmount = $vatMethod->amount;
+        if ($price > 0) {
+          $vatPercentage = ($vatMethod->amount / $price) * 100;
         }
-        $vatMethodName = $vatMethod->name;
-        $vatMethodType = $vatMethod->type;
+      }
+      $vatMethodName = $vatMethod->name;
+      $vatMethodType = $vatMethod->type;
     }
     $expiryDate = null;
     if ($request->expiry_date) {
@@ -317,7 +390,7 @@ class ProductController extends Controller
     $costPrice = $request->costPrice ?? 0;
 
     DB::transaction(function () use ($request, $validated, $price, $vatAmount, $vatPercentage, $vatMethodId, $vatMethodName, $vatMethodType, $expiryDate, $quantity, $costPrice, $imageUrl, $product) {
-      
+
       $product->update([
         'name' => $validated['productTitle'],
         'sku' => $validated['productSku'],
@@ -350,6 +423,20 @@ class ProductController extends Controller
         ]);
       }
 
+      // Update per-price-list prices
+      foreach ($request->price_list ?? [] as $priceListId => $row) {
+        $priceListId = (int) $priceListId;
+        if (!PriceList::where('id', $priceListId)->exists()) {
+          continue;
+        }
+        $unitPrice = isset($row['unit_price']) && $row['unit_price'] !== '' ? (float) $row['unit_price'] : null;
+        $rrp = isset($row['rrp']) && $row['rrp'] !== '' ? (float) $row['rrp'] : null;
+        ProductPriceList::updateOrCreate(
+          ['product_id' => $request->id, 'price_list_id' => $priceListId],
+          ['unit_price' => $unitPrice, 'rrp' => $rrp]
+        );
+      }
+
       // Sync warehouse product
       WarehouseProductSyncService::sync($request->id, $quantity, $costPrice);
     });
@@ -359,70 +446,71 @@ class ProductController extends Controller
 
   }
 
-  public function add(){
+  public function add()
+  {
     $data['brands'] = Brand::all();
     $data['vatMethods'] = VatMethod::where('status', 'Active')->orderBy('name')->get();
     $data['units'] = Unit::where('status', 'Active')->orderBy('name')->get();
     $settings = Setting::all()->pluck('value', 'key');
     $data['currencySymbol'] = $settings['currency_symbol'] ?? '₱';
-    return view('content.product.add',$data);
+    return view('content.product.add', $data);
   }
 
- public function ajaxList(Request $request)
-{
+  public function ajaxList(Request $request)
+  {
     $query = Product::select([
-        'id',
-        'name as product_name', 
-        'description',
-        'sku',
-        'price',
-        'image_url',
-        'is_active'
+      'id',
+      'name as product_name',
+      'description',
+      'sku',
+      'price',
+      'image_url',
+      'is_active'
     ]);
 
     return DataTables::eloquent($query)
-        ->filterColumn('product_name', function($query, $keyword) {
-            $query->where('products.name', 'like', "%{$keyword}%");
-        })
-        ->filterColumn('sku', function($query, $keyword) {
-            $query->where('products.sku', 'like', "%{$keyword}%");
-        })
-        ->filterColumn('price', function($query, $keyword) {
-            $query->where('products.price', 'like', "%{$keyword}%");
-        })
-        ->order(function($query) use ($request) {
-         
-            if ($request->has('order')) {
-                $columnIndex = $request->order[0]['column'];
-                $dir = $request->order[0]['dir'];
+      ->filterColumn('product_name', function ($query, $keyword) {
+        $query->where('products.name', 'like', "%{$keyword}%");
+      })
+      ->filterColumn('sku', function ($query, $keyword) {
+        $query->where('products.sku', 'like', "%{$keyword}%");
+      })
+      ->filterColumn('price', function ($query, $keyword) {
+        $query->where('products.price', 'like', "%{$keyword}%");
+      })
+      ->order(function ($query) use ($request) {
 
-                // Column index mapping
-                switch ($columnIndex) {
-                    case 2: // product_name
-                        $query->orderBy('products.name', $dir);
-                        break;
-                    case 3: // sku
-                        $query->orderBy('products.sku', $dir);
-                        break;
-                    case 4: // price
-                        $query->orderBy('products.price', $dir);
-                        break;
-                    case 5: // price
-                        $query->orderBy('products.is_active', $dir);
-                        break;
-                    default: // default fallback
-                        $query->orderBy('products.id', 'desc');
-                        break;
-                }
-            } else {
-                $query->orderBy('products.id', 'desc'); // default
-            }
-        })
-        ->addColumn('product_brand', function($product) {
-            return Str::limit($product->description, 40);
-        })
-        ->toJson();
-}
+        if ($request->has('order')) {
+          $columnIndex = $request->order[0]['column'];
+          $dir = $request->order[0]['dir'];
+
+          // Column index mapping
+          switch ($columnIndex) {
+            case 2: // product_name
+              $query->orderBy('products.name', $dir);
+              break;
+            case 3: // sku
+              $query->orderBy('products.sku', $dir);
+              break;
+            case 4: // price
+              $query->orderBy('products.price', $dir);
+              break;
+            case 5: // price
+              $query->orderBy('products.is_active', $dir);
+              break;
+            default: // default fallback
+              $query->orderBy('products.id', 'desc');
+              break;
+          }
+        } else {
+          $query->orderBy('products.id', 'desc'); // default
+        }
+      })
+      ->addColumn('product_brand', function ($product) {
+        return Str::limit($product->description, 40);
+      })
+      ->toJson();
+  }
 
 
   public function searchAjax(Request $request)
@@ -430,20 +518,20 @@ class ProductController extends Controller
     $q = trim($request->get('q', ''));
     $limit = (int) $request->get('limit', 10);
 
-    $query = Product::select(['id','name','sku','price','image_url','wallet_credit'])
-      ->where('is_active',1);
+    $query = Product::select(['id', 'name', 'sku', 'price', 'image_url', 'wallet_credit'])
+      ->where('is_active', 1);
 
     if ($q !== '') {
-      $query->where(function($sub) use ($q) {
-        $sub->where('name','like',"%{$q}%")
-            ->orWhere('sku','like',"%{$q}%");
+      $query->where(function ($sub) use ($q) {
+        $sub->where('name', 'like', "%{$q}%")
+          ->orWhere('sku', 'like', "%{$q}%");
       });
     }
 
-    $products = $query->orderBy('id','desc')->limit($limit)->get();
+    $products = $query->orderBy('id', 'desc')->limit($limit)->get();
 
     return response()->json([
-      'results' => $products->map(function($p){
+      'results' => $products->map(function ($p) {
         return [
           'id' => $p->id,
           'text' => $p->name . ' (' . $p->sku . ')',
@@ -454,7 +542,7 @@ class ProductController extends Controller
       })
     ]);
   }
- 
+
   public function delete($id)
   {
     $product = Product::findOrFail($id);
@@ -466,15 +554,16 @@ class ProductController extends Controller
   public function checkSku(Request $request)
   {
     $request->validate([
-      'sku' => ['required','string'],
-      'id' => ['nullable','integer']
+      'sku' => ['required', 'string'],
+      'id' => ['nullable', 'integer']
     ]);
 
     $sku = trim($request->sku);
     $id = $request->id;
 
     $exists = Product::where('sku', $sku)
-      ->when(!empty($id), function($q) use ($id) { $q->where('id', '!=', $id); })
+      ->when(!empty($id), function ($q) use ($id) {
+        $q->where('id', '!=', $id); })
       ->exists();
 
     return response()->json(['valid' => !$exists]);
@@ -483,15 +572,16 @@ class ProductController extends Controller
   public function checkUnitSku(Request $request)
   {
     $request->validate([
-      'sku' => ['required','string'],
-      'id' => ['nullable','integer']
+      'sku' => ['required', 'string'],
+      'id' => ['nullable', 'integer']
     ]);
 
     $sku = trim($request->sku);
     $id = $request->id;
 
     $exists = Product::where('product_unit_sku', $sku)
-      ->when(!empty($id), function($q) use ($id) { $q->where('id', '!=', $id); })
+      ->when(!empty($id), function ($q) use ($id) {
+        $q->where('id', '!=', $id); })
       ->exists();
 
     return response()->json(['valid' => !$exists]);
@@ -506,22 +596,22 @@ class ProductController extends Controller
       'importFile.file' => 'The uploaded file is invalid',
       'importFile.max' => 'File size must not exceed 10MB',
     ]);
-    
+
     // Custom validation for file type
     $file = $request->file('importFile');
     $extension = strtolower($file->getClientOriginalExtension());
     $allowedExtensions = ['csv', 'txt'];
-    
+
     if (!in_array($extension, $allowedExtensions)) {
       return redirect()->back()
         ->withErrors(['importFile' => 'File must be in CSV format (.csv). If you have an Excel file, please convert it to CSV first.'])
         ->withInput();
     }
-    
+
     // Check if file is actually an Excel file (ZIP signature)
     $fileContent = file_get_contents($file->getRealPath(), false, null, 0, 4);
     $isExcelFile = (substr($fileContent, 0, 2) === 'PK'); // Excel files start with ZIP signature
-    
+
     if ($isExcelFile) {
       return redirect()->back()
         ->withErrors(['importFile' => 'The file appears to be an Excel file. Please convert it to CSV format first. In Excel: File > Save As > CSV (Comma delimited) (*.csv)'])
@@ -548,17 +638,17 @@ class ProductController extends Controller
         Toastr::error('File appears to be empty or could not be read. Please ensure it is a valid CSV file.');
         return redirect()->back();
       }
-      
+
       $headers = array_shift($rows);
-      
+
       // Validate that we got actual headers (not binary data)
       if (empty($headers) || (count($headers) === 1 && strlen(trim($headers[0])) < 3)) {
         Toastr::error('Could not read headers from file. The file may be corrupted or in an unsupported format. Please ensure you are uploading a CSV file (not Excel format).');
         return redirect()->back();
       }
-      
+
       // Clean headers - remove BOM and trim
-      $headers = array_map(function($header) {
+      $headers = array_map(function ($header) {
         // Remove BOM characters
         $header = preg_replace('/\x{FEFF}/u', '', $header);
         // Remove any non-printable characters except spaces
@@ -567,11 +657,12 @@ class ProductController extends Controller
         $header = trim($header);
         return $header;
       }, $headers);
-      
+
       // Filter out empty headers
-      $headers = array_filter($headers, function($h) { return !empty(trim($h)); });
+      $headers = array_filter($headers, function ($h) {
+        return !empty(trim($h)); });
       $headers = array_values($headers); // Re-index array
-      
+
       $headerMap = $this->mapHeaders($headers);
 
       // Validate headers (case-insensitive matching with alternative names)
@@ -583,7 +674,7 @@ class ProductController extends Controller
         'Status' => ['Status (1 = Active / 0 = Inactive)', 'Status', 'status', 'STATUS', 'Product Status', 'product status', 'Status (1 = Active / 0 = Inactive)'],
         'Brand' => ['Brand', 'brand', 'BRAND', 'Product Brand', 'product brand']
       ];
-      
+
       // Optional headers map (for better matching)
       $optionalHeadersMap = [
         'Image' => ['Image', 'image', 'IMAGE', 'Product Image', 'product image', 'Image URL', 'image url', 'ImageUrl'],
@@ -602,16 +693,16 @@ class ProductController extends Controller
         'Brand Image' => ['Brand Image', 'brand image', 'BRAND IMAGE', 'Brand Image URL', 'brand image url', 'BrandImage'],
         'Brand Tags' => ['Brand Tags', 'brand tags', 'BRAND TAGS', 'Brand Tag', 'brand tag', 'Tags', 'tags']
       ];
-      
+
       $missingHeaders = [];
       $foundHeaders = array_keys($headerMap);
       $normalizedHeaderMap = [];
-      
+
       // Build normalized header map for required headers
       foreach ($requiredHeadersMap as $canonicalName => $variations) {
         $found = false;
         $foundIndex = null;
-        
+
         // Check each variation
         foreach ($variations as $variation) {
           // Check exact match
@@ -620,7 +711,7 @@ class ProductController extends Controller
             $found = true;
             break;
           }
-          
+
           // Check case-insensitive match
           foreach ($foundHeaders as $foundHeader) {
             if (strcasecmp(trim($foundHeader), trim($variation)) === 0) {
@@ -630,16 +721,16 @@ class ProductController extends Controller
             }
           }
         }
-        
+
         if (!$found) {
           $missingHeaders[] = $canonicalName;
         }
       }
-      
+
       // Build normalized header map for optional headers (like Image)
       foreach ($optionalHeadersMap as $canonicalName => $variations) {
         $found = false;
-        
+
         // Check each variation
         foreach ($variations as $variation) {
           // Check exact match
@@ -648,7 +739,7 @@ class ProductController extends Controller
             $found = true;
             break;
           }
-          
+
           // Check case-insensitive match
           foreach ($foundHeaders as $foundHeader) {
             if (strcasecmp(trim($foundHeader), trim($variation)) === 0) {
@@ -659,13 +750,14 @@ class ProductController extends Controller
           }
         }
       }
-      
+
       // Update headerMap with normalized names
       $headerMap = $normalizedHeaderMap;
 
       if (!empty($missingHeaders)) {
         $errorMsg = 'Missing required columns: ' . implode(', ', $missingHeaders);
-        $errorMsg .= '<br><strong>Found headers in file:</strong> ' . implode(', ', array_map(function($h) { return '"' . $h . '"'; }, array_slice($foundHeaders, 0, 20)));
+        $errorMsg .= '<br><strong>Found headers in file:</strong> ' . implode(', ', array_map(function ($h) {
+          return '"' . $h . '"'; }, array_slice($foundHeaders, 0, 20)));
         if (count($foundHeaders) > 20) {
           $errorMsg .= ' (and ' . (count($foundHeaders) - 20) . ' more)';
         }
@@ -676,16 +768,16 @@ class ProductController extends Controller
       // Step 1: Validate ALL rows first (don't insert anything yet)
       $validatedProducts = [];
       $allErrors = [];
-      
+
       foreach ($rows as $rowIndex => $row) {
         $rowNumber = $rowIndex + 2; // +2 because header is row 1, and array is 0-indexed
-        
+
         try {
           $productData = $this->mapRowToProductData($row, $headerMap, $rowNumber);
-          
+
           // Validate product data using same rules as create method
           $validationResult = $this->validateProductData($productData);
-          
+
           if ($validationResult['valid']) {
             // Store validated product data for later insertion
             $validatedProducts[] = $productData;
@@ -726,14 +818,14 @@ class ProductController extends Controller
 
       try {
         DB::beginTransaction();
-        
+
         foreach ($validatedProducts as $productData) {
           $this->createProductFromImport($productData);
           $results['success']++;
         }
-        
+
         DB::commit();
-        
+
         Toastr::success("Successfully imported {$results['success']} product(s).");
       } catch (\Exception $e) {
         DB::rollBack();
@@ -752,33 +844,33 @@ class ProductController extends Controller
     $rows = [];
     // Try to detect encoding and handle BOM
     $content = file_get_contents($file->getRealPath());
-    
+
     // Remove BOM if present
     $content = preg_replace('/\x{FEFF}/u', '', $content);
-    
+
     // Try to convert to UTF-8 if not already
     if (!mb_check_encoding($content, 'UTF-8')) {
       $content = mb_convert_encoding($content, 'UTF-8', 'auto');
     }
-    
+
     // Write cleaned content to temp file
     $tempFile = tempnam(sys_get_temp_dir(), 'csv_import_');
     file_put_contents($tempFile, $content);
-    
+
     $handle = fopen($tempFile, 'r');
-    
+
     if ($handle !== false) {
       while (($row = fgetcsv($handle, 1000, ',')) !== false) {
         $rows[] = $row;
       }
       fclose($handle);
     }
-    
+
     // Clean up temp file
     if (file_exists($tempFile)) {
       unlink($tempFile);
     }
-    
+
     return $rows;
   }
 
@@ -807,30 +899,30 @@ class ProductController extends Controller
 
   private function mapRowToProductData($row, $headerMap, $rowNumber)
   {
-    $getValue = function($headerName) use ($row, $headerMap) {
+    $getValue = function ($headerName) use ($row, $headerMap) {
       // Try exact match first
       if (isset($headerMap[$headerName])) {
         $index = $headerMap[$headerName];
         if (isset($row[$index])) {
           $value = $row[$index];
           // Return trimmed string or the value itself
-          $trimmed = is_string($value) ? trim($value) : (string)$value;
+          $trimmed = is_string($value) ? trim($value) : (string) $value;
           // Return null for empty strings, otherwise return the value
           return $trimmed === '' ? null : $trimmed;
         }
       }
-      
+
       // Try case-insensitive match
       foreach ($headerMap as $mapHeader => $index) {
         if (strcasecmp(trim($mapHeader), trim($headerName)) === 0) {
           if (isset($row[$index])) {
             $value = $row[$index];
-            $trimmed = is_string($value) ? trim($value) : (string)$value;
+            $trimmed = is_string($value) ? trim($value) : (string) $value;
             return $trimmed === '' ? null : $trimmed;
           }
         }
       }
-      
+
       return null;
     };
 
@@ -861,10 +953,10 @@ class ProductController extends Controller
 
     // Convert scientific notation to regular number for Product Code
     if ($data['productSku'] && (stripos($data['productSku'], 'E+') !== false || stripos($data['productSku'], 'E-') !== false)) {
-      $data['productSku'] = (string)(float)$data['productSku'];
+      $data['productSku'] = (string) (float) $data['productSku'];
     }
     if ($data['productUnitSku'] && (stripos($data['productUnitSku'], 'E+') !== false || stripos($data['productUnitSku'], 'E-') !== false)) {
-      $data['productUnitSku'] = (string)(float)$data['productUnitSku'];
+      $data['productUnitSku'] = (string) (float) $data['productUnitSku'];
     }
 
     return $data;
@@ -899,14 +991,15 @@ class ProductController extends Controller
     } else {
       // Split brands by comma and trim each
       $brandNames = array_map('trim', explode(',', $data['brand']));
-      $brandNames = array_filter($brandNames, function($name) { return !empty($name); }); // Remove empty values
-      
+      $brandNames = array_filter($brandNames, function ($name) {
+        return !empty($name); }); // Remove empty values
+
       if (empty($brandNames)) {
         $errors[] = 'At least one brand is required';
       }
       // Note: Brands will be created if they don't exist, so we don't validate existence here
     }
-    
+
     // Brand Image URL validation (if provided)
     if (!empty($data['brandImage'])) {
       $url = trim($data['brandImage']);
@@ -984,14 +1077,14 @@ class ProductController extends Controller
     // Handle Category and Type (Sub Category) - create if not exists
     $categoryId = null;
     $subCategoryId = null;
-    
+
     // Scenario 1: Category is provided
     if (!empty($data['category'])) {
       $categoryName = trim($data['category']);
       $category = Category::where('name', $categoryName)
         ->whereNull('parent_id')
         ->first();
-      
+
       if (!$category) {
         // Create main category with Active status
         $category = Category::create([
@@ -1002,14 +1095,14 @@ class ProductController extends Controller
         ]);
       }
       $categoryId = $category->id;
-      
+
       // Then, handle subcategory (Type) if provided
       if (!empty($data['type'])) {
         $typeName = trim($data['type']);
         $subCategory = Category::where('name', $typeName)
           ->where('parent_id', $categoryId)
           ->first();
-        
+
         if (!$subCategory) {
           // Create subcategory with Active status
           $subCategory = Category::create([
@@ -1021,7 +1114,7 @@ class ProductController extends Controller
         }
         $subCategoryId = $subCategory->id;
       }
-    } 
+    }
     // Scenario 2: Category is blank but Type (Sub Category) is provided
     elseif (!empty($data['type'])) {
       $typeName = trim($data['type']);
@@ -1029,35 +1122,36 @@ class ProductController extends Controller
       $subCategory = Category::where('name', $typeName)
         ->whereNotNull('parent_id')
         ->first();
-      
+
       if (!$subCategory) {
         throw new \Exception("Type (Sub Category) '{$typeName}' does not exist and Category is blank.");
       }
-      
+
       $subCategoryId = $subCategory->id;
       $categoryId = $subCategory->parent_id;
     }
-    
+
     // Determine which category to use for brand (prefer subcategory if available)
     $brandCategoryId = $subCategoryId ?? $categoryId;
-    
+
     // Get brand IDs (support multiple brands comma-separated)
     $brandNames = array_map('trim', explode(',', $data['brand']));
-    $brandNames = array_filter($brandNames, function($name) { return !empty($name); }); // Remove empty values
-    
+    $brandNames = array_filter($brandNames, function ($name) {
+      return !empty($name); }); // Remove empty values
+
     $brandIds = [];
     foreach ($brandNames as $brandName) {
       $brand = Brand::where('name', $brandName)->first();
-      
+
       if (!$brand) {
         // Brand doesn't exist - need to create it
         // But we need a category to bind it to
-        
+
         // Scenario: Category='', Type='', Brand='c' - Error case
         if (empty($brandCategoryId)) {
           throw new \Exception("Brand '{$brandName}' does not exist and cannot be created because no Category or Type (Sub Category) is provided.");
         }
-        
+
         // Create brand if it doesn't exist
         $brandImageUrl = null;
         if (!empty($data['brandImage'])) {
@@ -1074,21 +1168,21 @@ class ProductController extends Controller
             }
           }
         }
-        
+
         // Create brand with Active status
         $brand = Brand::create([
           'name' => $brandName,
           'image' => $brandImageUrl,
           'is_active' => 1
         ]);
-        
+
         // Link brand to category
         if ($brandCategoryId) {
           // Check if link already exists
           $existingLink = BrandCategory::where('brand_id', $brand->id)
             ->where('category_id', $brandCategoryId)
             ->first();
-          
+
           if (!$existingLink) {
             BrandCategory::create([
               'brand_id' => $brand->id,
@@ -1096,18 +1190,19 @@ class ProductController extends Controller
             ]);
           }
         }
-        
+
         // Handle brand tags for new brand
         if (!empty($data['brandTags'])) {
           $tagNames = array_map('trim', explode(',', $data['brandTags']));
-          $tagNames = array_filter($tagNames, function($name) { return !empty($name); }); // Remove empty values
-          
+          $tagNames = array_filter($tagNames, function ($name) {
+            return !empty($name); }); // Remove empty values
+
           foreach ($tagNames as $tagName) {
             $tag = Tag::updateOrCreate(
               ['name' => $tagName, 'type' => 'categorical'],
               ['is_active' => 1]
             );
-            
+
             BrandTag::updateOrCreate([
               'brand_id' => $brand->id,
               'tag_id' => $tag->id
@@ -1120,7 +1215,7 @@ class ProductController extends Controller
           $existingLink = BrandCategory::where('brand_id', $brand->id)
             ->where('category_id', $brandCategoryId)
             ->first();
-          
+
           if (!$existingLink) {
             BrandCategory::create([
               'brand_id' => $brand->id,
@@ -1128,23 +1223,24 @@ class ProductController extends Controller
             ]);
           }
         }
-        
+
         // Handle brand tags for existing brand - check if tags exist, if not create them
         if (!empty($data['brandTags'])) {
           $tagNames = array_map('trim', explode(',', $data['brandTags']));
-          $tagNames = array_filter($tagNames, function($name) { return !empty($name); }); // Remove empty values
-          
+          $tagNames = array_filter($tagNames, function ($name) {
+            return !empty($name); }); // Remove empty values
+
           foreach ($tagNames as $tagName) {
             $tag = Tag::updateOrCreate(
               ['name' => $tagName, 'type' => 'categorical'],
               ['is_active' => 1]
             );
-            
+
             // Check if brand tag link exists, if not create it
             $existingBrandTag = BrandTag::where('brand_id', $brand->id)
               ->where('tag_id', $tag->id)
               ->first();
-            
+
             if (!$existingBrandTag) {
               BrandTag::create([
                 'brand_id' => $brand->id,
@@ -1154,10 +1250,10 @@ class ProductController extends Controller
           }
         }
       }
-      
+
       $brandIds[] = $brand->id;
     }
-    
+
     if (empty($brandIds)) {
       throw new \Exception('No valid brands found');
     }
@@ -1205,12 +1301,12 @@ class ProductController extends Controller
     // Set step quantity (default to 1 if not provided or less than 1)
     $step = 1;
     if (!empty($data['stepQuantity'])) {
-      $stepValue = is_numeric($data['stepQuantity']) ? (int)$data['stepQuantity'] : 1;
+      $stepValue = is_numeric($data['stepQuantity']) ? (int) $data['stepQuantity'] : 1;
       $step = $stepValue >= 1 ? $stepValue : 1;
     }
 
-    $price = (float)$data['productPrice'];
-    
+    $price = (float) $data['productPrice'];
+
     // Handle VAT Method - create if doesn't exist
     $vatAmount = 0;
     $vatPercentage = 0;
@@ -1220,14 +1316,14 @@ class ProductController extends Controller
     if (!empty($data['vatMethod'])) {
       $vatMethodName = trim($data['vatMethod']);
       $vatMethod = VatMethod::where('name', $vatMethodName)->first();
-      
+
       if (!$vatMethod) {
         // Extract percentage from name if it contains a number (e.g., "20%", "VAT 15%")
         $vatAmountValue = 0;
         if (preg_match('/(\d+(?:\.\d+)?)\s*%/', $vatMethodName, $matches)) {
-          $vatAmountValue = (float)$matches[1];
+          $vatAmountValue = (float) $matches[1];
         }
-        
+
         // Create new VAT method with type "Percentage" always
         $vatMethod = VatMethod::create([
           'name' => $vatMethodName,
@@ -1236,9 +1332,9 @@ class ProductController extends Controller
           'status' => 'Active'
         ]);
       }
-      
+
       $vatMethodId = $vatMethod->id;
-      
+
       // Calculate VAT amount and percentage
       if ($vatMethod->type == 'Percentage') {
         $vatPercentage = $vatMethod->amount;
@@ -1253,31 +1349,31 @@ class ProductController extends Controller
       $vatMethodName = $vatMethod->name;
       $vatMethodType = $vatMethod->type;
     }
-    
+
     // Handle numeric fields - convert empty strings to null/0, handle "0" as valid value
     $costPrice = 0;
     if (isset($data['costPrice']) && $data['costPrice'] !== '' && $data['costPrice'] !== null) {
-      $costPrice = is_numeric($data['costPrice']) ? (float)$data['costPrice'] : 0;
+      $costPrice = is_numeric($data['costPrice']) ? (float) $data['costPrice'] : 0;
     }
-    
+
     $quantity = 0;
     if (isset($data['quantity']) && $data['quantity'] !== '' && $data['quantity'] !== null) {
-      $quantity = is_numeric($data['quantity']) ? (int)$data['quantity'] : 0;
+      $quantity = is_numeric($data['quantity']) ? (int) $data['quantity'] : 0;
     }
-    
+
     $walletCredit = 0;
     if (isset($data['walletCredit']) && $data['walletCredit'] !== '' && $data['walletCredit'] !== null) {
-      $walletCredit = is_numeric($data['walletCredit']) ? (float)$data['walletCredit'] : 0;
+      $walletCredit = is_numeric($data['walletCredit']) ? (float) $data['walletCredit'] : 0;
     }
-    
+
     $weight = null;
     if (isset($data['weight']) && $data['weight'] !== '' && $data['weight'] !== null && trim($data['weight']) !== '') {
-      $weight = is_numeric($data['weight']) ? (float)$data['weight'] : null;
+      $weight = is_numeric($data['weight']) ? (float) $data['weight'] : null;
     }
-    
+
     $rrp = null;
     if (isset($data['rrp']) && $data['rrp'] !== '' && $data['rrp'] !== null && trim($data['rrp']) !== '') {
-      $rrp = is_numeric($data['rrp']) ? (float)$data['rrp'] : null;
+      $rrp = is_numeric($data['rrp']) ? (float) $data['rrp'] : null;
     }
 
     // Validate and set image URL
@@ -1311,13 +1407,13 @@ class ProductController extends Controller
       'rrp' => $rrp,
       'expiry_date' => $expiryDate,
       'image_url' => $imageUrl,
-        'stock_quantity' => $quantity,
-        'vat_percentage' => $vatPercentage,
-        'vat_method_id' => $vatMethodId,
-        'vat_amount' => $vatAmount,
-        'vat_method_name' => $vatMethodName,
-        'vat_method_type' => $vatMethodType,
-        'unit_id' => $unitId,
+      'stock_quantity' => $quantity,
+      'vat_percentage' => $vatPercentage,
+      'vat_method_id' => $vatMethodId,
+      'vat_amount' => $vatAmount,
+      'vat_method_name' => $vatMethodName,
+      'vat_method_type' => $vatMethodType,
+      'unit_id' => $unitId,
       'is_active' => $status,
     ]);
 
@@ -1389,18 +1485,18 @@ class ProductController extends Controller
 
     $filename = 'sample-products-import.csv';
     $handle = fopen('php://temp', 'r+');
-    
+
     // Add BOM for UTF-8 Excel compatibility
-    fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-    
+    fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
     // Write headers
     fputcsv($handle, $headers);
-    
+
     // Write sample data
     foreach ($sampleData as $row) {
       fputcsv($handle, $row);
     }
-    
+
     rewind($handle);
     $csv = stream_get_contents($handle);
     fclose($handle);

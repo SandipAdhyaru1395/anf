@@ -37,7 +37,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/category', [CategoryController::class, 'index'])->name('category.list');
         Route::get('/category/list/ajax', [CategoryController::class, 'ajaxList'])->name('category.list.ajax');
         Route::get('/category/edit/{id}', [CategoryController::class, 'edit'])->name('category.edit');
-        
+
     });
 
     Route::middleware('permission:category.create')->group(function () {
@@ -55,19 +55,19 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     // Brand
     Route::middleware('permission:brand.read')->group(function () {
         Route::get('/brand', [BrandController::class, 'index'])->name('brand.list');
-       Route::get('/brand/edit/{id}', [BrandController::class, 'edit'])->name('brand.edit');
+        Route::get('/brand/edit/{id}', [BrandController::class, 'edit'])->name('brand.edit');
         Route::get('/brand/list/ajax', [BrandController::class, 'ajaxList'])->name('brand.list.ajax');
     });
 
     Route::middleware('permission:brand.write')->group(function () {
-         Route::post('/brand/update', [BrandController::class, 'update'])->name('brand.update');
-         Route::get('/brand/delete/{id}', [BrandController::class, 'delete'])->name('brand.delete');
+        Route::post('/brand/update', [BrandController::class, 'update'])->name('brand.update');
+        Route::get('/brand/delete/{id}', [BrandController::class, 'delete'])->name('brand.delete');
         Route::post('/brand/delete-multiple', [BrandController::class, 'deleteMultiple']);
     });
 
     Route::middleware('permission:brand.create')->group(function () {
         Route::get('/brand/add', [BrandController::class, 'add'])->name('brand.add');
-         Route::post('/brand/create', [BrandController::class, 'create'])->name('brand.create');
+        Route::post('/brand/create', [BrandController::class, 'create'])->name('brand.create');
     });
 
     // Product
@@ -75,11 +75,12 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/product', [ProductController::class, 'index'])->name('product.list');
         Route::get('/product/list/ajax', [ProductController::class, 'ajaxList'])->name('product.list.ajax');
         Route::get('/product/edit/{id}', [ProductController::class, 'edit'])->name('product.edit');
+        Route::get('/product/edit/{id}/pricing', [ProductController::class, 'editPricing'])->name('product.edit.pricing');
         Route::get('/product/search/ajax', [ProductController::class, 'searchAjax'])->name('product.search.ajax');
         Route::post('/check-sku', [ProductController::class, 'checkSku'])->name('product.checkSku');
         Route::post('/check-unit-sku', [ProductController::class, 'checkUnitSku'])->name('product.checkUnitSku');
     });
-    
+
     Route::middleware('permission:product.create')->group(function () {
         Route::get('/product/add', [ProductController::class, 'add'])->name('product.add');
         Route::post('/product/create', [ProductController::class, 'create'])->name('product.create');
@@ -89,6 +90,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
 
     Route::middleware('permission:product.write')->group(function () {
         Route::post('/product/update', [ProductController::class, 'update'])->name('product.update');
+        Route::post('/product/update-pricing', [ProductController::class, 'updatePricing'])->name('product.update.pricing');
         Route::get('/product/delete/{id}', [ProductController::class, 'delete'])->name('product.delete');
         Route::post('/product/delete-multiple', [ProductController::class, 'deleteMultiple']);
     });
@@ -121,7 +123,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/supplier/check-email', [SupplierController::class, 'checkEmail'])->name('supplier.checkEmail');
         Route::post('/supplier/check-phone', [SupplierController::class, 'checkPhone'])->name('supplier.checkPhone');
     });
-    
+
     Route::middleware('permission:supplier.create')->group(function () {
         Route::get('/supplier/add', [SupplierController::class, 'add'])->name('supplier.add');
         Route::post('/supplier/create', [SupplierController::class, 'create'])->name('supplier.create');
@@ -156,7 +158,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/order/credit-note/add/{id}', [OrderController::class, 'creditNoteAdd'])->name('credit-note.add');
         Route::post('/order/credit-note/store', [OrderController::class, 'creditNoteStore'])->name('credit-note.store');
     });
-    
+
     // Order Items CRUD
     Route::middleware('permission:order.write')->group(function () {
         Route::post('/order/item/update', [OrderController::class, 'updateItem'])->name('order.item.update');
@@ -189,7 +191,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/customer/branch/{branch}/delete', [BranchController::class, 'destroy'])->name('customer.branch.delete');
         Route::post('/customer/delete-multiple', [CustomerController::class, 'deleteMultiple']);
     });
-    
+
     Route::middleware('permission:customer.create')->group(function () {
         Route::post('/customer/store', [CustomerController::class, 'store'])->name('customer.store');
         Route::post('/customer/branch/store', [BranchController::class, 'store'])->name('customer.branch.store');
@@ -203,12 +205,12 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/purchase/search/ajax', [PurchaseController::class, 'searchAjax'])->name('purchase.search.ajax');
         Route::get('/purchase/show/ajax/{id}', [PurchaseController::class, 'showAjax'])->name('purchase.show.ajax');
     });
-    
+
     Route::middleware('permission:purchase.create')->group(function () {
         Route::get('/purchase/add', [PurchaseController::class, 'add'])->name('purchase.add');
         Route::post('/purchase/create', [PurchaseController::class, 'create'])->name('purchase.create');
     });
-    
+
     Route::middleware('permission:purchase.write')->group(function () {
         Route::post('/purchase/update', [PurchaseController::class, 'update'])->name('purchase.update');
         Route::get('/purchase/delete/{id}', [PurchaseController::class, 'delete'])->name('purchase.delete');
@@ -221,7 +223,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
 
         Route::get('/user', [UserController::class, 'index'])->name('user.list');
         Route::get('/user/list/ajax', [UserController::class, 'ajaxUserAll'])->name('user.list.ajax');
-        
+
         Route::get('/user/ajax/show', [UserController::class, 'ajaxShow'])->name('user-ajax.show');
 
         Route::get('/user/view/account/{id}', [UserController::class, 'viewAccount'])->name('user-view-account.read');
@@ -261,7 +263,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/role/update', [RoleController::class, 'update'])->name('role.update');
     });
 
-    
+
 
     // Report
     Route::middleware('permission:report.read')->group(function () {
@@ -291,15 +293,24 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/settings/unit', [SettingController::class, 'viewUnit'])->name('settings.unit');
         Route::get('/settings/unit/list/ajax', [SettingController::class, 'unitListAjax'])->name('settings.unit.list.ajax');
         Route::get('/settings/unit/ajax/show', [SettingController::class, 'unitShow'])->name('settings.unit.ajax.show');
-        
+        Route::get('/settings/currencies', [SettingController::class, 'viewCurrency'])->name('settings.currency');
+        Route::get('/settings/currencies/list/ajax', [SettingController::class, 'currencyListAjax'])->name('settings.currency.list.ajax');
+        Route::get('/settings/currencies/ajax/show', [SettingController::class, 'currencyShow'])->name('settings.currency.ajax.show');
+
         Route::get('/settings/groups', [SettingController::class, 'viewCustomerGroup'])->name('settings.customerGroup');
         Route::get('/settings/groups/list/ajax', [SettingController::class, 'customerGroupListAjax'])->name('settings.customerGroup.list.ajax');
-        
-        Route::get('/settings/price-list', [SettingController::class, 'viewPriceList'])->name('settings.priceList');
+
+        Route::get('/settings/priceList', [SettingController::class, 'viewPriceList'])->name('settings.priceList');
 
         Route::get('/settings/groups/edit/{id}', [SettingController::class, 'customerGroupEdit'])->name('settings.customerGroup.edit');
 
         Route::get('/settings/groups/check-name', [SettingController::class, 'checkGroupName'])->name('settings.customerGroup.checkName');
+
+        Route::get('/settings/priceList/check-name', [SettingController::class, 'checkPriceListName'])->name('settings.priceList.checkName');
+
+        Route::get('/settings/priceList/list/ajax', [SettingController::class, 'priceListAjax'])->name('settings.priceList.ajax');
+
+        Route::get('/settings/priceList/edit/{id}', [SettingController::class, 'priceListEdit'])->name('settings.priceList.edit');
     });
 
     Route::middleware('permission:settings.update')->group(function () {
@@ -318,14 +329,23 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/settings/unit/store', [SettingController::class, 'unitStore'])->name('settings.unit.store');
         Route::post('/settings/unit/update', [SettingController::class, 'unitUpdate'])->name('settings.unit.update');
         Route::get('/settings/unit/delete/{id}', [SettingController::class, 'unitDelete'])->name('settings.unit.delete');
+        Route::post('/settings/currencies/store', [SettingController::class, 'currencyStore'])->name('settings.currency.store');
+        Route::post('/settings/currencies/update', [SettingController::class, 'currencyUpdate'])->name('settings.currency.update');
+        Route::get('/settings/currencies/delete/{id}', [SettingController::class, 'currencyDelete'])->name('settings.currency.delete');
 
-        Route::post('/settings/groups/store', [SettingController::class, 'customerGroupStore'])->name('settings.customerGroup.store');
         Route::post('/settings/groups/update', [SettingController::class, 'customerGroupUpdate'])->name('settings.customerGroup.update');
         Route::delete('/settings/groups/delete/{id}', [SettingController::class, 'customerGroupDelete'])->name('settings.customerGroup.delete');
+
+        Route::post('/settings/priceList/update', [SettingController::class, 'priceListUpdate'])->name('settings.priceList.update');
+        Route::delete('/settings/priceList/delete/{id}', [SettingController::class, 'priceListDelete'])->name('settings.priceList.delete');
+
     });
 
     Route::middleware('permission:settings.write')->group(function () {
         Route::get('/settings/groups/add/', [SettingController::class, 'customerGroupAdd'])->name('settings.customerGroup.add');
+        Route::get('/settings/priceList/add/', [SettingController::class, 'priceListAdd'])->name('settings.priceList.add');
+        Route::post('/settings/groups/store', [SettingController::class, 'customerGroupStore'])->name('settings.customerGroup.store');
+        Route::post('/settings/priceList/store', [SettingController::class, 'priceListStore'])->name('settings.priceList.store');
     });
 });
 

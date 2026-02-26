@@ -154,6 +154,19 @@
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="price_list_id">Price List</label>
+                                <select class="form-select select2" id="price_list_id" name="price_list_id">
+                                    @if ($price_lists->isNotEmpty())
+                                        <option value="" selected>Select price list</option>
+                                    @endif
+                                    @forelse($price_lists as $price_list)
+                                        <option value="{{ $price_list->id }}" @selected(old('price_list_id') == $price_list->id)>{{ $price_list->name }}</option>
+                                    @empty
+                                        <option value="">No price list found</option>
+                                    @endforelse
+                                </select>
+                            </div>
                         </div>
                     </div>
 

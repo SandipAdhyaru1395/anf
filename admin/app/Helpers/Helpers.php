@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\CustomerGroup;
+use App\Models\PriceList;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
@@ -350,5 +351,10 @@ CSS;
     public static function getCustomerGroups(){
         
         return CustomerGroup::all();
+    }
+
+    public static function getPriceLists(){
+        
+        return PriceList::all();
     }
 }

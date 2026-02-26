@@ -167,42 +167,106 @@ $(function () {
     });
   }
 
-  // Parent selects/unselects all children
-  document.querySelectorAll('.parent-category').forEach(parent => {
-    parent.addEventListener('change', function () {
-      const row = this.closest('tr');
-      const children = row.querySelectorAll('.child-category');
-      children.forEach(c => c.checked = this.checked);
-    });
-  });
+  // --- Selection logic: root checkbox controls all children in group; children update root state ---
+  const tree = document.getElementById('categories_tree');
+  if (tree) {
+    function getGroupChildCheckboxes(groupId) {
+      const rows = tree.querySelectorAll('tr[data-group-id="' + groupId + '"]');
+      const seen = {};
+      const checkboxes = [];
+      rows.forEach(function (row) {
+        row.querySelectorAll('.category-level-checkbox:not([id$="_root"]), .brand-checkbox').forEach(function (el) {
+          if (!seen[el.id]) {
+            seen[el.id] = true;
+            checkboxes.push(el);
+          }
+        });
+      });
+      return checkboxes;
+    }
 
-  // Child toggles parent checkbox if any child is selected
-  document.querySelectorAll('.child-category').forEach(child => {
-    child.addEventListener('change', function () {
-      const row = this.closest('tr');
-      const parent = row.querySelector('.parent-category');
-      const children = row.querySelectorAll('.child-category');
-      parent.checked = Array.from(children).some(c => c.checked);
-    });
-  });
+    function getRootCheckbox(groupId) {
+      return document.getElementById('cat_' + groupId + '_root');
+    }
 
-  document.querySelectorAll('.parent-category').forEach(parent => {
-    parent.addEventListener('change', function () {
-      const row = this.closest('tr');
-      const children = row.querySelectorAll('.brand-checkbox');
-      children.forEach(c => c.checked = this.checked);
-    });
-  });
+    function getGroupIdFromRoot(rootCb) {
+      var id = rootCb.id || '';
+      if (id.indexOf('_root') !== -1) {
+        return id.replace('cat_', '').replace('_root', '');
+      }
+      return null;
+    }
 
-  // Child toggles parent checkbox if any child is selected
-  document.querySelectorAll('.brand-checkbox').forEach(child => {
-    child.addEventListener('change', function () {
-      const row = this.closest('tr');
-      const parent = row.querySelector('.parent-category');
-      const children = row.querySelectorAll('.brand-checkbox');
-      parent.checked = Array.from(children).some(c => c.checked);
+    // Single delegated change handler for the whole tree
+    tree.addEventListener('change', function (e) {
+      var target = e.target;
+      var isCb = target.classList && (target.classList.contains('category-level-checkbox') || target.classList.contains('brand-checkbox'));
+      if (!isCb) return;
+
+      var isRoot = target.id && target.id.indexOf('_root') !== -1;
+      var groupId = isRoot ? getGroupIdFromRoot(target) : null;
+      if (!groupId && target.closest) {
+        var tr = target.closest('tr');
+        if (tr) groupId = tr.getAttribute('data-group-id');
+      }
+
+      if (!groupId) return;
+
+      var rootCb = getRootCheckbox(groupId);
+
+      if (isRoot) {
+        var children = getGroupChildCheckboxes(groupId);
+        children.forEach(function (c) {
+          c.checked = target.checked;
+        });
+        return;
+      }
+
+      // Child checkbox changed: check ancestors (up) and descendants (down) in path
+      if (target.checked) {
+        var ancestorIdsStr = target.getAttribute('data-ancestor-ids');
+        var myLevelStr = target.getAttribute('data-level');
+        var myLevel = myLevelStr != null ? parseInt(myLevelStr, 10) : null;
+
+        if (ancestorIdsStr) {
+          var ancestorIds = ancestorIdsStr.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+          if (rootCb && ancestorIds.indexOf(rootCb.value) !== -1) rootCb.checked = true;
+          tree.querySelectorAll('.category-level-checkbox[data-group-id="' + groupId + '"]').forEach(function (cb) {
+            if (cb.id && cb.id.indexOf('_root') !== -1) return;
+            if (ancestorIds.indexOf(cb.value) !== -1) cb.checked = true;
+            var descAnc = cb.getAttribute('data-ancestor-ids');
+            if (descAnc && myLevel != null) {
+              var descLevelStr = cb.getAttribute('data-level');
+              if (descLevelStr && parseInt(descLevelStr, 10) > myLevel) {
+                var descIds = descAnc.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+                if (descIds.indexOf(target.value) !== -1) cb.checked = true;
+              }
+            }
+          });
+        } else {
+          if (rootCb) rootCb.checked = true;
+        }
+      } else {
+        var myLevelStr = target.getAttribute('data-level');
+        var myLevel = myLevelStr != null ? parseInt(myLevelStr, 10) : null;
+        if (target.getAttribute('data-ancestor-ids') != null && myLevel != null) {
+          tree.querySelectorAll('.category-level-checkbox[data-group-id="' + groupId + '"]').forEach(function (cb) {
+            if (cb.id && cb.id.indexOf('_root') !== -1) return;
+            var descAnc = cb.getAttribute('data-ancestor-ids');
+            var descLevelStr = cb.getAttribute('data-level');
+            if (descAnc && descLevelStr && parseInt(descLevelStr, 10) > myLevel) {
+              var descIds = descAnc.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+              if (descIds.indexOf(target.value) !== -1) cb.checked = false;
+            }
+          });
+        }
+        if (rootCb) {
+          var children = getGroupChildCheckboxes(groupId);
+          rootCb.checked = children.some(function (c) { return c.checked; });
+        }
+      }
     });
-  });
+  }
   // FormValidation JS for Add Customer Group
   const addCustomerGroupForm = document.getElementById('addCustomerGroupForm');
   if (addCustomerGroupForm) {

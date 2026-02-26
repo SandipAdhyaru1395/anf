@@ -12,18 +12,18 @@ $(function () {
     select2.each(function () {
       var $this = $(this);
       
-      if ($this.attr('id') == 'customer_group_id') {
+      // if ($this.attr('id') == 'customer_group_id' || $this.attr('id') == 'price_list_id') {
           $this.wrap('<div class="position-relative"></div>').select2({
             placeholder: 'Select value',
             dropdownParent: $this.parent(),
             allowClear: true
           });
-        }else{
-          $this.wrap('<div class="position-relative"></div>').select2({
-            placeholder: 'Select value',
-            dropdownParent: $this.parent()
-          });
-        }
+        // }else{
+        //   $this.wrap('<div class="position-relative"></div>').select2({
+        //     placeholder: 'Select value',
+        //     dropdownParent: $this.parent()
+        //   });
+        // }
     });
   }
 });

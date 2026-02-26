@@ -139,32 +139,32 @@ export function MobileOrderDetails({ orderNumber, onNavigate, onBack, onReorder 
                     <div className="text-sm w-[200px] gap-x-[4px] gap-y-[8px] flex flex-col">
                       <div className="flex justify-between text-right flex-1 text-[14px]">
                         <span className="text-black w-[120px] h-[16px]">Subtotal</span>
-                        <span className="text-black w-[80px] h-[16px] flex-1">
+                        <span dir="ltr" className="text-black w-[80px] h-[16px] flex-1">
                           {order.currency_symbol}
                           {order.subtotal.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between text-right flex-1 text-[14px]">
                         <span className="text-black w-[120px] h-[16px]">Wallet Discount</span>
-                        <span className="text-black w-[80px] h-[16px] flex-1">
+                        <span dir="ltr" className="text-black w-[80px] h-[16px] flex-1">
                           {order.currency_symbol}
                           {order.wallet_discount.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between text-right flex-1 text-[14px]">
                         <span className="text-black w-[120px] h-[16px]">Delivery</span>
-                        <span className="text-black w-[80px] h-[16px] flex-1">{order.currency_symbol}{order.delivery_charge ? order.delivery_charge.toFixed(2) : '0.00'}</span>
+                        <span className="text-black w-[80px] h-[16px] flex-1" dir="ltr">{order.currency_symbol}{order.delivery_charge ? order.delivery_charge.toFixed(2) : '0.00'}</span>
                       </div>
                       <div className="flex justify-between text-right flex-1 text-[14px]">
                         <span className="text-black w-[120px] h-[16px]">VAT ({ (order.vat_amount > 0 ? ((order.vat_amount*100) / (order.subtotal+order.delivery_charge-order.wallet_discount)).toFixed(2) : '0.00') }%)</span>
-                        <span className="text-black w-[80px] h-[16px] flex-1">
+                        <span className="text-black w-[80px] h-[16px] flex-1" dir="ltr">
                           {order.currency_symbol}
                           {order.vat_amount.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between text-right flex-1 text-[14px]">
                         <span className="text-black w-[120px] h-[16px] font-semibold">Payment Total</span>
-                        <span className="text-black w-[80px] h-[16px] flex-1 font-semibold">
+                        <span className="text-black w-[80px] h-[16px] flex-1 font-semibold" dir="ltr">
                           {order.currency_symbol}
                           {((order as any).payment_amount ?? Math.max(0, (order.total_paid ?? 0) - ((order as any).wallet_credit_used ?? 0))).toFixed(2)}
                         </span>
@@ -211,7 +211,7 @@ export function MobileOrderDetails({ orderNumber, onNavigate, onBack, onReorder 
                       {it.product_image ? <img src={it.product_image} alt="" className="w-[50px] h-[50px] mr-[10px] object-cover" /> : <div className="w-[50px] h-[50px] mr-[10px] bg-gray-100" />}
                       <div className="font-medium text-gray-900 text-[16px] leading-[16px] flex-5">{it.product_name || `Product #${it.product_id}`}</div>
                       <div className="text-gray-800 text-[16px] leading-[16px] flex-1 text-center">{it.quantity}</div>
-                      <div className="font-semibold text-right text-[16px] leading-[16px]">
+                      <div className="font-semibold text-right text-[16px] leading-[16px]" dir="ltr">
                         {order.currency_symbol}
                         {it.total_price.toFixed(2)}
                       </div>

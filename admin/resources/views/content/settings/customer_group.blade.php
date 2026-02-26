@@ -19,7 +19,7 @@
         @include('content/settings/sidebar')
 
         <!-- Options -->
-        <div class="col-12 col-lg-9 pt-6 pt-lg-0">
+        <div class="col-12 col-lg-12 pt-6 pt-lg-0">
             <div class="tab-content p-0">
                 <!-- Store Details Tab -->
                 <div class="tab-pane fade show active" id="general" role="tabpanel">

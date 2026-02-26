@@ -24,6 +24,11 @@
             cursor: pointer;
         }
 
+        #categories_tree .category-level-cell {
+            vertical-align: middle;
+            border-right: 1px solid var(--bs-table-border-color);
+        }
+
         .child-categories-vertical .form-check {
             display: block;
             margin-bottom: 0.25rem;
@@ -36,7 +41,7 @@
     <div class="row g-6">
         @include('content/settings/sidebar')
 
-        <div class="col-12 col-lg-9 pt-6 pt-lg-0">
+        <div class="col-12 col-lg-12 pt-6 pt-lg-0">
             <div class="tab-content p-0">
                 <div class="tab-pane fade show active" id="general" role="tabpanel">
                     <div class="card mb-6">
@@ -70,106 +75,133 @@
                                 <div class="mb-3" id="categories_tree"
                                     style="{{ $customerGroup->restrict_categories ? 'display:block;' : 'display:none;' }}">
                                     <label class="form-label">Select Categories</label>
-                                    <table class="table table-bordered table-striped align-middle">
+                                    <table class="table table-bordered align-middle">
                                         <thead class="table-light">
                                             <tr>
-                                                <th style="width:40%;">Parent Category</th>
-                                                <th>Child Categories / Brands</th>
+                                                @for ($level = 1; $level <= $maxDepth; $level++)
+                                                    <th class="category-level-cell">
+                                                        {{ $level === 1 ? 'Category' : ($level === 2 ? 'Sub Category / Brands' : 'Sub Category ' . $level) }}
+                                                    </th>
+                                                @endfor
                                             </tr>
                                         </thead>
                                         <tbody>
-
                                             @php
-                                                $selectedCategoryIds = $customerGroup->categories
-                                                    ->pluck('id')
-                                                    ->toArray();
+                                                $selectedCategoryIds = $customerGroup->categories->pluck('id')->toArray();
                                                 $selectedBrandIds = $customerGroup->brands->pluck('id')->toArray();
                                             @endphp
 
-                                            @foreach ($categories as $category)
-                                                <tr>
+                                            @if ($maxDepth >= 2 && $groupedByRoot->isNotEmpty())
+                                            @foreach ($groupedByRoot as $group)
+                                                @php
+                                                    $root = $group['root'];
+                                                    $paths = $group['paths'];
+                                                    $pathCount = $paths->count();
+                                                    $hasChildren = $paths->contains(fn ($p) => count($p['path']) > 1);
+                                                    $isLeafGroup = !$hasChildren;
+                                                    $leafBrands = $isLeafGroup ? $paths->first()['brands'] : collect();
+                                                    $hasBrands = $leafBrands->isNotEmpty();
+                                                    $groupRowId = 'g' . $loop->iteration;
 
-                                                    {{-- ================= Parent Category ================= --}}
-                                                    <td>
-                                                        @php
-                                                            $childIds = $category->children->pluck('id')->toArray();
-                                                            $brandIds = $category->brands->pluck('id')->toArray();
-
-                                                            // Parent checked if:
-                                                            // 1) Any child category selected
-                                                            // 2) Any brand selected
-                                                            $isParentChecked =
-                                                                count(
-                                                                    array_intersect($childIds, $selectedCategoryIds),
-                                                                ) > 0 ||
-                                                                count(array_intersect($brandIds, $selectedBrandIds)) >
-                                                                    0;
-                                                        @endphp
-
-                                                        <div class="form-check">
-                                                            <input class="form-check-input parent-category" type="checkbox"
-                                                                id="parent_{{ $category->id }}"
-                                                                {{ $isParentChecked ? 'checked' : '' }}>
-
-                                                            <label class="form-check-label fw-semibold"
-                                                                for="parent_{{ $category->id }}">
-                                                                {{ $category->name }}
-                                                            </label>
-                                                        </div>
-                                                    </td>
-
-
-                                                    {{-- ================= Child / Brand Section ================= --}}
-                                                    <td>
-
-                                                        {{-- If child categories exist --}}
-                                                        @if ($category->children->count())
-                                                            <div class="child-categories-vertical">
-                                                                @foreach ($category->children as $child)
-                                                                    <div class="form-check mb-1">
-                                                                        <input class="form-check-input child-category"
-                                                                            type="checkbox" name="categories[]"
-                                                                            value="{{ $child->id }}"
-                                                                            id="category_{{ $child->id }}"
-                                                                            {{ in_array($child->id, $selectedCategoryIds) ? 'checked' : '' }}>
-
-                                                                        <label class="form-check-label"
-                                                                            for="category_{{ $child->id }}">
-                                                                            {{ $child->name }}
-                                                                        </label>
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
-
-                                                            {{-- If no child → show brands --}}
-                                                        @elseif($category->brands->count())
-                                                            <div class="brands-vertical">
-                                                                @foreach ($category->brands as $brand)
-                                                                    <div class="form-check mb-1">
-                                                                        <input class="form-check-input brand-checkbox"
-                                                                            type="checkbox" name="brands[]"
-                                                                            value="{{ $brand->id }}"
-                                                                            id="brand_{{ $brand->id }}"
-                                                                            {{ in_array($brand->id, $selectedBrandIds) ? 'checked' : '' }}>
-
-                                                                        <label class="form-check-label"
-                                                                            for="brand_{{ $brand->id }}">
-                                                                            {{ $brand->name }}
-                                                                        </label>
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
-                                                        @else
-                                                            <span class="text-muted">No child categories or brands</span>
+                                                    $rootChecked = $hasChildren
+                                                        ? in_array($root->id, $selectedCategoryIds)
+                                                        : ($hasBrands
+                                                            ? count(array_intersect($leafBrands->pluck('id')->toArray(), $selectedBrandIds)) > 0
+                                                            : in_array($root->id, $selectedCategoryIds));
+                                                @endphp
+                                                @foreach ($paths as $pathRow)
+                                                    @php
+                                                        $path = $pathRow['path'];
+                                                        $pathLen = count($path);
+                                                        $isLeafRow = $pathLen === 1;
+                                                        $brands = $isLeafRow ? $pathRow['brands'] : collect();
+                                                        $rowId = $groupRowId . '_p' . $loop->iteration;
+                                                    @endphp
+                                                    <tr data-row-id="{{ $rowId }}" data-group-id="{{ $groupRowId }}" data-leaf-row="{{ $isLeafRow ? '1' : '0' }}">
+                                                        @if ($loop->first)
+                                                            <td rowspan="{{ $pathCount }}" class="category-level-cell" style="vertical-align: top;">
+                                                                <div class="form-check">
+                                                                    @if ($hasChildren)
+                                                                        <input class="form-check-input category-level-checkbox" type="checkbox"
+                                                                            name="categories[]" value="{{ $root->id }}"
+                                                                            id="cat_{{ $groupRowId }}_root" data-group-id="{{ $groupRowId }}" data-level="0"
+                                                                            {{ $rootChecked ? 'checked' : '' }}>
+                                                                    @elseif($hasBrands)
+                                                                        <input class="form-check-input category-level-checkbox" type="checkbox"
+                                                                            id="cat_{{ $groupRowId }}_root" data-has-brands-only="1" data-group-id="{{ $groupRowId }}" data-level="0"
+                                                                            {{ $rootChecked ? 'checked' : '' }}>
+                                                                    @else
+                                                                        <input class="form-check-input category-level-checkbox" type="checkbox"
+                                                                            name="categories[]" value="{{ $root->id }}"
+                                                                            id="cat_{{ $groupRowId }}_root" data-group-id="{{ $groupRowId }}" data-level="0"
+                                                                            {{ $rootChecked ? 'checked' : '' }}>
+                                                                    @endif
+                                                                    <label class="form-check-label text-body fw-semibold" for="cat_{{ $groupRowId }}_root">{{ $root->name }}</label>
+                                                                </div>
+                                                            </td>
                                                         @endif
-
-                                                    </td>
-
-                                                </tr>
+                                                        @for ($level = 1; $level < $maxDepth; $level++)
+                                                            @php
+                                                                $prevPath = $loop->index > 0 ? $paths[$loop->index - 1]['path'] : null;
+                                                                $hasCatAtLevel = isset($path[$level]);
+                                                                $sameAsPrev = $prevPath && $hasCatAtLevel && isset($prevPath[$level]) && $prevPath[$level]->id === $path[$level]->id;
+                                                                $outputCell = !$sameAsPrev;
+                                                                $rowspan = 1;
+                                                                if ($outputCell && $hasCatAtLevel && !$isLeafRow) {
+                                                                    for ($i = $loop->index + 1; $i < $paths->count(); $i++) {
+                                                                        $p = $paths[$i]['path'] ?? [];
+                                                                        if (isset($p[$level]) && $p[$level]->id === $path[$level]->id) { $rowspan++; } else { break; }
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            @if ($outputCell)
+                                                                <td @if ($hasCatAtLevel && !$isLeafRow && $rowspan > 1) rowspan="{{ $rowspan }}" @endif class="category-level-cell" @if ($rowspan > 1) style="vertical-align: top;" @endif>
+                                                                    @if ($isLeafRow)
+                                                                        @if ($level === 1)
+                                                                            @if ($brands->isNotEmpty())
+                                                                                <div class="child-categories-vertical">
+                                                                                    @foreach ($brands as $brand)
+                                                                                        <div class="form-check mb-1">
+                                                                                            <input class="form-check-input brand-checkbox" type="checkbox" name="brands[]" value="{{ $brand->id }}"
+                                                                                                id="brand_{{ $rowId }}_{{ $brand->id }}"
+                                                                                                {{ in_array($brand->id, $selectedBrandIds) ? 'checked' : '' }}>
+                                                                                            <label class="form-check-label" for="brand_{{ $rowId }}_{{ $brand->id }}">{{ $brand->name }}</label>
+                                                                                        </div>
+                                                                                    @endforeach
+                                                                                </div>
+                                                                            @else
+                                                                                <span class="text-muted">No sub items available</span>
+                                                                            @endif
+                                                                        @endif
+                                                                    @else
+                                                                        @if ($hasCatAtLevel)
+                                                                            @php
+                                                                                $cat = $path[$level];
+                                                                                $isChecked = in_array($cat->id, $selectedCategoryIds);
+                                                                                $ancestorIds = collect($path)->take($level)->pluck('id')->implode(',');
+                                                                            @endphp
+                                                                            <div class="form-check">
+                                                                                <input class="form-check-input category-level-checkbox" type="checkbox"
+                                                                                    name="categories[]" value="{{ $cat->id }}"
+                                                                                    id="cat_{{ $groupRowId }}_l{{ $level }}_{{ $cat->id }}"
+                                                                                    data-group-id="{{ $groupRowId }}" data-level="{{ $level }}" data-ancestor-ids="{{ $ancestorIds }}"
+                                                                                    {{ $isChecked ? 'checked' : '' }}>
+                                                                                <label class="form-check-label text-body" for="cat_{{ $groupRowId }}_l{{ $level }}_{{ $cat->id }}">{{ $cat->name }}</label>
+                                                                            </div>
+                                                                        @endif
+                                                                    @endif
+                                                                </td>
+                                                            @endif
+                                                        @endfor
+                                                    </tr>
+                                                @endforeach
                                             @endforeach
-
+                                            @else
+                                                <tr>
+                                                    <td colspan="{{ $maxDepth }}" class="text-muted">No categories available.</td>
+                                                </tr>
+                                            @endif
                                         </tbody>
-
                                     </table>
                                 </div>
 

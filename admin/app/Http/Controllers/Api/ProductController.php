@@ -4,93 +4,117 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Models\PriceList;
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\CustomerGroup;
 use App\Models\CustomerGroupable;
 use Illuminate\Http\Request;
-use App\Models\Category;
 use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
     public function index()
-{
-    $customerGroupId = auth()->user()->customer_group_id ?? null;
-
-    // If no group → show everything (no restriction)
-    if (!$customerGroupId) {
-        return response()->json([
-            'categories' => $this->loadCategories()
-        ]);
-    }
-
-    $restriction = CustomerGroup::where('id', $customerGroupId)
-        ->value('restrict_categories');
-
-    // If restriction disabled → show everything
-    if ((int)$restriction === 0) {
-        return response()->json([
-            'categories' => $this->loadCategories()
-        ]);
-    }
-
-    // Load permissions only if restriction enabled
-    $groupables = CustomerGroupable::where('customer_group_id', $customerGroupId)->get();
-
-    if ($groupables->isEmpty()) {
-        return response()->json(['categories' => []]);
-    }
-
-    $allowedCategoryIds = $groupables
-        ->where('customer_groupable_type', Category::class)
-        ->pluck('customer_groupable_id')
-        ->toArray();
-
-    $allowedBrandIds = $groupables
-        ->where('customer_groupable_type', Brand::class)
-        ->pluck('customer_groupable_id')
-        ->toArray();
-
-    $categories = Category::whereNull('parent_id')
-        ->where('is_active', 1)
-        ->with(['childrenRecursive', 'brands.products', 'brands.tags'])
-        ->orderByDesc('is_special')
-        ->orderBy('sort_order')
-        ->get();
-
-    $formatted = $categories
-        ->map(fn($category) =>
-            $this->formatCategoryRecursive(
-                $category,
-                $allowedCategoryIds,
-                $allowedBrandIds,
-                true
-            )
-        )
-        ->filter()
-        ->values();
-
-    return response()->json(['categories' => $formatted]);
-}
-
-private function loadCategories()
-{
-    return Category::whereNull('parent_id')
-        ->where('is_active', 1)
-        ->with(['childrenRecursive', 'brands.products', 'brands.tags'])
-        ->orderByDesc('is_special')
-        ->orderBy('sort_order')
-        ->get()
-        ->map(fn($category) =>
-            $this->formatCategoryRecursive($category)
-        )
-        ->values();
-}
-
-
-    protected function formatCategoryRecursive($category, $allowedCategoryIds = [], $allowedBrandIds = [],$parent = false, $base = null)
     {
-       
+        $customerGroupId = auth()->user()->customer_group_id ?? null;
+
+        // If no group → show everything (no restriction)
+        if (!$customerGroupId) {
+            return response()->json([
+                'categories' => $this->loadCategories()
+            ]);
+        }
+
+        $restriction = CustomerGroup::where('id', $customerGroupId)
+            ->value('restrict_categories');
+
+        // If restriction disabled → show everything
+        if ((int) $restriction === 0) {
+            return response()->json([
+                'categories' => $this->loadCategories()
+            ]);
+        }
+
+        // Load permissions only if restriction enabled
+        $groupables = CustomerGroupable::where('customer_group_id', $customerGroupId)->get();
+
+        if ($groupables->isEmpty()) {
+            return response()->json(['categories' => []]);
+        }
+
+        $allowedCategoryIds = $groupables
+            ->where('customer_groupable_type', Category::class)
+            ->pluck('customer_groupable_id')
+            ->toArray();
+
+        if (!empty($allowedCategoryIds)) {
+            $allowedCategoryIds = $this
+                ->getAllChildCategoryIds($allowedCategoryIds)
+                ->toArray();
+        }
+
+        $allowedBrandIds = $groupables
+            ->where('customer_groupable_type', Brand::class)
+            ->pluck('customer_groupable_id')
+            ->toArray();
+
+        $categories = Category::whereNull('parent_id')
+            ->where('is_active', 1)
+            ->with(['childrenRecursive', 'brands.products', 'brands.tags'])
+            ->orderByDesc('is_special')
+            ->orderBy('sort_order')
+            ->get();
+
+        $formatted = $categories
+            ->map(
+                fn($category) =>
+                $this->formatCategoryRecursive(
+                    $category,
+                    $allowedCategoryIds,
+                    $allowedBrandIds,
+                    true
+                )
+            )
+            ->filter()
+            ->values();
+
+        return response()->json(['categories' => $formatted]);
+    }
+
+    private function getAllChildCategoryIds($parentIds)
+    {
+        $allIds = collect($parentIds);
+
+        $children = Category::whereIn('parent_id', $parentIds)->where('is_active', 1)->pluck('id');
+
+        if ($children->isNotEmpty()) {
+            $allIds = $allIds->merge(
+                $this->getAllChildCategoryIds($children->toArray())
+            );
+        }
+
+        return $allIds->unique();
+    }
+
+    private function loadCategories()
+    {
+        return Category::whereNull('parent_id')
+            ->where('is_active', 1)
+            ->with(['childrenRecursive', 'brands.products', 'brands.tags'])
+            ->orderByDesc('is_special')
+            ->orderBy('sort_order')
+            ->get()
+            ->map(
+                fn($category) =>
+                $this->formatCategoryRecursive($category)
+            )
+            ->values();
+    }
+
+
+    protected function formatCategoryRecursive($category, $allowedCategoryIds = [], $allowedBrandIds = [], $parent = false, $base = null)
+    {
+
         // Ensure children are ordered at every depth: first by is_special (desc), then by sort_order (asc)
         if ($category->relationLoaded('children')) {
             $children = $category->children
@@ -109,33 +133,33 @@ private function loadCategories()
         $hasChildren = $children && $children->isNotEmpty();
 
         if ($hasChildren) {
-            
-            if($parent || $base == 'category'){
+
+            if ($parent || $base == 'category') {
                 $base = 'category';
                 $children = $children->filter(function ($child) use ($allowedCategoryIds) {
                     return in_array($child->id, $allowedCategoryIds);
                 });
             }
-            
+
             return [
                 'name' => $category->name,
                 'is_special' => $category->is_special,
-                'subcategories' => $children->map(fn($child) => $this->formatCategoryRecursive($child, $allowedCategoryIds, $allowedBrandIds,false, $base))->values(),
+                'subcategories' => $children->map(fn($child) => $this->formatCategoryRecursive($child, $allowedCategoryIds, $allowedBrandIds, false, $base))->values(),
             ];
-        }else{
-            if($parent && $base == null){
+        } else {
+            if ($parent && $base == null) {
                 $base = 'brand';
             }
         }
 
         $brands = ($category->brands ?? collect())->filter(fn($b) => (int) ($b->is_active ?? 0) === 1);
 
-        if($base == 'brand'){
+        if ($base == 'brand') {
             $brands = $brands->filter(function ($brand) use ($allowedBrandIds) {
                 return in_array($brand->id, $allowedBrandIds);
             });
         }
-        
+
         return [
             'name' => $category->name,
             'is_special' => $category->is_special,
@@ -162,12 +186,47 @@ private function loadCategories()
         ];
     }
 
+    // protected function formatProduct($product)
+    // {
+
+    //     $imageUrl = $product->image_url ?? null;
+
+    //     $priceNumber = is_numeric($product->price) ? (float) $product->price : 0;
+    //     $discountNumber = isset($product->discount) && is_numeric($product->discount) ? (float) $product->discount : null;
+
+    //     $setting = Helpers::setting();
+
+    //     return [
+    //         'id' => $product->id,
+    //         'name' => $product->name,
+    //         'image' => $imageUrl,
+    //         'step_quantity' => $product->step_quantity,
+    //         // Expose available quantity for frontend cache consumers
+    //         'quantity' => isset($product->stock_quantity) ? (int) $product->stock_quantity : 0,
+    //         'price' => $setting['currency_symbol'] . number_format($priceNumber, 2),
+    //         'discount' => $discountNumber !== null ? ('£' . number_format($discountNumber, 2)) : null,
+    //         'wallet_credit' => isset($product->wallet_credit) ? (float) $product->wallet_credit : 0,
+    //         'vat_amount' => isset($product->vat_amount) ? (float) $product->vat_amount : 0,
+    //     ];
+    // }
+
     protected function formatProduct($product)
     {
-
         $imageUrl = $product->image_url ?? null;
 
-        $priceNumber = is_numeric($product->price) ? (float) $product->price : 0;
+        // Shared pricing logic from Product model
+        $customer = auth()->user();
+        $priceNumber = $product->getPrice($customer);
+
+        // Compute RRP only when customer's price list is Wholesale and Retail (price_list_type = 1)
+        $rrpNumber = null;
+        if ($customer && $customer->price_list_id) {
+            $priceList = PriceList::find((int) $customer->price_list_id);
+            if ($priceList && (int) $priceList->price_list_type === 1) {
+                $rrpNumber = $product->getRrpForPriceList($priceList);
+            }
+        }
+
         $discountNumber = isset($product->discount) && is_numeric($product->discount) ? (float) $product->discount : null;
 
         $setting = Helpers::setting();
@@ -179,7 +238,9 @@ private function loadCategories()
             'step_quantity' => $product->step_quantity,
             // Expose available quantity for frontend cache consumers
             'quantity' => isset($product->stock_quantity) ? (int) $product->stock_quantity : 0,
-            'price' => $setting['currency_symbol'] . number_format($priceNumber, 2),
+            // 'price' => $setting['currency_symbol'] . number_format($priceNumber, 2),
+            'price' => number_format($priceNumber, 2),
+            'rrp' => $rrpNumber !== null ? $setting['currency_symbol'] . number_format($rrpNumber, 2) : null,
             'discount' => $discountNumber !== null ? ('£' . number_format($discountNumber, 2)) : null,
             'wallet_credit' => isset($product->wallet_credit) ? (float) $product->wallet_credit : 0,
             'vat_amount' => isset($product->vat_amount) ? (float) $product->vat_amount : 0,
