@@ -116,14 +116,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                     .filter((n: any) => Boolean(n))
                 }
                 const filtered = filterNodesWithProducts(data.categories as any[])
-                // Normalize products to include `quantity` alongside `stock_quantity`
+                // Normalize products to include `quantity` alongside `available_qty`
                 const normalizeProductQuantities = (nodes: any[]): any[] => {
                   return nodes.map((node: any) => {
                     const withProducts = Array.isArray(node?.products)
                       ? {
                           products: node.products.map((p: any) => ({
                             ...p,
-                            quantity: typeof p?.quantity === 'number' ? p.quantity : (p?.stock_quantity ?? 0),
+                            quantity: typeof p?.quantity === 'number' ? p.quantity : (p?.available_qty ?? 0),
                           })),
                         }
                       : {}

@@ -48,7 +48,7 @@ Artisan::command('products:import-sql {path}', function (string $path) {
       // image
       'image_url' => 'image', 'image_path' => 'image', 'image' => 'image', 'photo' => 'image',
       // qty
-      'qty' => 'stock_qty', 'quantity' => 'stock_qty', 'stock' => 'stock_qty', 'stock_quantity' => 'stock_qty', 'inhand' => 'stock_qty',
+      'qty' => 'stock_qty', 'quantity' => 'stock_qty', 'stock' => 'stock_qty', 'available_qty' => 'stock_qty', 'inhand' => 'stock_qty',
       // in_stock
       'is_in_stock' => 'in_stock', 'available' => 'in_stock', 'active' => 'in_stock',
       // status

@@ -166,7 +166,7 @@
                                     </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4 mb-4 form-control-validation">
+                                <div class="col-md-3 mb-4 form-control-validation">
                                     <label class="form-label" for="date">Date <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control flatpickr" id="date" name="date" 
                                         value="{{ old('date', $order->order_date ? \Carbon\Carbon::parse($order->order_date)->format('d/m/Y H:i') : '') }}">
@@ -176,7 +176,7 @@
                                         </span>
                                     @enderror
                                 </div>
-                                 <div class="col-md-4 mb-4 form-control-validation">
+                                 <div class="col-md-3 mb-4 form-control-validation">
                                      <label class="form-label" for="shipping_charge">Shipping Charge</label>
                                      <input type="text" class="form-control" id="shipping_charge" name="shipping_charge" 
                                          value="{{ old('shipping_charge', number_format($order->delivery_charge ?? 0, 2, '.', '')) }}" placeholder="0.00" 
@@ -187,7 +187,7 @@
                                          </span>
                                      @enderror
                                  </div>
-                                 <div class="col-md-4 mb-4 form-control-validation">
+                                 <div class="col-md-3 mb-4 form-control-validation">
                                     <label class="form-label" for="address_id">Address <span class="text-danger">*</span></label>
                                     <select class="form-select" id="address_id" name="address_id">
                                         <option value="">Select Address</option>
@@ -216,6 +216,23 @@
                                         @endif
                                     </select>
                                     @error('address_id')
+                                        <span class="text-danger" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                                <div class="col-md-3 mb-4 form-control-validation">
+                                    <label class="form-label" for="status">Status</label>
+                                    @php
+                                        $currentStatus = old('status', $order->status ?? 'New');
+                                    @endphp
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="New" {{ $currentStatus === 'New' ? 'selected' : '' }}>New</option>
+                                        <option value="Completed" {{ $currentStatus === 'Completed' ? 'selected' : '' }}>Completed</option>
+                                        <option value="Cancelled" {{ $currentStatus === 'Cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                        <option value="Returned" {{ $currentStatus === 'Returned' ? 'selected' : '' }}>Returned</option>
+                                    </select>
+                                    @error('status')
                                         <span class="text-danger" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>

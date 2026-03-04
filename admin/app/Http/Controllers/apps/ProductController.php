@@ -39,6 +39,361 @@ class ProductController extends Controller
     return view('content.product.list', $data);
   }
 
+  /**
+   * Simple inventory overview: product name, SKU, on hand, available.
+   * "Available" currently mirrors available_qty and can be refined later.
+   */
+  public function inventory()
+  {
+    $data['categories'] = Category::with('children')->whereNull('parent_id')->orderBy('name')->get();
+    return view('content.inventory.index', $data);
+  }
+
+  /**
+   * Simple "Goods In" helper page: choose products and see their current stock.
+   */
+  public function inventoryGoodsIn()
+  {
+    return view('content.inventory.goods-in');
+  }
+
+  public function inventoryAjax(Request $request)
+  {
+    $query = Product::select([
+      'products.id',
+      'products.name',
+      'products.sku',
+      'products.onhand_qty',
+      'products.available_qty',
+      'products.ordered_qty',
+    ]);
+
+    if ($request->filled('category_id')) {
+      $categoryId = (int) $request->get('category_id');
+
+      // Filter products by category via brand → category mapping
+      $query
+        ->join('product_brand as pb', 'pb.product_id', '=', 'products.id')
+        ->join('brand_category as bc', 'bc.brand_id', '=', 'pb.brand_id')
+        ->where('bc.category_id', $categoryId)
+        ->groupBy(
+          'products.id',
+          'products.name',
+          'products.sku',
+          'products.onhand_qty',
+          'products.available_qty',
+          'products.ordered_qty'
+        );
+    }
+
+    return DataTables::eloquent($query)
+      ->addColumn('product_name', function ($product) {
+        return $product->name;
+      })
+      ->addColumn('on_hand', function ($product) {
+        // Prefer explicit onhand_qty; fall back to legacy available_qty if needed
+        return (int) ($product->onhand_qty ?? $product->available_qty ?? 0);
+      })
+      ->addColumn('ordered', function ($product) {
+        return (int) ($product->ordered_qty ?? 0);
+      })
+      ->addColumn('available', function ($product) {
+        // available_qty should always reflect onhand_qty - ordered_qty.
+        // For older rows that might not have been backfilled yet, derive a safe fallback.
+        $onHand = (float) ($product->onhand_qty ?? $product->available_qty ?? 0);
+        $ordered = (float) ($product->ordered_qty ?? 0);
+        $available = $product->available_qty;
+
+        if ($available === null) {
+          $available = max(0, $onHand - $ordered);
+        }
+
+        return (int) $available;
+      })
+      ->toJson();
+  }
+
+  /**
+   * Search products for Goods In page (by name or SKU).
+   */
+  public function inventoryProductSearchAjax(Request $request)
+  {
+    $q = trim($request->get('q', ''));
+    $limit = (int) $request->get('limit', 20);
+
+    $query = Product::select([
+      'id',
+      'name',
+      'sku',
+      'onhand_qty',
+      'available_qty',
+      'ordered_qty',
+    ]);
+
+    if ($q !== '') {
+      $query->where(function ($sub) use ($q) {
+        $sub->where('name', 'like', "%{$q}%")
+          ->orWhere('sku', 'like', "%{$q}%");
+      });
+    }
+
+    $products = $query->orderBy('name')->limit($limit)->get();
+
+    $results = $products->map(function (Product $p) {
+      $onHand = (int) ($p->onhand_qty ?? $p->available_qty ?? 0);
+      $ordered = (int) ($p->ordered_qty ?? 0);
+      $available = (int) ($p->available_qty ?? max(0, $onHand - $ordered));
+
+      return [
+        'id' => $p->id,
+        'text' => $p->name . ' (' . $p->sku . ')',
+        'sku' => $p->sku,
+        'on_hand' => $onHand,
+        'available' => $available,
+      ];
+    });
+
+    return response()->json(['results' => $results]);
+  }
+
+  /**
+   * Handle Goods In submit: update onhand_qty and available_qty for selected products.
+   */
+  public function inventoryGoodsInUpdate(Request $request)
+  {
+    $products = $request->input('products', []);
+
+    if (empty($products) || !is_array($products)) {
+      Toastr::warning('No products submitted.');
+      return redirect()->back();
+    }
+
+    $updated = 0;
+    $errors = [];
+
+    DB::beginTransaction();
+    try {
+      foreach ($products as $productId => $row) {
+        $id = isset($row['id']) ? (int) $row['id'] : (int) $productId;
+        if ($id <= 0) {
+          continue;
+        }
+
+        $onHandRaw = $row['on_hand'] ?? null;
+        if ($onHandRaw === null || $onHandRaw === '') {
+          continue;
+        }
+        if (!is_numeric($onHandRaw)) {
+          $errors[] = "Product ID {$id}: On hand must be a number.";
+          continue;
+        }
+
+        $product = Product::find($id);
+        if (!$product) {
+          $errors[] = "Product ID {$id} not found.";
+          continue;
+        }
+
+        $onHand = max(0, (float) $onHandRaw);
+        $ordered = (float) ($product->ordered_qty ?? 0);
+        $available = max(0, $onHand - $ordered);
+
+        $product->onhand_qty = $onHand;
+        $product->available_qty = $available;
+        $product->save();
+
+        WarehouseProductSyncService::sync($product->id, $onHand, null);
+
+        $updated++;
+      }
+
+      DB::commit();
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      Toastr::error('Goods In update failed: ' . $e->getMessage());
+      return redirect()->back();
+    }
+
+    if ($updated > 0) {
+      Toastr::success("Updated stock for {$updated} product(s).");
+    } else {
+      Toastr::warning('No stock quantities were updated.');
+    }
+
+    if (!empty($errors)) {
+      $first = array_slice($errors, 0, 5);
+      $msg = "Some rows were skipped:\n" . implode("\n", $first);
+      if (count($errors) > 5) {
+        $msg .= "\n(and " . (count($errors) - 5) . " more)";
+      }
+      Toastr::warning(nl2br(e($msg)), '', ['escapeHtml' => false, 'timeOut' => 10000]);
+    }
+
+    return redirect()->back();
+  }
+
+  /**
+   * Bulk update inventory from a simple CSV file: SKU, On Hand.
+   */
+  public function inventoryImport(Request $request)
+  {
+    $request->validate([
+      'inventory_file' => ['required', 'file', 'max:10240', 'mimes:csv,txt'],
+    ], [
+      'inventory_file.required' => 'Please choose a CSV file to upload.',
+      'inventory_file.file' => 'The uploaded file is invalid.',
+      'inventory_file.mimes' => 'The file must be a CSV (.csv).',
+      'inventory_file.max' => 'The file must not be larger than 10MB.',
+    ]);
+
+    $file = $request->file('inventory_file');
+
+    $handle = fopen($file->getRealPath(), 'r');
+    if ($handle === false) {
+      Toastr::error('Could not read the uploaded file. Please try again.');
+      return redirect()->back();
+    }
+
+    $rows = [];
+    while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+      // Skip completely empty rows
+      if (count(array_filter($row, fn($v) => trim((string) $v) !== '')) === 0) {
+        continue;
+      }
+      $rows[] = $row;
+    }
+    fclose($handle);
+
+    if (empty($rows)) {
+      Toastr::error('The uploaded file appears to be empty.');
+      return redirect()->back();
+    }
+
+    // Detect and skip header row if present
+    $startIndex = 0;
+    $firstRow = $rows[0];
+    $firstCol = strtolower(trim((string) ($firstRow[0] ?? '')));
+    $secondCol = strtolower(trim((string) ($firstRow[1] ?? '')));
+    if (str_contains($firstCol, 'sku') || str_contains($secondCol, 'on hand') || str_contains($secondCol, 'on_hand')) {
+      $startIndex = 1;
+    }
+
+    $updated = 0;
+    $notFound = [];
+    $errors = [];
+
+    DB::beginTransaction();
+    try {
+      for ($i = $startIndex; $i < count($rows); $i++) {
+        $row = $rows[$i];
+        $lineNumber = $i + 1;
+
+        $sku = trim((string) ($row[0] ?? ''));
+        $onHandRaw = trim((string) ($row[1] ?? ''));
+
+        if ($sku === '') {
+          $errors[] = "Line {$lineNumber}: Missing SKU.";
+          continue;
+        }
+
+        if ($onHandRaw === '' || !is_numeric($onHandRaw)) {
+          $errors[] = "Line {$lineNumber}: On Hand for SKU {$sku} must be a number.";
+          continue;
+        }
+
+        $product = Product::where('sku', $sku)->first();
+        if (!$product) {
+          $notFound[] = $sku;
+          continue;
+        }
+
+        $onHand = max(0, (float) $onHandRaw);
+        $ordered = (float) ($product->ordered_qty ?? 0);
+        $available = max(0, $onHand - $ordered);
+
+        $product->onhand_qty = $onHand;
+        $product->available_qty = $available;
+        $product->save();
+
+        // Keep warehouse stock in sync
+        WarehouseProductSyncService::sync($product->id, $onHand, null);
+
+        $updated++;
+      }
+
+      DB::commit();
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      Toastr::error('Inventory import failed: ' . $e->getMessage());
+      return redirect()->back();
+    }
+
+    if ($updated > 0) {
+      Toastr::success("Inventory updated for {$updated} product(s).");
+    } else {
+      Toastr::warning('No inventory records were updated from the file.');
+    }
+
+    if (!empty($notFound)) {
+      $sample = array_slice(array_unique($notFound), 0, 10);
+      $more = count(array_unique($notFound)) - count($sample);
+      $msg = 'Some SKUs were not found and were skipped: ' . implode(', ', $sample);
+      if ($more > 0) {
+        $msg .= " (and {$more} more)";
+      }
+      Toastr::warning($msg);
+    }
+
+    if (!empty($errors)) {
+      $firstErrors = array_slice($errors, 0, 5);
+      $msg = "Some rows were skipped due to validation errors:\n" . implode("\n", $firstErrors);
+      if (count($errors) > 5) {
+        $msg .= "\n(and " . (count($errors) - 5) . " more)";
+      }
+      Toastr::warning(nl2br(e($msg)), '', ['escapeHtml' => false, 'timeOut' => 10000]);
+    }
+
+    return redirect()->route('inventory.list');
+  }
+
+  /**
+   * Download a simple sample CSV for inventory import (SKU, On Hand).
+   */
+  public function inventoryImportSample()
+  {
+    $headers = [
+      'SKU',
+      'On Hand',
+    ];
+
+    $sampleData = [
+      ['ABC123', '100'],
+      ['XYZ789', '250'],
+    ];
+
+    $filename = 'sample-inventory-import.csv';
+    $handle = fopen('php://temp', 'r+');
+
+    // Add BOM for UTF-8 Excel compatibility
+    fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+    // Write headers
+    fputcsv($handle, $headers);
+
+    // Write sample data
+    foreach ($sampleData as $row) {
+      fputcsv($handle, $row);
+    }
+
+    rewind($handle);
+    $csv = stream_get_contents($handle);
+    fclose($handle);
+
+    return response($csv)
+      ->header('Content-Type', 'text/csv; charset=UTF-8')
+      ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+  }
+
   public function create(Request $request)
   {
 
@@ -166,7 +521,9 @@ class ProductController extends Controller
         'rrp' => $request->rrp ?? null,
         'expiry_date' => $expiryDate,
         'image_url' => $imageUrl,
-        'stock_quantity' => $quantity,
+        'onhand_qty' => $quantity,
+        'ordered_qty' => 0,
+        'available_qty' => $quantity,
         'vat_percentage' => $vatPercentage,
         'vat_method_id' => $vatMethodId,
         'vat_amount' => $vatAmount,
@@ -227,6 +584,14 @@ class ProductController extends Controller
     return view('content.product.edit-pricing', $data);
   }
 
+  public function editInventory($id)
+  {
+    $product = Product::findOrFail($id);
+    return view('content.product.edit-inventory', [
+      'product' => $product,
+    ]);
+  }
+
   public function updatePricing(Request $request)
   {
     $validated = $request->validate([
@@ -269,6 +634,33 @@ class ProductController extends Controller
 
     Toastr::success('Pricing updated successfully.');
     return redirect()->route('product.edit.pricing', $product->id);
+  }
+
+  public function updateInventory(Request $request)
+  {
+    $validated = $request->validate([
+      'id' => ['required', 'exists:products,id'],
+      'quantity' => ['nullable', 'numeric', 'min:0'],
+    ], [
+      'quantity.numeric' => 'On hand quantity must be a valid number.',
+      'quantity.min' => 'On hand quantity cannot be less than 0.',
+    ]);
+
+    $product = Product::findOrFail($request->id);
+    $onHand = isset($validated['quantity']) ? (float) $validated['quantity'] : 0;
+    $ordered = (float) ($product->ordered_qty ?? 0);
+    $available = max(0, $onHand - $ordered);
+
+    $allowOutOfStock = $request->has('allow_out_of_stock');
+
+    $product->update([
+      'onhand_qty' => $onHand,
+      'available_qty' => $available,
+      'allow_out_of_stock' => $allowOutOfStock,
+    ]);
+
+    Toastr::success('Inventory updated successfully.');
+    return redirect()->route('product.edit.inventory', $product->id);
   }
 
   public function update(Request $request)
@@ -404,7 +796,10 @@ class ProductController extends Controller
         'rrp' => $request->rrp ?? null,
         'expiry_date' => $expiryDate,
         'image_url' => $imageUrl,
-        'stock_quantity' => $quantity,
+        // Keep onhand_qty as the physical stock and derive available_qty from it
+        'onhand_qty' => $quantity,
+        // Preserve any existing ordered quantities when editing a product
+        'available_qty' => max(0, (float) $quantity - (float) ($product->ordered_qty ?? 0)),
         'vat_percentage' => $vatPercentage,
         'vat_method_id' => $vatMethodId,
         'vat_amount' => $vatAmount,
@@ -1407,7 +1802,9 @@ class ProductController extends Controller
       'rrp' => $rrp,
       'expiry_date' => $expiryDate,
       'image_url' => $imageUrl,
-      'stock_quantity' => $quantity,
+      'onhand_qty' => $quantity,
+      'ordered_qty' => 0,
+      'available_qty' => $quantity,
       'vat_percentage' => $vatPercentage,
       'vat_method_id' => $vatMethodId,
       'vat_amount' => $vatAmount,

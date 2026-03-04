@@ -199,8 +199,8 @@ class OrderController extends Controller
                 if (!$product) { continue; }
                 $qty = (int) $ci->quantity;
                 // Stock availability check at checkout time - reconcile cart quantities
-                if (isset($product->stock_quantity) && $product->stock_quantity !== null) {
-                    $available = (int) $product->stock_quantity;
+                if (isset($product->available_qty) && $product->available_qty !== null) {
+                    $available = (int) $product->available_qty;
                     if ($qty > $available) {
                         $adjusted = true;
                         $adjustments[] = [
@@ -294,16 +294,29 @@ class OrderController extends Controller
             // outstanding_amount = total_amount - wallet_credit_used (always)
             // payment_amount = outstanding_amount (always)
             // payment_amount = paid_amount + unpaid_amount
-            $paidAmount = $walletCreditUsed; // At order creation, only wallet credit is used (no payments yet)
-            $paymentAmount = $outstandingAmount; // payment_amount always equals outstanding_amount
+            $paidAmount = $walletCreditUsed; // At order creation, only wallet credit is used (no external payments yet)
+            $paymentAmount = $outstandingAmount; // payment_amount always equals outstanding_amount by default
             $unpaidAmount = $outstandingAmount - $paidAmount; // unpaid_amount = outstanding_amount - paid_amount
             
-            // Determine payment status
+            // Determine payment status, with optional override from frontend "payment_mode"
             $paymentStatus = 'Due';
             if ($unpaidAmount <= 0) {
                 $paymentStatus = 'Paid';
             } elseif ($paidAmount > 0) {
                 $paymentStatus = 'Partial';
+            }
+
+            $paymentMode = $request->input('payment_mode'); // "gateway" or "pay_later"
+            if ($paymentMode === 'gateway') {
+                // Simulate full payment via gateway for now
+                $paymentStatus = 'Paid';
+                $paidAmount = $totalAmount;
+                $unpaidAmount = 0;
+                $outstandingAmount = 0;
+                $paymentAmount = 0;
+            } elseif ($paymentMode === 'pay_later') {
+                // Explicitly mark as due (even if wallet applied)
+                $paymentStatus = 'Due';
             }
                 
             $order = Order::create([
@@ -325,7 +338,7 @@ class OrderController extends Controller
 				'payment_status' => $paymentStatus,
 				'outstanding_amount' => $outstandingAmount,
                 'estimated_delivery_date' => now()->addDays(7),
-                'status' => 'Completed',
+                'status' => 'New',
                 // Persist delivery address snapshot on the order
                 'branch_name' => (string) $branch->name,
                 'country' => (string) $branch->country,
@@ -380,11 +393,12 @@ class OrderController extends Controller
             }
 
             // Reduce product stock quantities after successful order item creation
+            // Mark quantities as ordered (do not change physical stock here)
             foreach ($pendingOrderItems as $poi) {
                 $qty = (float) ($poi['quantity'] ?? 0);
                 $productId = (int) ($poi['product_id'] ?? 0);
                 if ($productId > 0 && $qty > 0) {
-                    WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $qty);
+                    WarehouseProductSyncService::adjustOrdered($productId, 'addition', $qty);
                 }
             }
 
@@ -523,20 +537,20 @@ class OrderController extends Controller
             }
 
             // Check stock availability
-            if (isset($product->stock_quantity) && $product->stock_quantity !== null) {
-                if ($qty > (int) $product->stock_quantity) {
+            if (isset($product->available_qty) && $product->available_qty !== null) {
+                if ($qty > (int) $product->available_qty) {
                     $itemsSkipped[] = [
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'reason' => 'Insufficient stock',
-                        'available' => (int) $product->stock_quantity,
+                        'available' => (int) $product->available_qty,
                         'requested' => $qty
                     ];
                     // Use available stock if any, otherwise skip
-                    if ((int) $product->stock_quantity <= 0) {
+                    if ((int) $product->available_qty <= 0) {
                         continue;
                     }
-                    $qty = (int) $product->stock_quantity;
+                    $qty = (int) $product->available_qty;
                 }
             }
 
@@ -551,13 +565,13 @@ class OrderController extends Controller
                 // Add to existing quantity
                 $newQty = (int) $existingCartItem->quantity + $qty;
                 // Check stock again for combined quantity
-                if (isset($product->stock_quantity) && $product->stock_quantity !== null) {
-                    if ($newQty > (int) $product->stock_quantity) {
+                if (isset($product->available_qty) && $product->available_qty !== null) {
+                    if ($newQty > (int) $product->available_qty) {
                         $itemsSkipped[] = [
                             'product_id' => $product->id,
                             'product_name' => $product->name,
                             'reason' => 'Combined quantity exceeds stock',
-                            'available' => (int) $product->stock_quantity,
+                            'available' => (int) $product->available_qty,
                             'requested' => $newQty
                         ];
                         continue;

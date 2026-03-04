@@ -262,17 +262,7 @@ class SettingController extends Controller
   public function customerGroupStore(CustomerGroupRequest $request)
   {
     // Validate the request
-    $validated = $request->validate([
-      'name' => 'required|string|max:255',
-      'restrict_categories' => 'required|boolean',
-      // categories optional depending on restrict flag
-      'categories' => 'nullable|array',
-      'categories.*' => 'integer|exists:categories,id',
-
-      // brands optional
-      'brands' => 'nullable|array',
-      'brands.*' => 'integer|exists:brands,id',
-    ]);
+    $validated = $request->validated();
 
 
     DB::transaction(function () use ($validated) {
@@ -280,6 +270,7 @@ class SettingController extends Controller
       $customerGroup = CustomerGroup::create([
         'name' => $validated['name'],
         'restrict_categories' => $validated['restrict_categories'],
+        'pay_later' => (bool) ($validated['pay_later'] ?? 0),
       ]);
 
       if ($validated['restrict_categories']) {
@@ -305,15 +296,15 @@ class SettingController extends Controller
   {
 
     $customerGroups = CustomerGroup::withCount('customers')
-      // ->orderBy('id', 'desc')
-      ->get(['id', 'name', 'restrict_categories']);
+      ->get(['id', 'name', 'restrict_categories', 'pay_later']);
 
     $data = [];
     foreach ($customerGroups as $key => $customerGroup) {
       $data[$key]['id'] = $customerGroup->id;
       $data[$key]['name'] = $customerGroup->name;
       $data[$key]['restrict_categories'] = $customerGroup->restrict_categories;
-      $data[$key]['customers_count'] = $customerGroup->customers_count; // New field
+      $data[$key]['pay_later'] = (bool) $customerGroup->pay_later;
+      $data[$key]['customers_count'] = $customerGroup->customers_count;
     }
 
     return response()->json(['data' => $data]);
@@ -407,6 +398,7 @@ class SettingController extends Controller
     $customerGroup->update([
       'name' => $validated['name'],
       'restrict_categories' => $validated['restrict_categories'],
+      'pay_later' => (bool) ($validated['pay_later'] ?? 0),
     ]);
 
     // Clear old relations

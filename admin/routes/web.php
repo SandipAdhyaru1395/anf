@@ -76,9 +76,21 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/product/list/ajax', [ProductController::class, 'ajaxList'])->name('product.list.ajax');
         Route::get('/product/edit/{id}', [ProductController::class, 'edit'])->name('product.edit');
         Route::get('/product/edit/{id}/pricing', [ProductController::class, 'editPricing'])->name('product.edit.pricing');
+        Route::get('/product/edit/{id}/inventory', [ProductController::class, 'editInventory'])->name('product.edit.inventory');
         Route::get('/product/search/ajax', [ProductController::class, 'searchAjax'])->name('product.search.ajax');
         Route::post('/check-sku', [ProductController::class, 'checkSku'])->name('product.checkSku');
         Route::post('/check-unit-sku', [ProductController::class, 'checkUnitSku'])->name('product.checkUnitSku');
+    });
+
+    // Inventory overview
+    Route::middleware('permission:inventory.read')->group(function () {
+        Route::get('/inventory', [ProductController::class, 'inventory'])->name('inventory.list');
+        Route::get('/inventory/list/ajax', [ProductController::class, 'inventoryAjax'])->name('inventory.list.ajax');
+        Route::get('/goods-in', [ProductController::class, 'inventoryGoodsIn'])->name('inventory.goods_in');
+        Route::post('/goods-in', [ProductController::class, 'inventoryGoodsInUpdate'])->name('inventory.goods_in.update');
+        Route::get('/inventory/product/search/ajax', [ProductController::class, 'inventoryProductSearchAjax'])->name('inventory.product.search.ajax');
+        Route::post('/inventory/import', [ProductController::class, 'inventoryImport'])->name('inventory.import');
+        Route::get('/inventory/import/sample', [ProductController::class, 'inventoryImportSample'])->name('inventory.import.sample');
     });
 
     Route::middleware('permission:product.create')->group(function () {
@@ -91,6 +103,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     Route::middleware('permission:product.write')->group(function () {
         Route::post('/product/update', [ProductController::class, 'update'])->name('product.update');
         Route::post('/product/update-pricing', [ProductController::class, 'updatePricing'])->name('product.update.pricing');
+        Route::post('/product/update-inventory', [ProductController::class, 'updateInventory'])->name('product.update.inventory');
         Route::get('/product/delete/{id}', [ProductController::class, 'delete'])->name('product.delete');
         Route::post('/product/delete-multiple', [ProductController::class, 'deleteMultiple']);
     });

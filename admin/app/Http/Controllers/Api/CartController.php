@@ -112,8 +112,12 @@ class CartController extends Controller
         if ($item) {
             $newQty = (int) $item->quantity + $qty;
             // Stock check: if product has finite stock and requested exceeds available, warn
-            if (isset($product->stock_quantity) && $product->stock_quantity !== null) {
-                if ($newQty > (int) $product->stock_quantity) {
+            if (
+                !$product->allow_out_of_stock &&
+                isset($product->available_qty) &&
+                $product->available_qty !== null
+            ) {
+                if ($newQty > (int) $product->available_qty) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Requested quantity is not available in stock.',
@@ -125,8 +129,12 @@ class CartController extends Controller
             $item->line_total = $unit * $newQty;
             $item->save();
         } else {
-            if (isset($product->stock_quantity) && $product->stock_quantity !== null) {
-                if ($qty > (int) $product->stock_quantity) {
+            if (
+                !$product->allow_out_of_stock &&
+                isset($product->available_qty) &&
+                $product->available_qty !== null
+            ) {
+                if ($qty > (int) $product->available_qty) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Requested quantity is not available in stock.',
@@ -184,8 +192,12 @@ class CartController extends Controller
         if ($data['quantity'] === 0) {
             CartItem::where('cart_id', $cartId)->where('product_id', $product->id)->delete();
         } else {
-            if (isset($product->stock_quantity) && $product->stock_quantity !== null) {
-                if ((int)$data['quantity'] > (int) $product->stock_quantity) {
+            if (
+                !$product->allow_out_of_stock &&
+                isset($product->available_qty) &&
+                $product->available_qty !== null
+            ) {
+                if ((int) $data['quantity'] > (int) $product->available_qty) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Requested quantity is not available in stock.',

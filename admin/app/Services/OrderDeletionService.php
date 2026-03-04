@@ -39,7 +39,7 @@ class OrderDeletionService
             // Delete order payments
             $order->payments()->delete();
 
-            // Restore quantities (only for normal orders)
+            // Restore quantities (only for normal SO-like orders)
             if (!in_array($order->type, ['CN', 'EST'])) {
                 $this->restoreProductQuantities($order);
             }
@@ -123,11 +123,24 @@ class OrderDeletionService
 
             if ($item->product_id && $item->quantity > 0) {
                 try {
-                    WarehouseProductSyncService::adjustQuantity(
-                        $item->product_id,
-                        'addition',
-                        $item->quantity
-                    );
+                    if ($order->type === 'SO') {
+                        $qty = (float) $item->quantity;
+                        // If order was still open (not completed), just remove from ordered bucket
+                        if ($order->status !== 'Completed') {
+                            WarehouseProductSyncService::adjustOrdered(
+                                $item->product_id,
+                                'subtraction',
+                                $qty
+                            );
+                        } else {
+                            // If order was completed, reverse the physical shipment
+                            WarehouseProductSyncService::adjustQuantity(
+                                $item->product_id,
+                                'addition',
+                                $qty
+                            );
+                        }
+                    }
                 } catch (\Exception $e) {
                     Log::error("Stock restore failed: " . $e->getMessage());
                 }

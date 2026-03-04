@@ -11,7 +11,7 @@ class WarehouseProductSyncService
      * Sync warehouse product quantity and cost with product
      *
      * @param int $productId
-     * @param float|null $quantity Optional quantity. If null, uses product's stock_quantity
+     * @param float|null $quantity Optional quantity. If null, uses product's onhand_qty (or available_qty as fallback)
      * @param float|null $avgCost Optional avg_cost. If null, uses product's cost_price
      * @return WarehousesProduct
      */
@@ -23,7 +23,9 @@ class WarehouseProductSyncService
             throw new \Exception("Product with ID {$productId} not found");
         }
 
-        $quantity = $quantity ?? $product->stock_quantity;
+        // Prefer onhand_qty as the physical stock source of truth,
+        // but fall back to available_qty for older records that may not have onhand_qty populated yet.
+        $quantity = $quantity ?? ($product->onhand_qty ?? $product->available_qty ?? 0);
         $avgCost = $avgCost ?? $product->cost_price ?? 0;
 
         return WarehousesProduct::updateOrCreate(
@@ -65,19 +67,27 @@ class WarehouseProductSyncService
         // Preserve existing avg_cost
         $existingAvgCost = (float) $warehouseProduct->avg_cost;
 
-        // Update product stock quantity
+        // Update product physical (on hand) stock quantity
+        $currentOnHand = (float) ($product->onhand_qty ?? $product->available_qty ?? 0);
         if ($type === 'addition') {
-            $product->increment('stock_quantity', $quantity);
+            $currentOnHand += $quantity;
         } else {
-            $product->decrement('stock_quantity', $quantity);
+            $currentOnHand -= $quantity;
         }
+        $currentOnHand = max(0, $currentOnHand);
 
-        // Refresh to get updated value
-        $product->refresh();
+        // Preserve ordered_qty and re-derive available_qty so that:
+        // onhand_qty = ordered_qty + available_qty
+        $currentOrdered = (float) ($product->ordered_qty ?? 0);
+        $currentAvailable = max(0, $currentOnHand - $currentOrdered);
+
+        $product->onhand_qty = $currentOnHand;
+        $product->available_qty = $currentAvailable;
+        $product->save();
 
         // Update warehouse product quantity only, preserve avg_cost
         $warehouseProduct->update([
-            'quantity' => max(0, (float) $product->stock_quantity),
+            'quantity' => $currentOnHand,
             'avg_cost' => $existingAvgCost // Preserve existing avg_cost
         ]);
 
@@ -108,7 +118,7 @@ class WarehouseProductSyncService
             // If warehouse product doesn't exist, create it
             $warehouseProduct = WarehousesProduct::create([
                 'product_id' => $productId,
-                'quantity' => max(0, (float) $product->stock_quantity),
+                'quantity' => max(0, (float) $product->available_qty),
                 'avg_cost' => $product->cost_price ?? 0
             ]);
         }
@@ -117,22 +127,68 @@ class WarehouseProductSyncService
         $existingAvgCost = (float) $warehouseProduct->avg_cost;
 
         // Revert product stock quantity (opposite of adjust)
+        $currentOnHand = (float) ($product->onhand_qty ?? $product->available_qty ?? 0);
         if ($type === 'addition') {
-            $product->decrement('stock_quantity', $quantity);
+            // Original operation was an addition, so revert by subtracting
+            $currentOnHand -= $quantity;
         } else {
-            $product->increment('stock_quantity', $quantity);
+            // Original operation was a subtraction, so revert by adding back
+            $currentOnHand += $quantity;
         }
+        $currentOnHand = max(0, $currentOnHand);
 
-        // Refresh to get updated value
-        $product->refresh();
+        $currentOrdered = (float) ($product->ordered_qty ?? 0);
+        $currentAvailable = max(0, $currentOnHand - $currentOrdered);
+
+        $product->onhand_qty = $currentOnHand;
+        $product->available_qty = $currentAvailable;
+        $product->save();
 
         // Update warehouse product quantity only, preserve avg_cost
         $warehouseProduct->update([
-            'quantity' => max(0, (float) $product->stock_quantity),
+            'quantity' => $currentOnHand,
             'avg_cost' => $existingAvgCost // Preserve existing avg_cost
         ]);
 
         return $warehouseProduct;
+    }
+
+    /**
+     * Adjust ordered quantity (units allocated to open orders) and
+     * recalculate available quantity so that:
+     *   onhand_qty = ordered_qty + available_qty
+     *
+     * This does NOT change physical stock (onhand_qty).
+     *
+     * @param int $productId
+     * @param string $type 'addition' to increase ordered, 'subtraction' to decrease
+     * @param float $quantity
+     * @return Product
+     */
+    public static function adjustOrdered(int $productId, string $type, float $quantity): Product
+    {
+        $product = Product::find($productId);
+
+        if (!$product) {
+            throw new \Exception("Product with ID {$productId} not found");
+        }
+
+        $currentOrdered = (float) ($product->ordered_qty ?? 0);
+        if ($type === 'addition') {
+            $currentOrdered += $quantity;
+        } else {
+            $currentOrdered -= $quantity;
+        }
+        $currentOrdered = max(0, $currentOrdered);
+
+        $currentOnHand = (float) ($product->onhand_qty ?? $product->available_qty ?? 0);
+        $currentAvailable = max(0, $currentOnHand - $currentOrdered);
+
+        $product->ordered_qty = $currentOrdered;
+        $product->available_qty = $currentAvailable;
+        $product->save();
+
+        return $product;
     }
 
     /**

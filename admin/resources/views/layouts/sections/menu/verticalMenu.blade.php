@@ -19,9 +19,13 @@
         @foreach ($sidebarMenuData as $menu)
             @php
                 $isActive = \App\Helpers\Helpers::isMenuActive($menu);
+                $hasActiveChild = \App\Helpers\Helpers::hasActiveChild($menu);
             @endphp
 
-            <li class="menu-item {{ $isActive ? 'active open' : '' }}">
+            <li class="menu-item
+                {{ $isActive ? 'active' : '' }}
+                {{ !$isActive && $hasActiveChild ? 'open' : '' }}
+            ">
                 <a href="{{ isset($menu['url']) ? url($menu['url']) : 'javascript:void(0);' }}"
                     class="{{ !empty($menu['children']) ? 'menu-link menu-toggle' : 'menu-link' }}">
                     @isset($menu['icon'])
@@ -37,5 +41,38 @@
         @endforeach
 
     </ul>
+
+    <style>
+        /* Ensure no browser bullets/dots appear for sidebar lists */
+        #layout-menu .menu-inner,
+        #layout-menu .menu-sub,
+        #layout-menu .menu-inner ul {
+            list-style: none !important;
+            padding-left: 0;
+            margin-left: 0;
+        }
+
+        #layout-menu .menu-item {
+            list-style: none !important;
+        }
+
+        /* Remove list markers and any template bullet pseudo-elements */
+        #layout-menu .menu-item::marker {
+            content: '' !important;
+        }
+
+        #layout-menu .menu-item::before {
+            content: none !important;
+        }
+
+        /* Hide template's submenu bullet indicators */
+        #layout-menu .menu-sub .menu-link::before,
+        #layout-menu .menu-inner .menu-link::before {
+            display: none !important;
+            content: none !important;
+            background: none !important;
+            box-shadow: none !important;
+        }
+    </style>
 
 </aside>

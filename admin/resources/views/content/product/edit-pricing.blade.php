@@ -39,6 +39,9 @@
                 <li class="nav-item">
                     <span class="nav-link active">Pricing</span>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('product.edit.inventory', $product->id) }}" class="nav-link">Inventory</a>
+                </li>
             </ul>
 
             <div class="row">

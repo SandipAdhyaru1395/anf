@@ -142,7 +142,7 @@ private function loadCategories()
             'subcategories' => $brands->map(function ($brand) {
                 $products = ($brand->products ?? collect())
                     ->filter(fn($p) => (int) ($p->is_active ?? 0) === 1)
-                    ->sortByDesc('stock_quantity')
+                    ->sortByDesc('available_qty')
                     ->values();
                 // Check if image is a full URL or a stored file path
                 $imageUrl = null;
@@ -178,7 +178,7 @@ private function loadCategories()
             'image' => $imageUrl,
             'step_quantity' => $product->step_quantity,
             // Expose available quantity for frontend cache consumers
-            'quantity' => isset($product->stock_quantity) ? (int) $product->stock_quantity : 0,
+            'quantity' => isset($product->available_qty) ? (int) $product->available_qty : 0,
             'price' => $setting['currency_symbol'] . number_format($priceNumber, 2),
             'discount' => $discountNumber !== null ? ('£' . number_format($discountNumber, 2)) : null,
             'wallet_credit' => isset($product->wallet_credit) ? (float) $product->wallet_credit : 0,

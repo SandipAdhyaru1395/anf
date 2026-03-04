@@ -20,6 +20,7 @@ class CustomerGroupRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'restrict_categories' => 'required|boolean',
+            'pay_later' => 'nullable|boolean',
 
             // At least one of these required if restriction = 1
             'categories' => 'nullable|array',

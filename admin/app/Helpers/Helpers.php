@@ -7,6 +7,7 @@ use App\Models\PriceList;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 class Helpers
@@ -313,17 +314,47 @@ class Helpers
 CSS;
   }
 
-    public static function isMenuActive($menu) {
-        $currentUrl = url()->current();
-        
-        if (isset($menu['url']) && Str::contains($currentUrl,$menu['url'])) {
-            return true;
+    public static function isMenuActive($menu)
+    {
+        // 1) Route-name based matching (for menus like settings.*)
+        if (isset($menu['slug']) && Str::contains($menu['slug'], '.')) {
+            $currentRoute = Route::currentRouteName();
+
+            if (!$currentRoute) {
+                return false;
+            }
+
+            // Exact match or nested resource routes, e.g. settings.priceList.edit
+            return $currentRoute === $menu['slug'] || str_starts_with($currentRoute, $menu['slug'] . '.');
         }
-        if (!empty($menu['children'])) {
-            foreach ($menu['children'] as $child) {
-                if (\App\Helpers\Helpers::isMenuActive($child)) {
-                    return true;
-                }
+
+        // 2) URL-path based matching (for simple resources like category, product, etc.)
+        if (!isset($menu['url']) || empty($menu['url'])) {
+            return false;
+        }
+
+        $currentPath = request()->path(); // e.g. "role", "role/1/edit"
+
+        // Consider the item active if the current path starts with its URL segment
+        // and boundary is respected (so "role" does not match "rolex").
+        $segment = trim($menu['url'], '/');
+
+        return $currentPath === $segment || str_starts_with($currentPath, $segment . '/');
+    }
+
+    /**
+     * Returns true if any descendant of this menu item is active.
+     * Used to keep parent groups "open" while only the leaf has the active highlight.
+     */
+    public static function hasActiveChild($menu)
+    {
+        if (empty($menu['children'])) {
+            return false;
+        }
+
+        foreach ($menu['children'] as $child) {
+            if (self::isMenuActive($child) || self::hasActiveChild($child)) {
+                return true;
             }
         }
 

@@ -6,9 +6,13 @@ use Illuminate\Support\Facades\Route;
   @foreach ($menu as $submenu)
     @php
         $isActive = \App\Helpers\Helpers::isMenuActive($submenu);
+        $hasActiveChild = \App\Helpers\Helpers::hasActiveChild($submenu);
     @endphp
 
-    <li class="menu-item {{ $isActive ? 'active open' : '' }}">
+    <li class="menu-item
+      {{ $isActive ? 'active' : '' }}
+      {{ !$isActive && $hasActiveChild ? 'open' : '' }}
+    ">
         <a href="{{ isset($submenu['url']) ? url($submenu['url']) : 'javascript:void(0)' }}"
            class="{{ (!empty($submenu['children'])) ? 'menu-link menu-toggle' : 'menu-link' }}"
            @if (!empty($submenu['target'])) target="_blank" @endif>

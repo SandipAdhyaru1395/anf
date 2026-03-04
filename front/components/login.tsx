@@ -124,14 +124,14 @@ export default function Login() {
                 .filter((n: any) => Boolean(n));
             };
             const filtered = filterNodesWithProducts(dataP.categories as any[]);
-            // Ensure each product carries a quantity field alongside stock_quantity for cache consumers
+            // Ensure each product carries a quantity field alongside available_qty for cache consumers
             const normalizeProductQuantities = (nodes: any[]): any[] => {
               return nodes.map((node: any) => {
                 const withProducts = Array.isArray(node?.products)
                   ? {
                       products: node.products.map((p: any) => ({
                         ...p,
-                        quantity: typeof p?.quantity === "number" ? p.quantity : (p?.stock_quantity ?? 0),
+                        quantity: typeof p?.quantity === "number" ? p.quantity : (p?.available_qty ?? 0),
                       })),
                     }
                   : {};

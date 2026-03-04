@@ -7,52 +7,92 @@
       "slug": "dashboard"
     },
     {
-      "url": "category",
-      "icon": "menu-icon icon-base ti tabler-category",
-      "name": "Categories",
-      "slug": "category"
-    },
-    {
-      "url": "brand",
-      "icon": "menu-icon icon-base ti tabler-tags",
-      "name": "Brands",
-      "slug": "brand"
-    },
-    {
-      "url": "product",
-      "icon": "menu-icon icon-base ti tabler-cube",
+      "icon": "menu-icon icon-base ti tabler-packages",
       "name": "Products",
-      "slug": "product"
+      "slug": "products",
+      "submenu": [
+        {
+          "url": "category",
+          "icon": "menu-icon icon-base ti tabler-category",
+          "name": "Categories",
+          "slug": "category"
+        },
+        {
+          "url": "brand",
+          "icon": "menu-icon icon-base ti tabler-tags",
+          "name": "Brands",
+          "slug": "brand"
+        },
+        {
+          "url": "product",
+          "icon": "menu-icon icon-base ti tabler-cube",
+          "name": "Products",
+          "slug": "product"
+        }
+      ]
     },
     {
-      "url": "order",
-      "icon": "menu-icon icon-base ti tabler-shopping-cart",
-      "name": "Orders",
-      "slug": "order"
+      "icon": "menu-icon icon-base ti tabler-building-warehouse",
+      "name": "Inventory",
+      "slug": "inventories",
+      "submenu": [
+        {
+          "url": "inventory",
+          "icon": "menu-icon icon-base ti tabler-list-details",
+          "name": "Inventory",
+          "slug": "inventory"
+        },
+        {
+          "url": "goods-in",
+          "icon": "menu-icon icon-base ti tabler-arrow-bar-to-up",
+          "name": "Goods In",
+          "slug": "inventory.goods_in"
+        },
+        {
+          "url": "quantity-adjustment",
+          "icon": "menu-icon icon-base ti tabler-numbers",
+          "name": "Quantity Adjustments",
+          "slug": "quantity-adjustment"
+        }
+      ]
     },
     {
-      "url": "customer",
-      "icon": "menu-icon icon-base ti tabler-id",
-      "name": "Customers",
-      "slug": "customer"
-    },
-    {
-      "url": "supplier",
-      "icon": "menu-icon icon-base ti tabler-building-factory-2",
-      "name": "Suppliers",
-      "slug": "supplier"
-    },
-    {
-      "url": "quantity-adjustment",
-      "icon": "menu-icon icon-base ti tabler-numbers",
-      "name": "Quantity Adjustments",
-      "slug": "quantity-adjustment"
-    },
-    {
-      "url": "purchase",
       "icon": "menu-icon icon-base ti tabler-file-invoice",
-      "name": "Purchases",
-      "slug": "purchase"
+      "name": "Purchase",
+      "slug": "purchase-group",
+      "submenu": [
+        {
+          "url": "purchase",
+          "icon": "menu-icon icon-base ti tabler-file-invoice",
+          "name": "Purchases",
+          "slug": "purchase"
+        },
+        {
+          "url": "supplier",
+          "icon": "menu-icon icon-base ti tabler-building-factory-2",
+          "name": "Suppliers",
+          "slug": "supplier"
+        }
+      ]
+    },
+    {
+      "icon": "menu-icon icon-base ti tabler-shopping-bag",
+      "name": "Sales",
+      "slug": "sales",
+      "submenu": [
+        {
+          "url": "order",
+          "icon": "menu-icon icon-base ti tabler-shopping-cart",
+          "name": "Orders",
+          "slug": "order"
+        },
+        {
+          "url": "customer",
+          "icon": "menu-icon icon-base ti tabler-id",
+          "name": "Customers",
+          "slug": "customer"
+        }
+      ]
     },
     {
       "url": "user",
@@ -73,10 +113,65 @@
       "slug": "report"
     },
     {
-      "url": "settings",
       "icon": "menu-icon icon-base ti tabler-settings",
       "name": "Settings",
-      "slug": "settings"
+      "slug": "settings",
+      "submenu": [
+        {
+          "url": "settings",
+          "icon": "menu-icon icon-base ti tabler-building-store",
+          "name": "General",
+          "slug": "settings.general"
+        },
+        {
+          "url": "settings/banner",
+          "icon": "menu-icon icon-base ti tabler-photo",
+          "name": "Banner",
+          "slug": "settings.banner"
+        },
+        {
+          "url": "settings/maintenance",
+          "icon": "menu-icon icon-base ti tabler-tools",
+          "name": "Maintenance",
+          "slug": "settings.maintenance"
+        },
+        {
+          "url": "settings/delivery-method",
+          "icon": "menu-icon icon-base ti tabler-truck-delivery",
+          "name": "Delivery Methods",
+          "slug": "settings.deliveryMethod"
+        },
+        {
+          "url": "settings/groups",
+          "icon": "menu-icon icon-base ti tabler-users",
+          "name": "Customer Groups",
+          "slug": "settings.customerGroup"
+        },
+        {
+          "url": "settings/priceList",
+          "icon": "menu-icon icon-base ti tabler-receipt-2",
+          "name": "Price Lists",
+          "slug": "settings.priceList"
+        },
+        {
+          "url": "settings/vat-method",
+          "icon": "menu-icon icon-base ti tabler-scale",
+          "name": "VAT Methods",
+          "slug": "settings.vatMethod"
+        },
+        {
+          "url": "settings/unit",
+          "icon": "menu-icon icon-base ti tabler-ruler-measure",
+          "name": "Units",
+          "slug": "settings.unit"
+        },
+        {
+          "url": "settings/currencies",
+          "icon": "menu-icon icon-base ti tabler-currency-dollar",
+          "name": "Currencies",
+          "slug": "settings.currency"
+        }
+      ]
     }
   ]
 }

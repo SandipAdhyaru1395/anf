@@ -19,7 +19,9 @@ document.addEventListener('DOMContentLoaded', function (e) {
   const dt_order_table = document.querySelector('.datatables-order'),
     orderAdd = baseUrl + 'order/add',
     statusObj = {
+      'New': { title: 'New', class: 'bg-label-primary' },
       'Completed': { title: 'Completed', class: 'bg-success' },
+      'Cancelled': { title: 'Cancelled', class: 'bg-label-secondary' },
       'Returned': { title: 'Returned', class: 'bg-danger' }
     },
     paymentObj = {

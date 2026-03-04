@@ -114,6 +114,42 @@
                     }
                 }
             });
+
+            // Inventory tab: keep On Hand in sync and recalculate available
+            function syncInventory(from) {
+                var ordered = parseInt($('#inventory-ordered-hidden').val() || '0', 10);
+                if (isNaN(ordered)) ordered = 0;
+
+                var onHandDetails = parseInt($('#quantity').val() || '0', 10);
+                if (isNaN(onHandDetails)) onHandDetails = 0;
+
+                var onHandInventory = parseInt($('#inventory-onhand').val() || '0', 10);
+                if (isNaN(onHandInventory)) onHandInventory = 0;
+
+                var onHand;
+                if (from === 'inventory') {
+                    onHand = onHandInventory;
+                    $('#quantity').val(onHand ? onHand : '');
+                } else {
+                    onHand = onHandDetails;
+                    $('#inventory-onhand').val(onHand ? onHand : '');
+                }
+
+                var available = onHand - ordered;
+                if (available < 0) available = 0;
+                $('#inventory-available').text(available);
+            }
+
+            $('#quantity').on('input', function () {
+                syncInventory('details');
+            });
+
+            $('#inventory-onhand').on('input', function () {
+                syncInventory('inventory');
+            });
+
+            // Initial sync when page loads
+            syncInventory('details');
         });
     </script>
 @endsection
@@ -149,10 +185,14 @@
 
             <ul class="nav nav-tabs mb-4 px-2" role="tablist">
                 <li class="nav-item">
-                    <span class="nav-link active">Details</span>
+                    <a class="nav-link active" data-bs-toggle="tab" href="#tab-details" role="tab" aria-controls="tab-details"
+                       aria-selected="true">Details</a>
                 </li>
                 <li class="nav-item">
                     <a href="{{ route('product.edit.pricing', $product->id) }}" class="nav-link">Pricing</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('product.edit.inventory', $product->id) }}" class="nav-link">Inventory</a>
                 </li>
             </ul>
 
@@ -264,12 +304,19 @@
                                 </div>
                             </div>
                             <div class="row mb-6">
-                                <div class="col-md-4 mb-5 form-control-validation"><label class="form-label"
-                                        for="quantity">Quantity</label>
-                                    <input type="text" class="form-control" id="quantity" placeholder="Enter quantity"
-                                        name="quantity" onkeypress="return /^[0-9]+$/.test(event.key)"
-                                        aria-label="Product Quantity" value="{{ $product->stock_quantity }}"
-                                        autocomplete="off" />
+                                <div class="col-md-4 mb-5 form-control-validation">
+                                    <label class="form-label" for="quantity">Quantity</label>
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="quantity"
+                                        placeholder="Enter on hand quantity"
+                                        name="quantity"
+                                        onkeypress="return /^[0-9]+$/.test(event.key)"
+                                        aria-label="Product On Hand Quantity"
+                                        value="{{ $product->onhand_qty ?? $product->available_qty }}"
+                                        autocomplete="off"
+                                    />
                                 </div>
                                 <div class="col-md-4 mb-5 form-control-validation">
                                     <label class="form-label" for="unit_id">Product Unit</label>
@@ -451,6 +498,82 @@
             </div>
                 </div>
                 <!-- /Details tab -->
+
+                <!-- Inventory tab -->
+                <div class="tab-pane fade" id="tab-inventory" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1">Inventory</h5>
+                                <small class="text-muted">Manage on-hand and available stock for this product.</small>
+                            </div>
+                            <span class="badge bg-label-primary text-uppercase small">Stock Overview</span>
+                        </div>
+                        <div class="card-body">
+                            @php
+                                $onHand = (int) ($product->onhand_qty ?? $product->available_qty ?? 0);
+                                $ordered = (int) ($product->ordered_qty ?? 0);
+                                $available = max(0, $onHand - $ordered);
+                            @endphp
+                            <input type="hidden" id="inventory-ordered-hidden" value="{{ $ordered }}">
+
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 40%;">Product</th>
+                                                    <th style="width: 20%;" class="text-center">On Hand</th>
+                                                    <th style="width: 20%;" class="text-center">Available</th>
+                                                    <th style="width: 20%;" class="text-center">Backorder?</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <div class="fw-semibold">{{ $product->name }}</div>
+                                                        <div class="text-muted small">SKU: {{ $product->sku }}</div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="d-inline-flex align-items-center gap-2">
+                                                            <input
+                                                                type="text"
+                                                                class="form-control form-control-sm text-center"
+                                                                id="inventory-onhand"
+                                                                onkeypress="return /^[0-9]+$/.test(event.key)"
+                                                                value="{{ $onHand }}"
+                                                                autocomplete="off"
+                                                                style="max-width: 90px;"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span id="inventory-available"
+                                                              class="badge bg-label-success px-3 py-2">
+                                                            {{ $available }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="form-check d-inline-flex align-items-center justify-content-center">
+                                                            <input class="form-check-input me-2" type="checkbox"
+                                                                   id="inventory-backorder" disabled>
+                                                            <label class="form-check-label small text-muted"
+                                                                   for="inventory-backorder">
+                                                                Allow when out of stock
+                                                            </label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /Inventory tab -->
             </div>
         </form>
     </div>

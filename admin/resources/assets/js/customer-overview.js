@@ -10,7 +10,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
   const dt_customer_order = document.querySelector('.datatables-customer-order'),
     edit_order_url = baseUrl + 'order/edit',
     statusObj = {
-      'Completed': { title: 'Completed', class: 'bg-success' }
+      'New': { title: 'New', class: 'bg-label-primary' },
+      'Completed': { title: 'Completed', class: 'bg-success' },
+      'Cancelled': { title: 'Cancelled', class: 'bg-label-secondary' },
+      'Returned': { title: 'Returned', class: 'bg-danger' }
     },
     paymentObj = {
       'Due': { title: 'Due', class: 'bg-warning' },

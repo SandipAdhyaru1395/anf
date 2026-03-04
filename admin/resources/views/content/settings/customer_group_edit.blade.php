@@ -35,6 +35,18 @@
         }
     </style>
     @vite('resources/assets/js/settings-customerGroup.js')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const headerToggle = document.getElementById('pay_later_header_edit');
+            const hiddenInput = document.getElementById('pay_later');
+
+            if (headerToggle && hiddenInput) {
+                headerToggle.addEventListener('change', function () {
+                    hiddenInput.value = this.checked ? 1 : 0;
+                });
+            }
+        });
+    </script>
 @endsection
 
 @section('content')
@@ -46,29 +58,43 @@
                 <div class="tab-pane fade show active" id="general" role="tabpanel">
                     <div class="card mb-6">
                         <div class="card-body">
-                            <h5 class="card-title">Edit Customer Group</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">Edit Customer Group</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="form-label mb-0" for="pay_later_header_edit">Pay Later</label>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="pay_later_header_edit"
+                                            {{ old('pay_later', $customerGroup->pay_later) ? 'checked' : '' }}>
+                                    </div>
+                                </div>
+                            </div>
                             <form action="{{ route('settings.customerGroup.update', $customerGroup->id) }}" method="POST"
                                 id="editCustomerGroupForm">
                                 @csrf
 
                                 <input type="hidden" name="id" value="{{ $customerGroup->id }}">
 
-                                <!-- Customer Group Name -->
-                                <div class="mb-3 form-control-validation">
-                                    <label for="name" class="form-label">Customer Group Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="name" name="name"
-                                        value="{{ old('name', $customerGroup->name) }}" autocomplete="off">
-                                </div>
-
-                                <!-- Restrict Categories -->
-                                <div class="mb-3 form-control-validation">
-                                    <label class="form-label">Restrict Categories? <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="restrict_categories" name="restrict_categories">
-                                        <option value="0"
-                                            {{ $customerGroup->restrict_categories == 0 ? 'selected' : '' }}>No</option>
-                                        <option value="1"
-                                            {{ $customerGroup->restrict_categories == 1 ? 'selected' : '' }}>Yes</option>
-                                    </select>
+                                <!-- Customer group settings -->
+                                <div class="row g-3 my-4 align-items-end">
+                                    <div class="col-md-6 form-control-validation">
+                                        <label for="name" class="form-label">Customer Group Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="name" name="name"
+                                            value="{{ old('name', $customerGroup->name) }}" autocomplete="off">
+                                    </div>
+                                    <div class="col-md-6 form-control-validation">
+                                        <label class="form-label">Restrict Categories? <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="restrict_categories" name="restrict_categories">
+                                            <option value="0"
+                                                {{ $customerGroup->restrict_categories == 0 ? 'selected' : '' }}>No</option>
+                                            <option value="1"
+                                                {{ $customerGroup->restrict_categories == 1 ? 'selected' : '' }}>Yes</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 form-control-validation">
+                                        <label class="form-label d-block">&nbsp;</label>
+                                        <!-- Hidden field to carry Pay Later value from header switch -->
+                                        <input type="hidden" name="pay_later" id="pay_later" value="{{ old('pay_later', $customerGroup->pay_later) ? 1 : 0 }}">
+                                    </div>
                                 </div>
 
                                 <!-- Categories Table -->

@@ -28,7 +28,8 @@ interface ProductItem {
   step_quantity?: number;
   wallet_credit?: number;
   quantity?: number;
-  stock_quantity?: number;
+  available_qty?: number;
+  allow_out_of_stock?: boolean;
 }
 
 // Generic tree node that can be either a category (has subcategories)
@@ -222,7 +223,7 @@ export function MobileShop({ onNavigate, cart, increment, decrement, totals, sho
             }
             if (topAncestorIsSpecial) {
               filteredProducts = filteredProducts.filter((p) => {
-                const stock = Number((p as any)?.quantity ?? (p as any)?.stock_quantity ?? 0);
+                const stock = Number((p as any)?.quantity ?? (p as any)?.available_qty ?? 0);
                 const rawPrice: any = (p as any)?.price;
                 const numericPrice = typeof rawPrice === 'number'
                   ? rawPrice
@@ -286,10 +287,11 @@ export function MobileShop({ onNavigate, cart, increment, decrement, totals, sho
   const handleIncrement = async (product: ProductItem) => {
     try {
       const step = Number(product?.step_quantity) > 0 ? Number(product.step_quantity) : 1;
-      // Front check against stock if provided in product payload
-      const stock = Number((product as any)?.quantity ?? (product as any)?.stock_quantity ?? 0);
+      const allowOutOfStock = Boolean((product as any)?.allow_out_of_stock);
+      // Front check against stock if provided in product payload, unless out-of-stock ordering is allowed
+      const stock = Number((product as any)?.quantity ?? (product as any)?.available_qty ?? 0);
       const current = Number(cartQuantities[product.id] || 0);
-      if (stock > 0 && current + step > stock) {
+      if (!allowOutOfStock && stock > 0 && current + step > stock) {
         toast({ title: 'Quantity not available', description: `Only ${stock} in stock`, variant: 'destructive' });
         return;
       }
@@ -599,8 +601,9 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
           {hasProducts && (
             <div className="product-grid-responsive gap-3 px-3">
               {node.products!.map((product) => {
-                const stock = Number((product as any)?.quantity ?? (product as any)?.stock_quantity ?? 0);
-                const isOut = stock <= 0;
+                const stock = Number((product as any)?.quantity ?? (product as any)?.available_qty ?? 0);
+                const allowOutOfStock = Boolean((product as any)?.allow_out_of_stock);
+                const isOut = !allowOutOfStock && stock <= 0;
                 return (
                   <div key={product.id} className={`group bg-white border-b relative pb-2 offer-plus-sign z-10 w-[113px] ${isOut ? 'opacity-60' : ''}`}>
                     {(() => {

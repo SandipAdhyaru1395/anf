@@ -166,7 +166,7 @@ class ProductController extends Controller
             'subcategories' => $brands->map(function ($brand) {
                 $products = ($brand->products ?? collect())
                     ->filter(fn($p) => (int) ($p->is_active ?? 0) === 1)
-                    ->sortByDesc('stock_quantity')
+                    ->sortByDesc('available_qty')
                     ->values();
                 // Check if image is a full URL or a stored file path
                 $imageUrl = null;
@@ -202,7 +202,7 @@ class ProductController extends Controller
     //         'image' => $imageUrl,
     //         'step_quantity' => $product->step_quantity,
     //         // Expose available quantity for frontend cache consumers
-    //         'quantity' => isset($product->stock_quantity) ? (int) $product->stock_quantity : 0,
+    //         'quantity' => isset($product->available_qty) ? (int) $product->available_qty : 0,
     //         'price' => $setting['currency_symbol'] . number_format($priceNumber, 2),
     //         'discount' => $discountNumber !== null ? ('£' . number_format($discountNumber, 2)) : null,
     //         'wallet_credit' => isset($product->wallet_credit) ? (float) $product->wallet_credit : 0,
@@ -237,13 +237,14 @@ class ProductController extends Controller
             'image' => $imageUrl,
             'step_quantity' => $product->step_quantity,
             // Expose available quantity for frontend cache consumers
-            'quantity' => isset($product->stock_quantity) ? (int) $product->stock_quantity : 0,
+            'quantity' => isset($product->available_qty) ? (int) $product->available_qty : 0,
             // 'price' => $setting['currency_symbol'] . number_format($priceNumber, 2),
             'price' => number_format($priceNumber, 2),
             'rrp' => $rrpNumber !== null ? $setting['currency_symbol'] . number_format($rrpNumber, 2) : null,
             'discount' => $discountNumber !== null ? ('£' . number_format($discountNumber, 2)) : null,
             'wallet_credit' => isset($product->wallet_credit) ? (float) $product->wallet_credit : 0,
             'vat_amount' => isset($product->vat_amount) ? (float) $product->vat_amount : 0,
+            'allow_out_of_stock' => (bool) ($product->allow_out_of_stock ?? false),
         ];
     }
 

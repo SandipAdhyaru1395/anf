@@ -1,4 +1,4 @@
-<!-- Responsive Settings Navigation -->
+{{-- <!-- Responsive Settings Navigation -->
 <div class="col-12 mb-4">
   <div class="settings-wrapper shadow-sm rounded p-3 bg-white">
 
@@ -226,4 +226,4 @@
   transform: rotate(180deg);
   transition: transform 0.3s ease;
 }
-</style>
+</style> --}}

@@ -51,6 +51,8 @@ interface MobileCheckoutProps {
 
 export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: MobileCheckoutProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<"gateway" | "pay_later" | null>(null);
   const [isDispatchExpanded, setIsDispatchExpanded] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -184,6 +186,19 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
       toast({ title: "Select an branch", description: "Please choose a branch before continuing.", variant: "destructive" });
       return;
     }
+
+    // First click: reveal payment options instead of placing order immediately
+    if (!showPaymentOptions) {
+      setShowPaymentOptions(true);
+      return;
+    }
+
+    // Second click: require a payment mode
+    if (!paymentMode) {
+      toast({ title: "Choose payment option", description: "Please select Payment Gateway or Pay Later.", variant: "destructive" });
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const payloadItems = items.map(({ product, quantity }) => ({ product_id: product.id, quantity }));
@@ -200,6 +215,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         delivery_method_name: selectedDeliveryMethod?.name ?? null,
         delivery_time: selectedDeliveryMethod?.time ?? null,
         delivery_charge: selectedDeliveryMethod?.rate ?? null,
+        payment_mode: paymentMode,
       });
 
       if (result.success) {
@@ -421,14 +437,43 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           </Card>
         </Card>
 
-        {/* Continue to Payment Button */}
+        {/* Payment options step */}
+        {showPaymentOptions && (
+          <Card className="border-gray-300 mb-[10px] p-[14px]">
+            <h3 className="text-[14px] mb-[10px] font-semibold leading-[16px]">Choose payment method</h3>
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentMode"
+                  className="w-4 h-4 border-2 border-green-600 rounded-full"
+                  checked={paymentMode === "gateway"}
+                  onChange={() => setPaymentMode("gateway")}
+                />
+                <span className="text-sm text-black">Payment Gateway (Pay now)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentMode"
+                  className="w-4 h-4 border-2 border-green-600 rounded-full"
+                  checked={paymentMode === "pay_later"}
+                  onChange={() => setPaymentMode("pay_later")}
+                />
+                <span className="text-sm text-black">Pay Later (Order on credit)</span>
+              </label>
+            </div>
+          </Card>
+        )}
+
+        {/* Continue / Pay Button */}
         <div className="mt-4">
           <button
             onClick={handleContinueToPayment}
             disabled={isProcessing || !selectedBranch}
             className="w-full bg-green-600 disabled:bg-gray-400 text-white py-4 rounded-lg font-semibold text-lg hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
           >
-            {isProcessing ? "Processing..." : "Continue to Payment"}
+            {isProcessing ? "Processing..." : showPaymentOptions ? "Pay" : "Continue to Payment"}
           </button>
         </div>
       </main>

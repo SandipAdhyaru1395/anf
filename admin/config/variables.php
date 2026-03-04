@@ -31,5 +31,5 @@ return [
   "dribbbleUrl" => "",
   "instagramUrl" => "",
   "payment_status" => ["Due","Paid","Partial"],
-  "order_status" => ["Completed"]
+  "order_status" => ["New","Completed","Cancelled","Returned"]
 ];

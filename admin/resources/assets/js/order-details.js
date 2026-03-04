@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       items.forEach(function(item) {
-        const stockQuantity = parseFloat(item.stock_quantity || 0);
+        const stockQuantity = parseFloat(item.available_qty || 0);
         const isDisabled = stockQuantity <= 0;
         
         const $button = $('<button type="button" class="list-group-item list-group-item-action bg-white text-dark"></button>')

@@ -153,7 +153,7 @@ class OrderController extends Controller
       if ($productId > 0 && $orderedQuantity > 0) {
         $product = Product::find($productId);
         if ($product) {
-          $availableQuantity = (float) ($product->stock_quantity ?? 0);
+          $availableQuantity = (float) ($product->available_qty ?? 0);
           if ($orderedQuantity > $availableQuantity) {
             $productName = $product->name ?? 'Product #' . $productId;
             $stockErrors["products.{$index}.quantity"] = "Insufficient stock for {$productName}. Available: {$availableQuantity}, Requested: {$orderedQuantity}";
@@ -231,7 +231,7 @@ class OrderController extends Controller
         'delivery_charge' => $validated['shipping_charge'] ?? 0,
         'delivery_note' => $validated['delivery_note'] ?? null,
         'is_est' => isset($validated['is_est']) && $validated['is_est'] ? true : false,
-        'status' => 'Completed',
+        'status' => 'New',
         'payment_status' => 'Due',
         'subtotal' => 0,
         'vat_amount' => 0,
@@ -352,16 +352,17 @@ class OrderController extends Controller
       // Update order totals
       $this->updateOrderTotals($order->id);
 
-      // Decrement product quantities after order is created
-      foreach ($products as $productData) {
-        $quantity = (float) ($productData['quantity'] ?? 0);
-        $productId = (int) ($productData['product_id'] ?? 0);
-        if ($productId > 0 && $quantity > 0) {
-          try {
-            WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
-          } catch (\Exception $e) {
-            // Log error but don't fail the transaction
-            Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
+      // For SO orders, mark quantities as ordered (do not change physical stock here)
+      if ($orderType === 'SO') {
+        foreach ($products as $productData) {
+          $quantity = (float) ($productData['quantity'] ?? 0);
+          $productId = (int) ($productData['product_id'] ?? 0);
+          if ($productId > 0 && $quantity > 0) {
+            try {
+              WarehouseProductSyncService::adjustOrdered($productId, 'addition', $quantity);
+            } catch (\Exception $e) {
+              Log::error("Failed to adjust ordered quantity for product {$productId}: " . $e->getMessage());
+            }
           }
         }
       }
@@ -472,6 +473,7 @@ class OrderController extends Controller
       'products.*.product_id' => ['required', 'exists:products,id'],
       'products.*.quantity' => ['required', 'numeric', 'min:1'],
       'products.*.unit_cost' => ['required', 'numeric', 'min:0'],
+      'status' => ['required', 'string', 'in:New,Completed,Cancelled,Returned'],
     ], [
       'id.required' => 'Order ID is required',
       'id.exists' => 'Order not found',
@@ -491,9 +493,11 @@ class OrderController extends Controller
       'products.*.unit_cost.min' => 'Sale price must be 0 or greater',
       'shipping_charge.numeric' => 'Shipping charge must be a number',
       'shipping_charge.min' => 'Shipping charge must be 0 or greater',
+      'status.in' => 'Status must be New, Completed, Cancelled, or Returned',
     ]);
 
     $order = Order::with('items')->findOrFail($validated['id']);
+    $oldStatus = $order->status;
 
     // Parse date (support d/m/Y H:i and d/m/Y)
     $date = $validated['date'];
@@ -531,7 +535,7 @@ class OrderController extends Controller
       if ($productId > 0 && $orderedQuantity > 0) {
         $product = Product::find($productId);
         if ($product) {
-          $currentStock = (float) ($product->stock_quantity ?? 0);
+          $currentStock = (float) ($product->available_qty ?? 0);
           // Add back the old quantity that will be restored
           $oldQuantity = (float) ($oldQuantitiesByProduct[$productId] ?? 0);
           $availableQuantity = $currentStock + $oldQuantity;
@@ -567,8 +571,10 @@ class OrderController extends Controller
       }
     }
 
+    $newStatus = $validated['status'] ?? $oldStatus;
+
     // Process update in transaction
-    DB::transaction(function () use ($order, $products, $validated, $date, $addressData) {
+    DB::transaction(function () use ($order, $products, $validated, $date, $addressData, $oldQuantitiesByProduct, $oldStatus, $newStatus) {
       // Calculate old wallet credit earned before deleting items
       $oldWalletCreditEarned = $order->items->sum('wallet_credit_earned');
       $oldWalletCreditUsed = (float) ($order->wallet_credit_used ?? 0);
@@ -576,26 +582,13 @@ class OrderController extends Controller
       // Get customer for wallet credit adjustments
       $customer = $order->customer;
 
-      // Restore old product quantities before deleting items
-      foreach ($order->items as $oldItem) {
-        $oldQuantity = (float) ($oldItem->quantity ?? 0);
-        $oldProductId = (int) ($oldItem->product_id ?? 0);
-        if ($oldProductId > 0 && $oldQuantity > 0) {
-          try {
-            WarehouseProductSyncService::adjustQuantity($oldProductId, 'addition', $oldQuantity);
-          } catch (\Exception $e) {
-            // Log error but don't fail the transaction
-            Log::error("Failed to restore product quantity for product {$oldProductId}: " . $e->getMessage());
-          }
-        }
-      }
-
       // Delete old items
       $order->items()->delete();
 
       // Create new items and calculate new wallet credit earned
       // This handles: adding products, removing products, and changing quantities
       $newWalletCreditEarned = 0;
+      $newQuantitiesByProduct = [];
       foreach ($products as $productData) {
         $quantity = (int) $productData['quantity'];
         $unitPrice = (float) ($productData['unit_cost'] ?? 0); // Note: form uses unit_cost but it's actually unit_price for orders
@@ -642,6 +635,11 @@ class OrderController extends Controller
           'total_vat' => $totalVat,
           'total' => $total,
         ]);
+
+        $pid = (int) ($productData['product_id'] ?? 0);
+        if ($pid > 0) {
+          $newQuantitiesByProduct[$pid] = ($newQuantitiesByProduct[$pid] ?? 0) + $quantity;
+        }
       }
 
       // Refresh order to get new items
@@ -746,6 +744,7 @@ class OrderController extends Controller
         'order_number' => $order->order_number, // Keep original reference number, don't update
         'delivery_charge' => $validated['shipping_charge'] ?? 0,
         'delivery_note' => $validated['delivery_note'] ?? null,
+        'status' => $newStatus,
         'wallet_credit_used' => $newWalletCreditUsed,
       ];
 
@@ -758,17 +757,35 @@ class OrderController extends Controller
 
       // Update order totals again to recalculate with new wallet_credit_used
       $this->updateOrderTotals($order->id);
+      // Reconcile ordered and physical stock based on status transition
+      if ($order->type === 'SO') {
+        $allProductIds = array_unique(array_merge(array_keys($oldQuantitiesByProduct), array_keys($newQuantitiesByProduct)));
+        foreach ($allProductIds as $productId) {
+          $oldQty = (float) ($oldQuantitiesByProduct[$productId] ?? 0);
+          $newQty = (float) ($newQuantitiesByProduct[$productId] ?? 0);
 
-      // Decrement new product quantities after order is updated
-      foreach ($products as $productData) {
-        $quantity = (float) ($productData['quantity'] ?? 0);
-        $productId = (int) ($productData['product_id'] ?? 0);
-        if ($productId > 0 && $quantity > 0) {
-          try {
-            WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $quantity);
-          } catch (\Exception $e) {
-            // Log error but don't fail the transaction
-            Log::error("Failed to adjust product quantity for product {$productId}: " . $e->getMessage());
+          // Open quantities (affect ordered_qty) – only when status is strictly New
+          $oldOpen = ($oldStatus === 'New') ? $oldQty : 0.0;
+          $newOpen = ($newStatus === 'New') ? $newQty : 0.0;
+          $deltaOrdered = $newOpen - $oldOpen;
+
+          if ($deltaOrdered > 0) {
+            WarehouseProductSyncService::adjustOrdered($productId, 'addition', $deltaOrdered);
+          } elseif ($deltaOrdered < 0) {
+            WarehouseProductSyncService::adjustOrdered($productId, 'subtraction', abs($deltaOrdered));
+          }
+
+          // Shipped quantities (affect physical onhand_qty) – when status is Completed
+          $oldShipped = ($oldStatus === 'Completed') ? $oldQty : 0.0;
+          $newShipped = ($newStatus === 'Completed') ? $newQty : 0.0;
+          $deltaShipped = $newShipped - $oldShipped;
+
+          if ($deltaShipped > 0) {
+            // More shipped than before → reduce physical stock
+            WarehouseProductSyncService::adjustQuantity($productId, 'subtraction', $deltaShipped);
+          } elseif ($deltaShipped < 0) {
+            // Fewer shipped than before → restore physical stock
+            WarehouseProductSyncService::adjustQuantity($productId, 'addition', abs($deltaShipped));
           }
         }
       }

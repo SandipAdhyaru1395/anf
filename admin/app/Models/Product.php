@@ -8,6 +8,7 @@ use App\Models\Concerns\RecordsSyncUpdate;
 use App\Models\PriceList;
 use App\Models\ProductPriceList;
 use App\Models\Customer;
+use App\Models\Category;
 
 class Product extends Model
 {
@@ -27,7 +28,10 @@ class Product extends Model
         'weight',
         'rrp',
         'expiry_date',
-        'stock_quantity',
+        'available_qty',
+        'allow_out_of_stock',
+        'onhand_qty',
+        'ordered_qty',
         'step_quantity',
         'notification_request_count',
         'vat_percentage',
@@ -59,6 +63,11 @@ class Product extends Model
         return $this->belongsToMany(PriceList::class, 'product_price_list')
             ->withPivot('unit_price', 'rrp')
             ->withTimestamps();
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id');
     }
 
     /**
