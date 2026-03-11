@@ -56,6 +56,8 @@ $(document).ready(function () {
                 $('#editCustomerBranchForm input[name="state"]').val(branch.state || '');
                 $('#editCustomerBranchForm input[name="zip_code"]').val(branch.zip_code || '');
                 $('#editCustomerBranchForm input[name="country"]').val(branch.country || '');
+      $('#editCustomerBranchForm input[name="is_default_delivery"]').prop('checked', !!branch.is_default_delivery);
+      $('#editCustomerBranchForm input[name="is_default_billing"]').prop('checked', !!branch.is_default_billing);
             }
 
           }
@@ -99,100 +101,130 @@ function deleteBranch(branchId) {
 @endsection
 
 @section('content')
-@include('content.customer.header')
+@php
+  $customerName = $customer->company_name ?: ($customer->email ?: 'Customer');
+@endphp
 
-<div class="row">
-  @include('content.customer.sidebar')
+<style>
+  .customer-topbar {
+    background: #fff;
+    border: 1px solid #eceef1;
+    border-radius: .375rem;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .customer-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #566a7f;
+  }
+  .customer-breadcrumb a {
+    color: #696cff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .customer-breadcrumb a:hover {
+    color: #5f61e6;
+    text-decoration: underline;
+  }
+  .customer-breadcrumb .muted { color: #a1acb8; font-weight: 500; }
+  .customer-actions a {
+    color: #696cff;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .customer-actions a:hover { color: #5f61e6; }
+  .address-grid { margin-top: 1rem; }
+  .address-card,
+  .address {
+    background: #fff;
+    border: 1px solid #eceef1;
+    border-radius: .25rem;
+    padding: 1.1rem 1.1rem;
+    width: 300px;
+    min-height: 150px;
+    position: relative;
+  }
+  .address-card p,
+  .address p { margin: 0; line-height: 1.4; color: #566a7f; font-size: .85rem; }
+  .address-card:hover,
+  .address:hover { border-color: #d9dee3; }
+  .address-card.is-clickable,
+  .address.is-clickable { cursor: pointer; }
+  .address-edit-icon {
+    position: absolute;
+    top: .6rem;
+    right: .6rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    background: #f5f5f9;
+    border: 1px solid #eceef1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  .address:hover .address-edit-icon,
+  .address-card:hover .address-edit-icon {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
 
-  <!-- Customer Content -->
-  <div class="col-xl-8 col-lg-7 col-md-7 order-0 order-md-1">
-    <!-- Customer Pills -->
-    <div class="nav-align-top">
-      <ul class="nav nav-pills flex-column flex-md-row mb-6 row-gap-2 flex-wrap">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url('customer/'.$customer->id .'/overview') }}"><i
-              class="icon-base ti tabler-user icon-sm me-1_5"></i>Overview</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url('customer/'.$customer->id .'/security') }}"><i
-              class="icon-base ti tabler-lock icon-sm me-1_5"></i>Security</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" href="javascript:void(0);"><i
-              class="icon-base ti tabler-map-pin icon-sm me-1_5"></i>Branches</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url('customer/'.$customer->id .'/notifications') }}"><i
-              class="icon-base ti tabler-bell icon-sm me-1_5"></i>Notifications</a>
-        </li>
-      </ul>
-    </div>
-    <!--/ Customer Pills -->
-
-    <!-- Branch accordion -->
-
-    <div class="card card-action mb-6">
-      <div class="card-header align-items-center py-6">
-        <h5 class="card-action-title mb-0">Branches</h5>
-        <div class="card-action-element">
-          <button class="btn btn-sm btn-label-primary" type="button" data-bs-toggle="modal"
-            data-bs-target="#addCustomerBranch">Add new branch</button>
-        </div>
-      </div>
-      <div class="card-body">
-        @if(isset($branches) && $branches->count() > 0)
-          <div class="accordion accordion-flush accordion-arrow-left" id="accordionBranch">
-            @foreach($branches as $index => $branch)
-              <div class="accordion-item {{ $index === 0 ? 'border-bottom' : ($index === $branches->count() - 1 ? 'border-top-0' : 'border-bottom border-top-0') }}">
-                <div class="accordion-header d-flex justify-content-between align-items-center flex-wrap flex-sm-nowrap"
-                  id="heading{{ $branch->id }}">
-                  <a class="accordion-button collapsed" data-bs-toggle="collapse"
-                    data-bs-target="#branch{{ $branch->id }}" 
-                    aria-expanded="false" 
-                    aria-controls="heading{{ $branch->id }}"
-                    role="button">
-                    <span>
-                      
-                      <span class="mb-0">{{ $branch->address_line1 }}</span>
-                    </span>
-                  </a>
-                  <div class="d-flex gap-4 p-6 p-sm-0 pt-0 ms-1 ms-sm-0">
-                    <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#editCustomerBranch" data-id="{{ $branch->id }}">
-                      <i class="icon-base ti tabler-edit text-body icon-md"></i>
-                    </a>
-                    <a href="javascript:void(0);" onclick="deleteBranch({{ $branch->id }})">
-                      <i class="icon-base ti tabler-trash text-body icon-md"></i>
-                    </a>
-                  </div>
-                </div>
-                <div id="branch{{ $branch->id }}" 
-                     class="accordion-collapse collapse" 
-                     aria-labelledby="heading{{ $branch->id }}"
-                     data-bs-parent="#accordionBranch">
-                  <div class="accordion-body ps-6 ms-1">
-                    <h6 class="mb-1">{{ $branch->name ?: '' }}</h6>
-                    <p class="mb-1">{{ $branch->address_line1 }},</p>
-                    @if($branch->address_line2)
-                      <p class="mb-1">{{ $branch->address_line2 }},</p>
-                    @endif
-                    <p class="mb-1">{{ $branch->city }}, {{ $branch->state }} {{ $branch->zip_code }},</p>
-                    <p class="mb-1">{{ $branch->country }}</p>
-                  </div>
-                </div>
-              </div>
-            @endforeach
-          </div>
-        @else
-          <div class="text-center py-4">
-            <p class="text-muted">No branches found. Add first branch using the button above.</p>
-          </div>
-        @endif
-      </div>
-    </div>
-    <!-- Branch accordion -->
-    
+<div class="customer-topbar">
+  <div class="customer-breadcrumb">
+    <a href="{{ route('customer.list') }}">Customers</a>
+    <span class="muted">/</span>
+    <a href="{{ route('customer.overview', $customer->id) }}">{{ $customerName }}</a>
+    <span class="muted">/</span>
+    <span>Addresses</span>
   </div>
-  <!--/ Customer Content -->
+  <div class="customer-actions">
+    <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addCustomerBranch">New Address</a>
+  </div>
+</div>
+
+<div class="address-grid">
+  @if(isset($branches) && $branches->count() > 0)
+    <div class="d-flex flex-wrap gap-4">
+      @foreach($branches as $branch)
+        <div
+          class="address address-card is-clickable"
+          role="button"
+          tabindex="0"
+          data-bs-toggle="modal"
+          data-bs-target="#editCustomerBranch"
+          data-id="{{ $branch->id }}"
+        >
+          <span class="address-edit-icon" aria-hidden="true">
+            <i class="icon-base ti tabler-pencil"></i>
+          </span>
+          <p>{{ $branch->name ?: ($branch->company_name ?? '') }}</p>
+          @if(!empty($customerName)) <p>{{ $customerName }}</p> @endif
+          @if(!empty($branch->address_line1)) <p>{{ $branch->address_line1 }}</p> @endif
+          @if(!empty($branch->address_line2)) <p>{{ $branch->address_line2 }}</p> @endif
+          @if(!empty($branch->city)) <p>{{ $branch->city }}</p> @endif
+          @if(!empty($branch->state)) <p>{{ $branch->state }}</p> @endif
+          @if(!empty($branch->zip_code)) <p>{{ $branch->zip_code }}</p> @endif
+          @if(!empty($branch->country)) <p>{{ $branch->country }}</p> @endif
+        </div>
+      @endforeach
+    </div>
+  @else
+    <div class="text-muted">No addresses found.</div>
+  @endif
 </div>
 
 <!-- Modal -->

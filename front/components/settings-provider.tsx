@@ -19,6 +19,7 @@ type Settings = {
   currency_symbol?: string | null
   banner?: string | null
   maintenance_mode?: boolean | null
+  payment_gateway_available?: boolean | null
   theme?: Theme | null
 }
 
@@ -60,6 +61,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         currency_symbol: s?.currency_symbol ?? null,
         banner: s?.banner ?? null,
         maintenance_mode: typeof s?.maintenance_mode === 'boolean' ? s.maintenance_mode : null,
+        payment_gateway_available: typeof s?.payment_gateway_available === 'boolean' ? s.payment_gateway_available : null,
         theme: s?.theme ? {
           use_default: typeof s.theme.use_default === 'boolean' ? s.theme.use_default : null,
           primary_bg_color: s.theme.primary_bg_color ?? null,
@@ -228,6 +230,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                   rep_name: c.rep_name ?? null,
                   rep_email: c.rep_email ?? null,
                   rep_mobile: c.rep_mobile ?? null,
+                  pay_later_allowed: !!c.pay_later_allowed,
                 }
                 try {
                   sessionStorage.setItem('customer_cache', JSON.stringify({ version: vers.Customer, customer: normalized as any, favoriteProductIds: ids }))
@@ -260,10 +263,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const raw = sessionStorage.getItem('settings_cache')
       if (raw) {
         const cachedSettings = JSON.parse(raw)
-        // Ensure banner field exists in cached settings
-        if (cachedSettings && !cachedSettings.hasOwnProperty('banner')) {
-          cachedSettings.banner = null
-          // Update the cache with the new field
+        // Ensure new fields exist in cached settings
+        if (cachedSettings) {
+          if (!cachedSettings.hasOwnProperty('banner')) {
+            cachedSettings.banner = null
+          }
+          if (!cachedSettings.hasOwnProperty('payment_gateway_available')) {
+            cachedSettings.payment_gateway_available = null
+          }
+          // Update the cache with the new fields
           try { sessionStorage.setItem('settings_cache', JSON.stringify(cachedSettings)) } catch {}
         }
         setSettings(cachedSettings)

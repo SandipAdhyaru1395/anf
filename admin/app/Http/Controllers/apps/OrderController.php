@@ -920,6 +920,14 @@ class OrderController extends Controller
       $query->where('orders.order_date', '<=', $endDate);
     }
 
+    // Status filter for "Show" dropdown
+    $statusFilter = $request->input('status_filter');
+    if ($statusFilter === 'except_cancelled') {
+      $query->where('orders.status', '!=', 'Cancelled');
+    } elseif ($statusFilter === 'cancelled') {
+      $query->where('orders.status', '=', 'Cancelled');
+    }
+
     return DataTables::eloquent($query)
       ->filter(function ($query) use ($request) {
 
@@ -1091,6 +1099,26 @@ class OrderController extends Controller
       ->toJson();
   }
 
+
+  /**
+   * Show order view page (full page, not modal).
+   */
+  public function show($id)
+  {
+    $order = Order::with(['items.product', 'customer', 'parentOrder', 'creditNotes.items.product', 'payments'])->findOrFail($id);
+
+    $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
+    $currencySymbol = $settings['currency_symbol'] ?? '£';
+    $currencyCode = 'GBP';
+    if (!empty($settings['default_currency_id'])) {
+      $currency = \App\Models\Currency::find($settings['default_currency_id']);
+      if ($currency && !empty($currency->currency_code)) {
+        $currencyCode = $currency->currency_code;
+      }
+    }
+
+    return view('content.order.view', compact('order', 'settings', 'currencySymbol', 'currencyCode'));
+  }
 
   public function showAjax($id)
   {
@@ -1816,7 +1844,8 @@ class OrderController extends Controller
           }
         ],
         'amount' => ['required', 'numeric', 'min:1'],
-        'payment_method' => ['required', 'string', 'in:Cash,Bank,Outstanding'],
+      // Allow DNA Gateway in addition to existing methods
+      'payment_method' => ['required', 'string', 'in:Cash,Bank,Outstanding,DNA Gateway'],
         'note' => ['nullable', 'string'],
       ], [
         'order_id.required' => 'Order ID is required',

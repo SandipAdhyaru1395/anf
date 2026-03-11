@@ -21,6 +21,13 @@ class SettingController extends Controller
         $bannerPath = $settings->get('banner');
         $bannerUrl = $bannerPath ? asset('storage/'.$bannerPath) : null;
 
+        // Determine if DNA payment gateway is available (enabled + fully configured)
+        $dnaEnabled = ($settings->get('dna_payments_enabled') === '1');
+        $dnaClientId = $settings->get('dna_payments_client_id');
+        $dnaClientSecret = $settings->get('dna_payments_client_secret');
+        $dnaTerminalId = $settings->get('dna_payments_terminal_id');
+        $dnaGatewayAvailable = $dnaEnabled && !empty($dnaClientId) && !empty($dnaClientSecret) && !empty($dnaTerminalId);
+
         // Build versions map from sync_updates table, tolerating schema differences
         $versionsMap = [];
         try {
@@ -41,6 +48,7 @@ class SettingController extends Controller
                 'currency_symbol' => $settings->get('currency_symbol') ?? '',
                 'banner' => $bannerUrl,
                 'maintenance_mode_store' => $settings->get('maintenance_mode_store') === '1',
+                'payment_gateway_available' => $dnaGatewayAvailable,
                 'theme' => [
                     'use_default' => $settings->get('default_theme') === '1',
                     'primary_bg_color' => $settings->get('primary_bg_color') ?? $settings->get('theme_primary_color'),

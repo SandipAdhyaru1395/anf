@@ -52,6 +52,14 @@ class CustomerController extends Controller
     $customer_groups = Helpers::getCustomerGroups();
     $price_lists = Helpers::getPriceLists();
 
+    // Addresses (branches) for defaults in overview
+    $branches = Branch::query()
+      ->where('customer_id', $id)
+      ->orderByDesc('is_default_delivery')
+      ->orderByDesc('is_default_billing')
+      ->orderBy('created_at', 'asc')
+      ->get();
+
     return [
       'customer' => $customer,
       'ordersCount' => (int) ($orderAgg->orders_count ?? 0),
@@ -59,7 +67,8 @@ class CustomerController extends Controller
       'currencySymbol' => $currencySymbol,
       'sales_persons' => $sales_persons,
       'customer_groups' => $customer_groups,
-      'price_lists' => $price_lists
+      'price_lists' => $price_lists,
+      'branches' => $branches
     ];
   }
   public function overview($id = null)
@@ -71,99 +80,111 @@ class CustomerController extends Controller
 
   public function ajaxList(Request $request)
   {
-    // Column mapping for manual sorting
+    // Column mapping for manual sorting (Name, Main Contact, Group, Last Seen, Last Order, Min. Spend, Status)
     $columns = [
-      2 => 'customers.email',
-      3 => 'customers.phone',
-      4 => 'customers.credit_balance',
-      5 => 'order_stats.orders_count',
-      6 => 'order_stats.total_spent',
+      0 => DB::raw('COALESCE(customers.company_name, customers.email)'),
+      1 => 'customers.email',
+      2 => 'customer_groups.name',
+      3 => 'customers.last_login',
+      4 => 'order_stats.last_order_at',
+      5 => 'customers.is_active',
     ];
 
-    // Subquery for order stats
+    // Subquery for order stats (include last order date)
     $orderStats = DB::table('orders')
       ->selectRaw('
             customer_id,
             COUNT(id) as orders_count,
-            COALESCE(SUM(total_amount),0) as total_spent
+            COALESCE(SUM(total_amount),0) as total_spent,
+            MAX(created_at) as last_order_at
         ')
       ->groupBy('customer_id');
 
-    // Main query
+    // Main query with customer_groups for group name
     $query = Customer::query()
       ->leftJoinSub($orderStats, 'order_stats', function ($join) {
         $join->on('customers.id', '=', 'order_stats.customer_id');
       })
-      ->whereNull('customers.deleted_at') // remove if not using soft deletes
+      ->leftJoin('customer_groups', 'customers.customer_group_id', '=', 'customer_groups.id')
+      ->whereNull('customers.deleted_at')
       ->select([
         'customers.id',
-        'customers.email as customer',
+        'customers.company_name',
+        'customers.email',
         'customers.phone',
-        'customers.credit_balance',
+        'customers.last_login',
+        'customers.is_active',
+        'customer_groups.name as group_name',
         DB::raw('COALESCE(order_stats.orders_count,0) as orders_count'),
         DB::raw('COALESCE(order_stats.total_spent,0) as total_spent'),
+        'order_stats.last_order_at',
       ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Manual Sorting
-    |--------------------------------------------------------------------------
-    */
-    if ($request->has('order')) {
+    // Status filter (Show: All except closed = active only by default, active, inactive, all)
+    $statusFilter = $request->input('status_filter');
+    if ($statusFilter === 'active') {
+      $query->where('customers.is_active', true);
+    } elseif ($statusFilter === 'inactive') {
+      $query->where('customers.is_active', false);
+    } elseif ($statusFilter === 'except_closed' || $statusFilter === '') {
+      $query->where('customers.is_active', true);
+    }
 
-      $orderColumnIndex = $request->order[0]['column'];
+    if ($request->has('order') && !empty($request->order[0])) {
+      $orderColumnIndex = (int) $request->order[0]['column'];
       $orderDirection = $request->order[0]['dir'];
 
       if (isset($columns[$orderColumnIndex])) {
         $query->orderBy($columns[$orderColumnIndex], $orderDirection);
       }
-
     } else {
-      // Default sort: customer DESC
-      $query->orderBy('customers.email', 'desc');
+      $query->orderBy(DB::raw('COALESCE(customers.company_name, customers.email)'), 'asc');
     }
 
     return DataTables::of($query)
 
-      /*
-      |--------------------------------------------------------------------------
-      | Fix Global Search (important)
-      |--------------------------------------------------------------------------
-      */
       ->filter(function ($query) use ($request) {
-
         if ($search = $request->input('search.value')) {
-
           $query->where(function ($q) use ($search) {
-
             $q->where('customers.email', 'like', "%{$search}%")
+              ->orWhere('customers.company_name', 'like', "%{$search}%")
               ->orWhere('customers.phone', 'like', "%{$search}%")
-              ->orWhere('customers.credit_balance', 'like', "%{$search}%")
-              ->orWhere('order_stats.orders_count', 'like', "%{$search}%")
-              ->orWhere('order_stats.total_spent', 'like', "%{$search}%");
+              ->orWhere('customer_groups.name', 'like', "%{$search}%");
           });
         }
       })
 
-      /*
-      |--------------------------------------------------------------------------
-      | Format Columns
-      |--------------------------------------------------------------------------
-      */
-      ->editColumn('credit_balance', function ($row) {
-        return number_format((float) $row->credit_balance, 2, '.', '');
+      ->addColumn('name', function ($row) {
+        return $row->company_name ?: $row->email;
       })
-
-      ->editColumn('total_spent', function ($row) {
-        return number_format((float) $row->total_spent, 2, '.', '');
+      ->addColumn('main_contact', function ($row) {
+        return $row->email ?: '-';
       })
-
-      ->addColumn('actions', function ($row) {
-        return '<button class="btn btn-sm btn-primary">Edit</button>';
+      ->addColumn('group', function ($row) {
+        return $row->group_name ?: '';
       })
-
-      ->rawColumns(['actions'])
-
+      ->addColumn('last_seen', function ($row) {
+        if (!$row->last_login) {
+          return '';
+        }
+        $date = $row->last_login instanceof \Carbon\Carbon
+          ? $row->last_login
+          : Carbon::parse($row->last_login);
+        return $date->format('d M Y');
+      })
+      ->addColumn('last_order', function ($row) {
+        return $row->last_order_at ? Carbon::parse($row->last_order_at)->format('d M Y') : '';
+      })
+      ->addColumn('min_spend', function () {
+        return '-';
+      })
+      ->addColumn('status', function ($row) {
+        $active = (bool) $row->is_active;
+        $class = $active ? 'badge-status-active' : 'badge-status-inactive';
+        $text = $active ? 'Active' : 'Inactive';
+        return '<span class="' . $class . '">' . $text . '</span>';
+      })
+      ->rawColumns(['status'])
       ->make(true);
   }
 
@@ -177,14 +198,32 @@ class CustomerController extends Controller
       ->get();
 
     $data = $orders->map(function (Order $order) {
+      $orderDateValue = $order->order_date ?: $order->created_at;
+      $deliverOnValue = $order->estimated_delivery_date;
+
+      $orderDateIso = null;
+      if (!empty($orderDateValue)) {
+        $orderDateIso = $orderDateValue instanceof \Carbon\Carbon
+          ? $orderDateValue->toISOString()
+          : Carbon::parse($orderDateValue)->toISOString();
+      }
+
+      $deliverOnIso = null;
+      if (!empty($deliverOnValue)) {
+        $deliverOnIso = $deliverOnValue instanceof \Carbon\Carbon
+          ? $deliverOnValue->toISOString()
+          : Carbon::parse($deliverOnValue)->toISOString();
+      }
+
       return [
         'id' => $order->id,
-        'order' => $order->order_number ?? $order->id,
-        'order_number' => $order->order_number ?? '',
-        'date' => optional($order->created_at)->toISOString(),
-        'payment_status' => $order->payment_status ?? 'Due',
-        'order_status' => $order->status ?? 'Completed',
-        'spent' => number_format((float) ($order->total_amount ?? 0), 2),
+        'order_number' => $order->order_number ?? null,
+        'number' => $order->order_number ?? $order->id,
+        'order_date' => $orderDateIso,
+        'deliver_on' => $deliverOnIso,
+        'total' => number_format((float) ($order->total_amount ?? 0), 2),
+        'invoice' => '-',
+        'status' => $order->status ?? 'New',
       ];
     });
 
@@ -206,6 +245,8 @@ class CustomerController extends Controller
 
     // Load addresses for the customer
     $branches = Branch::where('customer_id', $id)
+      ->orderByDesc('is_default_delivery')
+      ->orderByDesc('is_default_billing')
       ->orderBy('created_at', 'asc')
       ->get();
 

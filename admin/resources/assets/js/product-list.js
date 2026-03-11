@@ -12,6 +12,85 @@ document.addEventListener('DOMContentLoaded', function (e) {
   bodyBg = config.colors.bodyBg;
   headingColor = config.colors.headingColor;
 
+  // ERP Sync button (Planufac)
+  const syncBtn = document.getElementById('btn-sync-planufac');
+  if (syncBtn) {
+    syncBtn.addEventListener('click', function () {
+      const url = syncBtn.getAttribute('data-sync-url') || (baseUrl + 'product/sync/planufac');
+      const token = $('meta[name="csrf-token"]').attr('content');
+
+      Swal.fire({
+        title: 'Sync products from ERP?',
+        text: 'This will fetch latest products from Planufac ERP and update your product list.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, sync now',
+        cancelButtonText: 'Cancel',
+        customClass: {
+          confirmButton: 'btn btn-primary me-3',
+          cancelButton: 'btn btn-label-secondary'
+        },
+        buttonsStyling: false
+      }).then(function (result) {
+        if (!result.isConfirmed) return;
+
+        syncBtn.disabled = true;
+        const originalHtml = syncBtn.innerHTML;
+        syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Syncing...';
+
+        $.ajax({
+          url: url,
+          type: 'POST',
+          data: { _token: token },
+          success: function (response, status, xhr) {
+            const queued = response && response.queued;
+            const summary = response && response.summary ? response.summary : null;
+
+            let message = response && response.message ? response.message : 'Sync started.';
+            if (!queued && summary) {
+              message =
+                `Processed: ${summary.processed || 0}\n` +
+                `Inserted: ${summary.inserted || 0}\n` +
+                `Updated: ${summary.updated || 0}`;
+            }
+
+            Swal.fire({
+              icon: 'success',
+              title: queued ? 'Sync queued' : 'Sync complete',
+              text: message,
+              customClass: { confirmButton: 'btn btn-success' },
+              buttonsStyling: false
+            });
+
+            // Reload DataTable if present
+            try {
+              if (typeof dt_products !== 'undefined' && dt_products) {
+                dt_products.ajax.reload(null, false);
+              }
+            } catch (e) {}
+          },
+          error: function (xhr) {
+            let message = 'Sync failed.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              message = xhr.responseJSON.message;
+            }
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: message,
+              customClass: { confirmButton: 'btn btn-danger' },
+              buttonsStyling: false
+            });
+          },
+          complete: function () {
+            syncBtn.disabled = false;
+            syncBtn.innerHTML = originalHtml;
+          }
+        });
+      });
+    });
+  }
+
   // Variable declaration for table
   const dt_product_table = document.querySelector('.datatables-products'),
     productAdd = baseUrl + 'product/add',
@@ -478,10 +557,17 @@ document.addEventListener('DOMContentLoaded', function (e) {
                   ]
                 },
                 {
-                  text: '<i class="icon-base ti tabler-upload me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Import Products</span>',
+                  text: '<i class="icon-base ti tabler-download me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Import Products</span>',
                   className: 'btn btn-label-secondary me-2',
                   action: function () {
                     $('#importProductModal').modal('show');
+                  }
+                },
+                {
+                  text: '<i class="icon-base ti tabler-photo-plus me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Import Images</span>',
+                  className: 'btn btn-label-secondary me-2',
+                  action: function () {
+                    $('#importProductImagesModal').modal('show');
                   }
                 },
                 {

@@ -35,4 +35,23 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | ERP Services
+    |--------------------------------------------------------------------------
+    */
+    'planufac' => [
+        'base_url' => env('PLANUFAC_BASE_URL', 'https://sandbox.planufac.com'),
+        'email' => env('PLANUFAC_EMAIL'),
+        'password' => env('PLANUFAC_PASSWORD'),
+        'timeout' => env('PLANUFAC_TIMEOUT', 20),
+    ],
+
+    'dna_payments' => [
+        'currency' => env('DNA_PAYMENTS_CURRENCY', 'GBP'),
+        'return_url' => env('DNA_PAYMENTS_RETURN_URL'),
+        'failure_url' => env('DNA_PAYMENTS_FAILURE_URL'),
+        'callback_url' => env('DNA_PAYMENTS_CALLBACK_URL'),
+    ],
+
 ];

@@ -11,6 +11,7 @@
   "require": {
     "php": "^8.2",
     "brian2694/laravel-toastr": "^5.59",
+    "dna/dnapayments-sdk-php": "^2.1",
     "dompdf/dompdf": "^3.1",
     "laravel/framework": "^12.0",
     "laravel/sanctum": "^4.0",

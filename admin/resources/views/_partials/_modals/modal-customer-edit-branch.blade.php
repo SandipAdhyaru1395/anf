@@ -53,6 +53,19 @@
                 <span class="text-danger">{{ $message }}</span>
             @enderror
           </div>
+
+          <div class="col-12">
+            <div class="d-flex flex-column gap-4 mt-2">
+              <label class="d-flex align-items-center gap-3">
+                <input type="checkbox" name="is_default_delivery" value="1" class="form-check-input m-0" {{ old('is_default_delivery') ? 'checked' : '' }}>
+                <span class="fw-medium">Use As Default Delivery Address</span>
+              </label>
+              <label class="d-flex align-items-center gap-3">
+                <input type="checkbox" name="is_default_billing" value="1" class="form-check-input m-0" {{ old('is_default_billing') ? 'checked' : '' }}>
+                <span class="fw-medium">Use As Default Billing Address</span>
+              </label>
+            </div>
+          </div>
           <div class="col-12 text-center">
             <button type="submit" class="btn btn-primary me-3">Submit</button>
             <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancel</button>

@@ -98,12 +98,15 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/product/create', [ProductController::class, 'create'])->name('product.create');
         Route::post('/product/import', [ProductController::class, 'import'])->name('product.import');
         Route::get('/product/import/sample', [ProductController::class, 'downloadSample'])->name('product.import.sample');
+        Route::post('/product/images/import', [ProductController::class, 'importImages'])->name('product.images.import');
+        Route::get('/product/images/import/sample', [ProductController::class, 'downloadImagesSample'])->name('product.images.import.sample');
     });
 
     Route::middleware('permission:product.write')->group(function () {
         Route::post('/product/update', [ProductController::class, 'update'])->name('product.update');
         Route::post('/product/update-pricing', [ProductController::class, 'updatePricing'])->name('product.update.pricing');
         Route::post('/product/update-inventory', [ProductController::class, 'updateInventory'])->name('product.update.inventory');
+        Route::post('/product/sync/planufac', [ProductController::class, 'syncPlanufacProducts'])->name('product.sync.planufac');
         Route::get('/product/delete/{id}', [ProductController::class, 'delete'])->name('product.delete');
         Route::post('/product/delete-multiple', [ProductController::class, 'deleteMultiple']);
     });
@@ -151,6 +154,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     //Order
     Route::middleware('permission:order.read')->group(function () {
         Route::get('/order', [OrderController::class, 'index'])->name('order.list');
+        Route::get('/order/view/{id}', [OrderController::class, 'show'])->name('order.show');
         Route::get('/order/details', [OrderController::class, 'getOrderDetails'])->name('order-details');
         Route::get('/order/edit/{id}', [OrderController::class, 'edit'])->name('order.edit');
         Route::get('/order/list/ajax', [OrderController::class, 'ajaxList'])->name('order.list.ajax');
@@ -296,6 +300,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/settings/banner', [SettingController::class, 'viewBannerSettings'])->name('settings.banner');
         Route::get('/settings/maintenance', [SettingController::class, 'viewMaintenanceSettings'])->name('settings.maintenance');
         Route::get('/settings/theme', [SettingController::class, 'viewThemeSettings'])->name('settings.theme');
+        Route::get('/settings/payment-gateways', [SettingController::class, 'viewPaymentGateways'])->name('settings.paymentGateways');
         Route::get('/settings/delivery-method', [SettingController::class, 'viewDeliveryMethod'])->name('settings.deliveryMethod');
         Route::get('/settings/delivery-method/list/ajax', [SettingController::class, 'deliveryMethodListAjax'])->name('settings.deliveryMethod.list.ajax');
         Route::get('/settings/delivery-method/ajax/show', [SettingController::class, 'deliveryMethodShow'])->name('settings.deliveryMethod.ajax.show');
@@ -332,6 +337,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/settings/maintenance/update', [SettingController::class, 'updateMaintenanceSettings'])->name('settings.maintenance.update');
         Route::post('/settings/truncate', [SettingController::class, 'truncateData'])->name('settings.truncate');
         Route::post('/settings/theme/update', [SettingController::class, 'updateThemeSettings'])->name('settings.theme.update');
+        Route::post('/settings/payment-gateways/update', [SettingController::class, 'updatePaymentGateways'])->name('settings.paymentGateways.update');
         Route::post('/settings/delivery-method/store', [SettingController::class, 'deliveryMethodStore'])->name('settings.deliveryMethod.store');
         Route::post('/settings/delivery-method/update', [SettingController::class, 'deliveryMethodUpdate'])->name('settings.deliveryMethod.update');
         Route::get('/settings/delivery-method/delete/{id}', [SettingController::class, 'deliveryMethodDelete'])->name('settings.deliveryMethod.delete');

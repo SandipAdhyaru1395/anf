@@ -16,7 +16,9 @@ use App\Models\CartItem;
 use App\Models\OrderRef;
 use App\Helpers\Helpers;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Services\WarehouseProductSyncService;
+use App\Services\DnaPaymentsService;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
@@ -44,7 +46,7 @@ class OrderController extends Controller
                 'units' => (int)($order->units_count ?? 0),
                 'skus' => (int)($order->skus_count ?? 0),
                 'currency_symbol' => $setting['currency_symbol'] ?? '',
-                'total_paid' => (float)($order->outstanding_amount ?? 0),
+                'total_paid' => (float)($order->paid_amount ?? 0),
             ];
         });
 
@@ -99,7 +101,7 @@ class OrderController extends Controller
                 'delivery_method' => $order->delivery_method_name,
                 'wallet_discount' => (float)($order->wallet_credit_used ?? 0) * -1,
                 'delivery_charge' => (float)($order->delivery_charge ?? 0),
-                'total_paid' => (float)($order->total_amount ?? 0),
+                'total_paid' => (float)($order->paid_amount ?? 0),
                 'payment_amount' => (float)($order->payment_amount ?? max(0, ($order->total_amount ?? 0) - ($order->wallet_credit_used ?? 0))),
                 'currency_symbol' => $setting['currency_symbol'] ?? '',
                 'address' => [
@@ -114,7 +116,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function store(Request $request){
+    public function store(Request $request, DnaPaymentsService $dnaPayments){
 
         try {
             // Validate the request (server will derive items/totals from cart)
@@ -307,15 +309,61 @@ class OrderController extends Controller
             }
 
             $paymentMode = $request->input('payment_mode'); // "gateway" or "pay_later"
+
+            // Enforce customer-group pay_later flag
+            $canPayLater = (bool) optional(optional($customer)->customerGroup)->pay_later;
+            if ($paymentMode === 'pay_later' && !$canPayLater) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pay later is not allowed for your customer group.',
+                    'errors' => [
+                        'payment_mode' => ['Pay later is not available for your account.'],
+                    ],
+                ], 200);
+            }
+
+            // If gateway selected, create DNA checkout session and return redirect URL.
             if ($paymentMode === 'gateway') {
-                // Simulate full payment via gateway for now
-                $paymentStatus = 'Paid';
-                $paidAmount = $totalAmount;
-                $unpaidAmount = 0;
-                $outstandingAmount = 0;
-                $paymentAmount = 0;
-            } elseif ($paymentMode === 'pay_later') {
-                // Explicitly mark as due (even if wallet applied)
+                $invoiceId = (string) Str::uuid();
+                $currency = config('services.dna_payments.currency', 'GBP');
+
+                // Persist payment context in cache so callback can reconstruct order safely
+                $context = [
+                    'customer_id'        => optional($customer)->id,
+                    'branch_id'          => $branch->id,
+                    'cart_id'            => $cart->id,
+                    'delivery_method_id' => $deliveryMethod?->id,
+                    'delivery_note'      => $request->input('delivery_note'),
+                ];
+                Cache::put('dna_invoice_'.$invoiceId, $context, now()->addDay());
+
+                try {
+                    $dna = $dnaPayments->createHostedPayment(
+                        $invoiceId,
+                        (float) $outstandingAmount,
+                        $currency,
+                        $context
+                    );
+                } catch (\RuntimeException $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => '',
+                        'errors' => [
+                            'payment_mode' => [$e->getMessage()],
+                        ],
+                    ], 200);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'requires_redirect' => true,
+                    'redirect_url' => $dna['checkoutUrl'],
+                    'payment_id' => $dna['paymentId'],
+                ]);
+            }
+
+            // For pay_later, explicitly mark as due (even if wallet applied)
+            if ($paymentMode === 'pay_later') {
                 $paymentStatus = 'Due';
             }
                 
@@ -463,7 +511,7 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Checkout failed: ' . $e->getMessage()
+                'message' => 'Checkout failed. ' . $e->getMessage()
             ], 500);
         }
     }

@@ -18,6 +18,7 @@ type Customer = {
   rep_name?: string | null
   rep_email?: string | null
   rep_mobile?: string | null
+  pay_later_allowed?: boolean
 }
 
 type CustomerContextValue = {
@@ -63,7 +64,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
           postcode: c.postcode ?? null,
           rep_name : c.rep_name ?? null,
           rep_email : c.rep_email ?? null,
-          rep_mobile : c.rep_mobile ?? null
+          rep_mobile : c.rep_mobile ?? null,
+          pay_later_allowed: !!c.pay_later_allowed,
         }
         setCustomer(normalized)
         const ids: number[] = Array.isArray(favRes?.data?.product_ids) ? favRes.data.product_ids.map((n: any) => Number(n)) : []

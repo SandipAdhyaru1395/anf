@@ -23,6 +23,11 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Models\VatMethod;
 use App\Models\Setting;
 use App\Models\Unit;
+use App\Jobs\SyncPlanufacProductsJob;
+use App\Services\Planufac\PlanufacClient;
+use App\Services\Planufac\PlanufacProductSyncService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class ProductController extends Controller
 {
@@ -907,6 +912,37 @@ class ProductController extends Controller
       ->toJson();
   }
 
+  public function syncPlanufacProducts(Request $request)
+  {
+    // If queues are configured but the jobs table isn't migrated, dispatching will fail.
+    // We'll use queue when available; otherwise run sync inline (still chunked + optimized).
+
+    try {
+      if (Schema::hasTable('jobs') && config('queue.default') !== 'sync') {
+        SyncPlanufacProductsJob::dispatch();
+        return response()->json([
+          'queued' => true,
+          'message' => 'Sync started in background. Refresh this page in a moment to see updated products.',
+          'last_sync' => Cache::get(PlanufacProductSyncService::CACHE_LAST_SYNC_KEY),
+        ], 202);
+      }
+
+      $service = new PlanufacProductSyncService(new PlanufacClient());
+      $summary = $service->syncAll(200);
+
+      return response()->json([
+        'queued' => false,
+        'message' => 'Sync completed.',
+        'summary' => $summary,
+      ]);
+    } catch (\Throwable $e) {
+      return response()->json([
+        'queued' => false,
+        'message' => $e->getMessage(),
+      ], 500);
+    }
+  }
+
 
   public function searchAjax(Request $request)
   {
@@ -980,6 +1016,233 @@ class ProductController extends Controller
       ->exists();
 
     return response()->json(['valid' => !$exists]);
+  }
+
+  public function importImages(Request $request)
+  {
+    $request->validate([
+      'imagesFile' => ['required', 'file', 'max:10240'],
+    ], [
+      'imagesFile.required' => 'Please select a file to import',
+      'imagesFile.file' => 'The uploaded file is invalid',
+      'imagesFile.max' => 'File size must not exceed 10MB',
+    ]);
+
+    $file = $request->file('imagesFile');
+    $extension = strtolower($file->getClientOriginalExtension());
+    $allowedExtensions = ['csv', 'txt'];
+
+    if (!in_array($extension, $allowedExtensions)) {
+      return redirect()->back()
+        ->withErrors(['imagesFile' => 'File must be in CSV format (.csv). If you have an Excel file, please convert it to CSV first.'])
+        ->withInput();
+    }
+
+    // Check if file is actually an Excel file (ZIP signature)
+    $fileContent = file_get_contents($file->getRealPath(), false, null, 0, 4);
+    $isExcelFile = (substr($fileContent, 0, 2) === 'PK');
+
+    if ($isExcelFile) {
+      return redirect()->back()
+        ->withErrors(['imagesFile' => 'The file appears to be an Excel file. Please convert it to CSV format first. In Excel: File &gt; Save As &gt; CSV (Comma delimited) (*.csv)'])
+        ->withInput();
+    }
+
+    try {
+      $rows = $this->readCsvFile($file);
+
+      if (empty($rows)) {
+        Toastr::error('No data found in the file or file is empty. Please ensure your file is a valid CSV file.');
+        return redirect()->back();
+      }
+
+      $headers = array_shift($rows);
+      if (empty($headers)) {
+        Toastr::error('Could not read headers from file. The file may be corrupted or in an unsupported format.');
+        return redirect()->back();
+      }
+
+      // Normalize headers
+      $normalizedHeaders = [];
+      foreach ($headers as $index => $header) {
+        $header = preg_replace('/\x{FEFF}/u', '', (string) $header);
+        $header = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $header);
+        $header = trim($header);
+        if ($header !== '') {
+          $normalizedHeaders[$index] = strtolower($header);
+        }
+      }
+
+      $skuIndex = null;
+      $imageIndex = null;
+
+      foreach ($normalizedHeaders as $index => $header) {
+        if ($skuIndex === null && str_contains($header, 'sku')) {
+          $skuIndex = $index;
+        }
+        if ($imageIndex === null && (str_contains($header, 'image') || str_contains($header, 'url'))) {
+          $imageIndex = $index;
+        }
+      }
+
+      if ($skuIndex === null || $imageIndex === null) {
+        $foundHeaders = array_values(array_filter(array_map('trim', $headers)));
+        $errorMsg = 'Missing required columns: SKU and Image URL.';
+        if (!empty($foundHeaders)) {
+          $errorMsg .= '<br><strong>Found headers in file:</strong> ' . implode(', ', array_map(function ($h) {
+            return '"' . $h . '"';
+          }, array_slice($foundHeaders, 0, 20)));
+          if (count($foundHeaders) > 20) {
+            $errorMsg .= ' (and ' . (count($foundHeaders) - 20) . ' more)';
+          }
+        }
+        Toastr::error($errorMsg, '', ['timeOut' => 10000]);
+        return redirect()->back();
+      }
+
+      $errors = [];
+      $notFound = [];
+      $validRows = [];
+
+      foreach ($rows as $rowIndex => $row) {
+        $lineNumber = $rowIndex + 2; // header is line 1
+
+        $sku = isset($row[$skuIndex]) ? trim((string) $row[$skuIndex]) : '';
+        $imageUrlRaw = isset($row[$imageIndex]) ? trim((string) $row[$imageIndex]) : '';
+
+        if ($sku === '' && $imageUrlRaw === '') {
+          continue;
+        }
+
+        if ($sku === '') {
+          $errors[] = "Line {$lineNumber}: Missing SKU.";
+          continue;
+        }
+
+        if ($imageUrlRaw === '') {
+          $errors[] = "Line {$lineNumber}: Missing image URL for SKU {$sku}.";
+          continue;
+        }
+
+        $url = $imageUrlRaw;
+        if (!preg_match('/^https?:\/\//i', $url) && !filter_var($url, FILTER_VALIDATE_URL)) {
+          if (strpos($url, '://') === false && strpos($url, '.') !== false) {
+            $url = 'https://' . ltrim($url, '/');
+          } else {
+            $errors[] = "Line {$lineNumber}: Image URL for SKU {$sku} must be a valid URL.";
+            continue;
+          }
+        }
+
+        $product = Product::where('sku', $sku)->first();
+        if (!$product) {
+          $notFound[] = $sku;
+          continue;
+        }
+
+        $validRows[] = [
+          'sku' => $sku,
+          'image_url' => $url,
+        ];
+      }
+
+      if (!empty($errors)) {
+        $errorMessage = "Import failed. Please fix the following errors and try again:<br>";
+        if (count($errors) <= 20) {
+          $errorMessage .= "<ul style='margin: 10px 0; padding-left: 20px;'>";
+          foreach ($errors as $error) {
+            $errorMessage .= "<li>" . htmlspecialchars($error, ENT_QUOTES, 'UTF-8') . "</li>";
+          }
+          $errorMessage .= "</ul>";
+        } else {
+          $errorMessage .= "<ul style='margin: 10px 0; padding-left: 20px;'>";
+          foreach (array_slice($errors, 0, 20) as $error) {
+            $errorMessage .= "<li>" . htmlspecialchars($error, ENT_QUOTES, 'UTF-8') . "</li>";
+          }
+          $errorMessage .= "</ul>";
+          $errorMessage .= "<strong>And " . (count($errors) - 20) . " more error(s).</strong>";
+        }
+        Toastr::error($errorMessage, '', ['timeOut' => 15000, 'escapeHtml' => false]);
+        return redirect()->back();
+      }
+
+      if (empty($validRows)) {
+        Toastr::warning('No valid rows found to update images.');
+        return redirect()->back();
+      }
+
+      DB::beginTransaction();
+      $updated = 0;
+
+      foreach ($validRows as $row) {
+        $product = Product::where('sku', $row['sku'])->first();
+        if ($product) {
+          $product->image_url = $row['image_url'];
+          $product->save();
+          $updated++;
+        }
+      }
+
+      DB::commit();
+
+      if ($updated > 0) {
+        Toastr::success("Images updated for {$updated} product(s).");
+      } else {
+        Toastr::warning('No product images were updated from the file.');
+      }
+
+      if (!empty($notFound)) {
+        $sample = array_slice(array_unique($notFound), 0, 10);
+        $more = count(array_unique($notFound)) - count($sample);
+        $msg = 'Some SKUs were not found and were skipped: ' . implode(', ', $sample);
+        if ($more > 0) {
+          $msg .= " (and {$more} more)";
+        }
+        Toastr::warning($msg);
+      }
+    } catch (\Throwable $e) {
+      if (DB::transactionLevel() > 0) {
+        DB::rollBack();
+      }
+      Toastr::error('Image import failed: ' . $e->getMessage());
+    }
+
+    return redirect()->route('product.list');
+  }
+
+  public function downloadImagesSample()
+  {
+    $headers = [
+      'SKU',
+      'Image URL',
+    ];
+
+    $sampleData = [
+      ['6936330000000', 'https://example.com/images/product-6936330000000.jpg'],
+      ['ABC123', 'https://example.com/images/product-abc123.png'],
+    ];
+
+    $filename = 'sample-product-images-import.csv';
+    $handle = fopen('php://temp', 'r+');
+
+    // Add BOM for UTF-8 Excel compatibility
+    fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+    // Write headers
+    fputcsv($handle, $headers);
+
+    // Write sample data
+    foreach ($sampleData as $row) {
+      fputcsv($handle, $row);
+    }
+
+    rewind($handle);
+    $csv = stream_get_contents($handle);
+    fclose($handle);
+
+    return response($csv)
+      ->header('Content-Type', 'text/csv; charset=UTF-8')
+      ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
   }
 
   public function import(Request $request)

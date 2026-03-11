@@ -13,6 +13,8 @@ class CustomerController extends Controller
         $user = $request->user();
         
 
+        $canPayLater = (bool) optional($user->customerGroup)->pay_later;
+
         return response()->json([
             'success' => true,
             'customer' => [
@@ -29,7 +31,8 @@ class CustomerController extends Controller
                 'postcode' => $user->company_zip_code ?? null,
                 'rep_name' => $user?->salesPerson?->name ?? null,
                 'rep_email' => $user?->salesPerson?->email ?? null,
-                'rep_mobile' => $user?->salesPerson?->phone ?? null
+                'rep_mobile' => $user?->salesPerson?->phone ?? null,
+                'pay_later_allowed' => $canPayLater,
             ],
         ]);
     }

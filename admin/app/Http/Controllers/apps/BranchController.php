@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Response;
 
 class BranchController extends Controller
 {
@@ -27,6 +28,8 @@ class BranchController extends Controller
             'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'zip_code' => 'required|string|max:255',
+            'is_default_delivery' => 'nullable|boolean',
+            'is_default_billing' => 'nullable|boolean',
         ],[
             'name.required' => 'Please enter branch name',
             'address_line1.required' => 'Please enter address line 1',
@@ -41,7 +44,24 @@ class BranchController extends Controller
             DB::beginTransaction();
 
             $validatedData = $validator->validated();
-            Branch::create($validatedData);
+            $validatedData['is_default_delivery'] = $request->boolean('is_default_delivery');
+            $validatedData['is_default_billing'] = $request->boolean('is_default_billing');
+
+            $branch = Branch::create($validatedData);
+
+            if ($branch->is_default_delivery) {
+                Branch::query()
+                    ->where('customer_id', $branch->customer_id)
+                    ->where('id', '!=', $branch->id)
+                    ->update(['is_default_delivery' => false]);
+            }
+
+            if ($branch->is_default_billing) {
+                Branch::query()
+                    ->where('customer_id', $branch->customer_id)
+                    ->where('id', '!=', $branch->id)
+                    ->update(['is_default_billing' => false]);
+            }
 
             DB::commit();
 
@@ -91,6 +111,8 @@ class BranchController extends Controller
             'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'zip_code' => 'required|string|max:255',
+            'is_default_delivery' => 'nullable|boolean',
+            'is_default_billing' => 'nullable|boolean',
         ],[
             'name.required' => 'Please enter branch name',
             'address_line1.required' => 'Please enter address line 1',
@@ -108,7 +130,23 @@ class BranchController extends Controller
             DB::beginTransaction();
 
             $validatedData = $validator->validated();
+            $validatedData['is_default_delivery'] = $request->boolean('is_default_delivery');
+            $validatedData['is_default_billing'] = $request->boolean('is_default_billing');
             $branch->update($validatedData);
+
+            if ($branch->is_default_delivery) {
+                Branch::query()
+                    ->where('customer_id', $branch->customer_id)
+                    ->where('id', '!=', $branch->id)
+                    ->update(['is_default_delivery' => false]);
+            }
+
+            if ($branch->is_default_billing) {
+                Branch::query()
+                    ->where('customer_id', $branch->customer_id)
+                    ->where('id', '!=', $branch->id)
+                    ->update(['is_default_billing' => false]);
+            }
 
             DB::commit();
 
@@ -145,4 +183,5 @@ class BranchController extends Controller
             return redirect()->back();
         }
     }
+
 }

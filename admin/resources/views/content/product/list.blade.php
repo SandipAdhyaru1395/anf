@@ -112,6 +112,17 @@
 
 <!-- Product List Table -->
 <div class="card">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <h5 class="mb-0">Products</h5>
+    <button
+      type="button"
+      class="btn btn-label-secondary"
+      id="btn-sync-planufac"
+      data-sync-url="{{ route('product.sync.planufac') }}"
+    >
+      <i class="icon-base ti tabler-refresh me-1"></i>Sync ERP
+    </button>
+  </div>
   <div class="card-datatable">
     <table class="datatables-products table">
       <thead class="border-top">
@@ -195,6 +206,52 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Import Products</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Import Product Images Modal -->
+<div class="modal fade" id="importProductImagesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Import Product Images</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="importProductImagesForm" method="POST" action="{{ route('product.images.import') }}" enctype="multipart/form-data">
+        @csrf
+        <div class="modal-body">
+          <div class="mb-4">
+            <label class="form-label" for="imagesFile">Select File <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" id="imagesFile" name="imagesFile" accept=".csv" required>
+            <div class="form-text">Supported format: CSV only. File should contain SKU and full image URL columns.</div>
+            @error('imagesFile')
+              <span class="text-danger" role="alert">
+                <strong>{{ $message }}</strong>
+              </span>
+            @enderror
+          </div>
+          <div class="alert alert-info">
+            <h6 class="alert-heading">File Format Requirements:</h6>
+            <ul class="mb-0">
+              <li><strong>File Format:</strong> CSV files only. If you have an Excel file (.xlsx, .xls), please convert it to CSV first: In Excel, go to File &gt; Save As &gt; Choose "CSV (Comma delimited) (*.csv)".</li>
+              <li><strong>Column Headers (in order):</strong> SKU, Image URL</li>
+              <li><strong>SKU:</strong> Must match an existing product SKU in the system.</li>
+              <li><strong>Image URL:</strong> Enter a full URL (e.g., https://example.com/image.jpg). If URL doesn't start with http:// or https://, the system will try to automatically prefix it.</li>
+              <li><strong>Important:</strong> All rows will be validated before any images are updated. If any row has errors, no images will be updated. Fix all errors and try again.</li>
+            </ul>
+          </div>
+          <div class="mb-3">
+            <a href="{{ route('product.images.import.sample') }}" class="btn btn-sm btn-label-secondary">
+              <i class="icon-base ti tabler-download me-1"></i>Download Sample CSV
+            </a>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Import Images</button>
         </div>
       </form>
     </div>

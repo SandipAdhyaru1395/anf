@@ -762,20 +762,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
           const id = row.data().id;
           if (!id) return;
 
-          // Fetch details via AJAX and show modal
-          const url = baseUrl + 'order/show/ajax/' + id;
-          fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (res) { return res.json(); })
-            .then(function (payload) {
-              if (!payload || !payload.html) return;
-              const modalEl = document.getElementById('order-view-modal');
-              const contentEl = document.getElementById('order-view-modal-content');
-              if (!modalEl || !contentEl) return;
-              contentEl.innerHTML = payload.html;
-              const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-              modal.show();
-            })
-            .catch(function () { /* ignore */ });
+          window.location.href = baseUrl + 'order/view/' + id;
         });
       }
     });

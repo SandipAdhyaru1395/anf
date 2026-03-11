@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\DnaCallbackController;
 
 
 // Public auth endpoints
@@ -54,3 +55,6 @@ Route::middleware(['store.maintenance','auth:sanctum'])->group(function () {
     Route::post('/cart/set', [CartController::class, 'set']);
     Route::post('/cart/clear', [CartController::class, 'clear']);
 });
+
+// DNA Payments callback (no auth)
+Route::post('/dna/callback', [DnaCallbackController::class, 'handle']);

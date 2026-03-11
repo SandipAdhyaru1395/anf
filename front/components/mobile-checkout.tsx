@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCustomer } from "@/components/customer-provider";
 import FloatingInput from "./ui/floating-input";
 import { useCurrency } from "@/components/currency-provider";
+import { useSettings } from "@/components/settings-provider";
 
 interface Branch {
   id: number;
@@ -51,8 +52,7 @@ interface MobileCheckoutProps {
 
 export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: MobileCheckoutProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<"gateway" | "pay_later" | null>(null);
+  const [paymentMode, setPaymentMode] = useState<"gateway" | "pay_later" | null>("gateway");
   const [isDispatchExpanded, setIsDispatchExpanded] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -62,6 +62,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
   const { toast } = useToast();
   const { refresh, customer } = useCustomer();
   const { format, symbol } = useCurrency();
+  const { settings } = useSettings();
+  const [gatewayUnavailable, setGatewayUnavailable] = useState<boolean>(false);
 
   // Backend-driven cart snapshot for checkout
   const [items, setItems] = useState<Array<{ product: ProductItem; quantity: number }>>([]);
@@ -181,21 +183,42 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
     }
   }, [deliveryMethods]);
 
+  const payLaterAllowed = !!customer?.pay_later_allowed;
+  const initialGatewayAvailable = typeof settings?.payment_gateway_available === 'boolean' ? settings.payment_gateway_available : true;
+  const effectiveGatewayUnavailable = gatewayUnavailable || !initialGatewayAvailable;
+  const gatewayAvailable = !effectiveGatewayUnavailable;
+  const hidePaymentSection = !payLaterAllowed && gatewayUnavailable;
+
+  // If gateway becomes unavailable but pay-later is allowed, default to pay-later
+  useEffect(() => {
+    if (!gatewayAvailable && payLaterAllowed && paymentMode !== "pay_later") {
+      setPaymentMode("pay_later");
+    }
+  }, [gatewayAvailable, payLaterAllowed, paymentMode]);
+
   const handleContinueToPayment = async () => {
+    if (hidePaymentSection) {
+      toast({
+        title: "Checkout unavailable",
+        description: "Online payment is currently unavailable. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!selectedBranch) {
       toast({ title: "Select an branch", description: "Please choose a branch before continuing.", variant: "destructive" });
       return;
     }
 
-    // First click: reveal payment options instead of placing order immediately
-    if (!showPaymentOptions) {
-      setShowPaymentOptions(true);
-      return;
-    }
-
-    // Second click: require a payment mode
-    if (!paymentMode) {
-      toast({ title: "Choose payment option", description: "Please select Payment Gateway or Pay Later.", variant: "destructive" });
+    // Require a valid payment mode
+    if (!paymentMode || (paymentMode === "pay_later" && !payLaterAllowed)) {
+      toast({
+        title: "Choose payment option",
+        description: payLaterAllowed
+          ? "Please select Payment Gateway or Pay Later."
+          : "Please select Payment Gateway.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -218,13 +241,20 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         payment_mode: paymentMode,
       });
 
+        if (result.success && result.requires_redirect && result.redirect_url) {
+        // DNA payment gateway flow: redirect to hosted checkout
+        if (typeof window !== "undefined") {
+          window.location.href = result.redirect_url;
+        }
+        return;
+      }
+
       if (result.success) {
         toast({
           title: "Order Placed Successfully! 🎉",
           description: `Order Number: ${result.order_number}`,
           variant: "default",
         });
-        // Ask dashboard to refresh orders list on next visit/mount
         try {
           sessionStorage.setItem("orders_needs_refresh", "1");
         } catch { }
@@ -233,11 +263,9 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
             window.dispatchEvent(new Event("orders-refresh"));
           } catch { }
         }
-        // Refresh customer wallet balance
         try {
           await refresh();
         } catch { }
-        // Clear the cart after successful checkout
         clearCart();
         onNavigate("dashboard");
       } else {
@@ -247,9 +275,35 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           onBack();
           return;
         }
+        const errorMessage: string | undefined = typeof result?.message === "string" ? result.message : undefined;
+
+        // If DNA payment gateway failed due to being disabled or not configured,
+        // mark gateway as unavailable. Behaviour:
+        // - If pay-later is allowed: only show Pay Later (gateway option hidden).
+        // - If pay-later is not allowed: hide entire payment section and block checkout.
+        const paymentModeErrors: unknown = result?.errors?.payment_mode;
+        const firstPaymentError =
+          Array.isArray(paymentModeErrors) && typeof paymentModeErrors[0] === "string"
+            ? paymentModeErrors[0]
+            : undefined;
+
+        const gatewayErrorText = firstPaymentError || errorMessage || "";
+        if (
+          typeof gatewayErrorText === "string" &&
+          (gatewayErrorText.includes("Payment Gateway is disabled.") ||
+            gatewayErrorText.includes("Payment Gateway is not configured."))
+        ) {
+          setGatewayUnavailable(true);
+          if (!payLaterAllowed) {
+            setPaymentMode(null);
+          } else if (paymentMode === "gateway" || paymentMode === null) {
+            setPaymentMode("pay_later");
+          }
+        }
+
         toast({
           title: "Checkout Failed",
-          description: result.message,
+          description: errorMessage || "Please try again later.",
           variant: "destructive",
         });
       }
@@ -437,31 +491,35 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           </Card>
         </Card>
 
-        {/* Payment options step */}
-        {showPaymentOptions && (
+        {/* Payment options */}
+        {!hidePaymentSection && gatewayAvailable && (
           <Card className="border-gray-300 mb-[10px] p-[14px]">
             <h3 className="text-[14px] mb-[10px] font-semibold leading-[16px]">Choose payment method</h3>
             <div className="space-y-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMode"
-                  className="w-4 h-4 border-2 border-green-600 rounded-full"
-                  checked={paymentMode === "gateway"}
-                  onChange={() => setPaymentMode("gateway")}
-                />
-                <span className="text-sm text-black">Payment Gateway (Pay now)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMode"
-                  className="w-4 h-4 border-2 border-green-600 rounded-full"
-                  checked={paymentMode === "pay_later"}
-                  onChange={() => setPaymentMode("pay_later")}
-                />
-                <span className="text-sm text-black">Pay Later (Order on credit)</span>
-              </label>
+              {gatewayAvailable && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMode"
+                    className="w-4 h-4 border-2 border-green-600 rounded-full"
+                    checked={paymentMode === "gateway"}
+                    onChange={() => setPaymentMode("gateway")}
+                  />
+                  <span className="text-sm text-black">Payment Gateway (Pay now)</span>
+                </label>
+              )}
+              {payLaterAllowed && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMode"
+                    className="w-4 h-4 border-2 border-green-600 rounded-full"
+                    checked={paymentMode === "pay_later"}
+                    onChange={() => setPaymentMode("pay_later")}
+                  />
+                  <span className="text-sm text-black">Pay Later (Order on credit)</span>
+                </label>
+              )}
             </div>
           </Card>
         )}
@@ -473,7 +531,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
             disabled={isProcessing || !selectedBranch}
             className="w-full bg-green-600 disabled:bg-gray-400 text-white py-4 rounded-lg font-semibold text-lg hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
           >
-            {isProcessing ? "Processing..." : showPaymentOptions ? "Pay" : "Continue to Payment"}
+            {isProcessing ? "Processing..." : "Continue to Payment"}
           </button>
         </div>
       </main>

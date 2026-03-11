@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { MobileDashboard } from "@/components/mobile-dashboard"
 import { MobileShop } from "@/components/mobile-shop"
 import { MobileBasket } from "@/components/mobile-basket"
@@ -52,6 +52,26 @@ export default function Home() {
   const clearCart = () => {
     setCart({})
   }
+
+  // Handle redirects from /payment-result based on stored flags
+  useEffect(() => {
+    try {
+      const target = sessionStorage.getItem("post_payment_page")
+      const shouldClearCart = sessionStorage.getItem("post_payment_clear_cart")
+
+      if (shouldClearCart === "1") {
+        setCart({})
+        sessionStorage.removeItem("post_payment_clear_cart")
+      }
+
+      if (target === "checkout" || target === "dashboard") {
+        setCurrentPage(target as typeof currentPage)
+        sessionStorage.removeItem("post_payment_page")
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const handleNavigate = (page: "dashboard" | "shop" | "basket" | "checkout" | "wallet" | "account" | "rep-details" | "company-details" | "orders" | "order-details" | "branches", favorites = false) => {
     setCurrentPage(page)

@@ -8,138 +8,65 @@
 // Datatable (js)
 document.addEventListener('DOMContentLoaded', function (e) {
   const dt_customer_order = document.querySelector('.datatables-customer-order'),
-    edit_order_url = baseUrl + 'order/edit',
+    edit_order_url = baseUrl + 'order/edit/',
+    currencySymbol = window.currencySymbol || '',
     statusObj = {
       'New': { title: 'New', class: 'bg-label-primary' },
       'Completed': { title: 'Completed', class: 'bg-success' },
       'Cancelled': { title: 'Cancelled', class: 'bg-label-secondary' },
       'Returned': { title: 'Returned', class: 'bg-danger' }
-    },
-    paymentObj = {
-      'Due': { title: 'Due', class: 'bg-warning' },
-      'Paid': { title: 'Paid', class: 'bg-success' },
-      'Partial': { title: 'Partial', class: 'bg-info' }
     };
 
   // orders datatable
   if (dt_customer_order) {
-    let tableTitle = document.createElement('h5');
-    tableTitle.classList.add('card-title', 'mb-0');
-    tableTitle.innerHTML = 'Orders placed';
     const customerId = dt_customer_order.getAttribute('data-customer-id');
     var dt_order = new DataTable(dt_customer_order, {
       ajax: baseUrl + 'customer/' + customerId + '/orders/ajax',
       columns: [
-        // columns according to JSON
-        { data: 'id' },
-        { data: 'order' },
-        { data: 'date' },
-        { data: 'payment_status' },
-        { data: 'order_status' },
-        { data: 'spent' },
-        { data: 'id' }
+        { data: 'number' },
+        { data: 'order_date' },
+        { data: 'total' },
+        { data: 'invoice' },
+        { data: 'status' }
       ],
       columnDefs: [
         {
-          // For Responsive
-          className: 'control',
-          searchable: false,
-          orderable: false,
-          responsivePriority: 2,
-          targets: 0,
-          render: function (data, type, full, meta) {
-            return '';
-          }
-        },
-        {
-          // order order number
           targets: 1,
-          responsivePriority: 4,
-          render: function (data, type, full, meta) {
-            const id = full['order'];
-            return "<a href='" + edit_order_url + "?order_number=" + encodeURIComponent(full['order_number'] || '') + "'><span>#" + id + '</span></a>';
+          render: function (data, type, full) {
+            if (!data) return '-';
+            const date = new Date(data);
+            const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            return '<span class="text-nowrap">' + formattedDate + '</span>';
           }
         },
         {
-          // date
           targets: 2,
-          render: function (data, type, full, meta) {
-            const date = new Date(full.date); // convert the date string to a Date object
-            const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            return '<span class="text-nowrap">' + formattedDate + '</span > ';
+          className: 'text-nowrap',
+          render: function (data) {
+            const amount = data ? data : '0.00';
+            return '<span class="fw-medium">' + currencySymbol + amount + '</span>';
           }
         },
         {
-          // payment
-          targets: 3,
-          render: function (data, type, full, meta) {
-            const payment = full['payment_status'];
-            const info = paymentObj[payment] || { title: '', class: 'bg-label-secondary' };
-            return `
-              <span class="badge px-2 ${info.class} text-capitalized">
-                ${info.title}
-              </span>`;
-          }
-        },
-        {
-          // status
           targets: 4,
-          render: function (data, type, full, meta) {
-            const status = full['order_status'];
-            const info = statusObj[status] || { title: '', class: 'bg-label-secondary' };
-            return `
-              <span class="badge px-2 ${info.class} text-capitalized">
-                ${info.title}
-              </span>`;
-          }
-        },
-        {
-          // spent
-          targets: 5,
-          render: function (data, type, full, meta) {
-            const spent = full['spent'];
-            return '<span >' + spent + '</span>';
-          }
-        },
-        {
-          targets: -1,
-          title: 'Actions',
-          searchable: false,
-          orderable: false,
-          render: function (data, type, full, meta) {
-            return `
-              <div class="text-xxl-center">
-                <button class="btn btn-text-secondary rounded-pill waves-effect btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                  <i class="icon-base ti tabler-dots-vertical"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-end m-0">
-                  <a href="${edit_order_url}/${full['id']}" class="dropdown-item">View</a>
-                  <a href="javascript:void(0);" class="dropdown-item delete-record" data-id="${full['id']}">Delete</a>
-                </div>
-              </div>
-            `;
+          render: function (data) {
+            const status = data || 'New';
+            const info = statusObj[status] || { title: status, class: 'bg-label-secondary' };
+            return `<span class="badge px-2 ${info.class} text-capitalized">${info.title}</span>`;
           }
         }
       ],
-      order: [[1, 'desc']],
+      order: [[0, 'desc']],
       layout: {
-        topStart: {
-          rowClass: 'row card-header border-bottom mx-0 px-3 py-0',
-          features: [tableTitle]
-        },
-        topEnd: {
-          search: {
-            placeholder: 'Search order',
-            text: '_INPUT_'
-          }
-        },
+        topStart: null,
+        topEnd: null,
         bottomStart: {
           rowClass: 'row mx-3 justify-content-between',
           features: ['info']
         },
         bottomEnd: 'paging'
       },
-      pageLength: 6,
+      pageLength: 10,
       language: {
         paginate: {
           next: '<i class="icon-base ti tabler-chevron-right scaleX-n1-rtl icon-18px"></i>',
@@ -147,44 +74,18 @@ document.addEventListener('DOMContentLoaded', function (e) {
           first: '<i class="icon-base ti tabler-chevrons-left scaleX-n1-rtl icon-18px"></i>',
           last: '<i class="icon-base ti tabler-chevrons-right scaleX-n1-rtl icon-18px"></i>'
         }
-      },
-      // For responsive popup
-      responsive: {
-        details: {
-          display: DataTable.Responsive.display.modal({
-            header: function (row) {
-              const data = row.data();
-              return 'Details of ' + data['order'];
-            }
-          }),
-          type: 'column',
-          renderer: function (api, rowIdx, columns) {
-            const data = columns
-              .map(function (col) {
-                return col.title !== '' // Do not show row in modal popup if title is blank (for check box)
-                  ? `<tr data-dt-row="${col.rowIndex}" data-dt-column="${col.columnIndex}">
-                      <td>${col.title}:</td>
-                      <td>${col.data}</td>
-                    </tr>`
-                  : '';
-              })
-              .join('');
-
-            if (data) {
-              const div = document.createElement('div');
-              div.classList.add('table-responsive');
-              const table = document.createElement('table');
-              div.appendChild(table);
-              table.classList.add('table');
-              const tbody = document.createElement('tbody');
-              tbody.innerHTML = data;
-              table.appendChild(tbody);
-              return div;
-            }
-            return false;
-          }
-        }
       }
+    });
+
+    // Row click -> open order edit page
+    dt_customer_order.querySelector('tbody').addEventListener('click', function (e) {
+      if (e.target.closest('a, button, input, select, textarea, label, .dropdown-menu')) return;
+      var tr = e.target.closest('tr');
+      if (!tr) return;
+      var row = dt_order.row(tr);
+      var data = row && row.data ? row.data() : null;
+      if (!data || !data.id) return;
+      window.location.href = edit_order_url + data.id;
     });
   }
 
@@ -200,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
     if (!orderId) {
       const tr = trigger.closest('tr');
       if (tr) {
-        const row = dt_products.row(tr);
+        const row = dt_order.row(tr);
         const data = row && row.data && row.data();
         orderId = data && data.id;
       }

@@ -17,6 +17,9 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
+        'planufac_product_id',
+        'planufac_synced_at',
+        'planufac_payload',
         'name',
         'sku',
         'product_unit_sku',
@@ -41,6 +44,11 @@ class Product extends Model
         'vat_method_type',
         'unit_id',
         'is_active',
+    ];
+
+    protected $casts = [
+        'planufac_synced_at' => 'datetime',
+        'planufac_payload' => 'array',
     ];
 
     public function brands()

@@ -170,6 +170,12 @@
           "icon": "menu-icon icon-base ti tabler-currency-dollar",
           "name": "Currencies",
           "slug": "settings.currency"
+        },
+        {
+          "url": "settings/payment-gateways",
+          "icon": "menu-icon icon-base ti tabler-credit-card",
+          "name": "Payment Gateways",
+          "slug": "settings.paymentGateways"
         }
       ]
     }

@@ -977,6 +977,12 @@ class SettingController extends Controller
     return view('content.settings.theme', compact('setting'));
   }
 
+  public function viewPaymentGateways()
+  {
+    $setting = Setting::all()->pluck('value', 'key');
+    return view('content.settings.payment-gateways', compact('setting'));
+  }
+
   public function updateThemeSettings(Request $request)
   {
     $validated = $request->validate([
@@ -1008,6 +1014,28 @@ class SettingController extends Controller
 
     Toastr::success('Theme settings updated successfully');
     return redirect()->route('settings.theme');
+  }
+
+  public function updatePaymentGateways(Request $request)
+  {
+    $validated = $request->validate([
+      'dna_enabled' => 'nullable|in:on,off',
+      'dna_client_id' => 'nullable|string|max:191',
+      'dna_client_secret' => 'nullable|string|max:512',
+      'dna_terminal_id' => 'nullable|string|max:191',
+      'dna_mode' => 'nullable|in:test,live',
+    ]);
+
+    $enabled = ($validated['dna_enabled'] ?? 'off') === 'on';
+
+    Setting::updateOrCreate(['key' => 'dna_payments_enabled'], ['value' => $enabled ? '1' : '0']);
+    Setting::updateOrCreate(['key' => 'dna_payments_client_id'], ['value' => $validated['dna_client_id'] ?? '']);
+    Setting::updateOrCreate(['key' => 'dna_payments_client_secret'], ['value' => $validated['dna_client_secret'] ?? '']);
+    Setting::updateOrCreate(['key' => 'dna_payments_terminal_id'], ['value' => $validated['dna_terminal_id'] ?? '']);
+    Setting::updateOrCreate(['key' => 'dna_payments_mode'], ['value' => $validated['dna_mode'] ?? 'test']);
+
+    Toastr::success('Payment gateway settings updated successfully');
+    return redirect()->route('settings.paymentGateways');
   }
 
   public function truncateData(Request $request)

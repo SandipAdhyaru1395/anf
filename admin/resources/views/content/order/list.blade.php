@@ -268,13 +268,4 @@
 @include('_partials._modals.modal-add-payment')
 @include('_partials._modals.modal-view-payments')
 
-<!-- View Modal -->
-<div class="modal fade" id="order-view-modal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-simple">
-    <div class="modal-content" id="order-view-modal-content">
-      <!-- AJAX content will be injected here -->
-    </div>
-  </div>
-</div>
-
 @endsection

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "019c1cc22710fe5d85d763aa4d77e98f",
+    "content-hash": "f15ff01b6625f17154f787f1101ba76d",
     "packages": [
         {
             "name": "brian2694/laravel-toastr",
@@ -271,6 +271,49 @@
                 "source": "https://github.com/dflydev/dflydev-dot-access-data/tree/v3.0.3"
             },
             "time": "2024-07-08T12:26:09+00:00"
+        },
+        {
+            "name": "dna/dnapayments-sdk-php",
+            "version": "2.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DNA-Payments/dnapayments-sdk-php.git",
+                "reference": "21c595d5abd05289cc87482d40363a55aadb920a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DNA-Payments/dnapayments-sdk-php/zipball/21c595d5abd05289cc87482d40363a55aadb920a",
+                "reference": "21c595d5abd05289cc87482d40363a55aadb920a",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.8"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^11.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "DNAPayments\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alikhan Izbergenov",
+                    "email": "alikhan@dnapayments.com"
+                }
+            ],
+            "description": "DNA payments library for php",
+            "support": {
+                "issues": "https://github.com/DNA-Payments/dnapayments-sdk-php/issues",
+                "source": "https://github.com/DNA-Payments/dnapayments-sdk-php/tree/2.1.2"
+            },
+            "time": "2024-08-16T08:19:24+00:00"
         },
         {
             "name": "doctrine/inflector",
