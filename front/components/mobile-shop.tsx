@@ -440,7 +440,7 @@ export function MobileShop({ onNavigate, cart, increment, decrement, totals, sho
                     {totalWalletCredit.toFixed(2)}
                   </span>
                 </span>
-                {cartTotals.totalDiscount > 0 && <span className="text-green-600 text-xs">{format(cartTotals.totalDiscount)} off</span>}
+                {cartTotals.totalDiscount > 0 && <span className="text-green-600 text-xs ml-2">{format(cartTotals.totalDiscount)} off</span>}
               </div>
             </div>
             <div className="text-sm font-semibold text-center text-[#999] py-1">Includes FREE delivery</div>

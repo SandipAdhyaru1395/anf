@@ -31,6 +31,9 @@ Route::middleware(['store.maintenance','auth:sanctum'])->group(function () {
     Route::get('/customer', [CustomerController::class, 'me']);
     Route::put('/customer', [CustomerController::class, 'updateCompanyDetails']);
 
+    // DNA Pay by Bank: list of banks for checkout
+    Route::get('/banks', [OrderController::class, 'banks']);
+
     // Checkout API endpoint
     Route::post('/checkout',[OrderController::class, 'store']);
 

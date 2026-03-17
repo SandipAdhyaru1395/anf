@@ -116,15 +116,36 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * GET /api/banks – list banks for DNA Pay by Bank (Open Banking).
+     */
+    public function banks(DnaPaymentsService $dnaPayments)
+    {
+        try {
+            $banks = $dnaPayments->getBanks();
+            return response()->json([
+                'success' => true,
+                'banks' => $banks,
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'banks' => [],
+            ], 200);
+        }
+    }
+
     public function store(Request $request, DnaPaymentsService $dnaPayments){
 
         try {
             // Validate the request (server will derive items/totals from cart)
-            $request->validate([
+            $rules = [
                 'branch_id' => 'required|integer|exists:branches,id',
                 'delivery_method_id' => 'nullable|integer',
                 'delivery_note' => 'nullable|string',
-            ]);
+            ];
+            $request->validate($rules);
 
             $branchId = (int) $request->input('branch_id');
             $customer = $request->user();
@@ -152,32 +173,7 @@ class OrderController extends Controller
                     'message' => 'Your cart is empty.',
                 ], 200);
             }
-            // Ensure cart totals reflect latest product prices (recompute inline)
-            $cartItemsAll = \App\Models\CartItem::where('cart_id', $cart->id)->get();
-            $subtotalRecalc = 0.0;
-            $unitsRecalc = 0;
-            foreach ($cartItemsAll as $ci0) {
-                $p0 = Product::find($ci0->product_id);
-                $unit0 = $p0 ? (float)$p0->price : (float)$ci0->unit_price;
-                $qty0 = (int)$ci0->quantity;
-                $line0 = $unit0 * $qty0;
-                if ((float)$ci0->unit_price !== $unit0 || (float)$ci0->line_total !== $line0) {
-                    $ci0->unit_price = $unit0;
-                    $ci0->line_total = $line0;
-                    $ci0->save();
-                }
-                $subtotalRecalc += $line0;
-                $unitsRecalc += $qty0;
-            }
-            $skusRecalc = (int) $cartItemsAll->count();
-            \App\Models\Cart::where('id', $cart->id)->update([
-                'subtotal' => $subtotalRecalc,
-                'total_discount' => 0,
-                'total' => $subtotalRecalc,
-                'units' => $unitsRecalc,
-                'skus' => $skusRecalc,
-            ]);
-            $cart->refresh();
+            // Use existing cart item prices (already include volume discounts from CartController)
             $cartItems = \App\Models\CartItem::where('cart_id', $cart->id)->get();
             if ($cartItems->isEmpty()) {
                 return response()->json([
@@ -215,7 +211,8 @@ class OrderController extends Controller
                             \App\Models\CartItem::where('id', $ci->id)->delete();
                         } else {
                             $ci->quantity = $available;
-                            $ci->line_total = ((float)$product->price) * $available;
+                            // keep existing discounted unit_price, just update line_total
+                            $ci->line_total = ((float)$ci->unit_price) * $available;
                             $ci->save();
                         }
                         // Do not add to pending order items now; we'll early return after reconciliation
@@ -223,8 +220,9 @@ class OrderController extends Controller
                     }
                 }
 
-                $price = (float) $product->price;
-                // Calculate total price: price * quantity (no discounted_price column exists)
+                // Use effective cart unit price (already includes any volume discounts)
+                $price = (float) $ci->unit_price;
+                // Calculate total price: price * quantity
                 $totalPrice = round($price * $qty, 2);
                 // Calculate VAT: unit_vat = product vat_amount, total_vat = unit_vat * quantity
                 $unitVat = round((float)($product->vat_amount ?? 0), 2);
@@ -296,7 +294,7 @@ class OrderController extends Controller
             // outstanding_amount = total_amount - wallet_credit_used (always)
             // payment_amount = outstanding_amount (always)
             // payment_amount = paid_amount + unpaid_amount
-            $paidAmount = $walletCreditUsed; // At order creation, only wallet credit is used (no external payments yet)
+            $paidAmount = 0; // At order creation, only wallet credit is used (no external payments yet)
             $paymentAmount = $outstandingAmount; // payment_amount always equals outstanding_amount by default
             $unpaidAmount = $outstandingAmount - $paidAmount; // unpaid_amount = outstanding_amount - paid_amount
             
@@ -308,7 +306,8 @@ class OrderController extends Controller
                 $paymentStatus = 'Partial';
             }
 
-            $paymentMode = $request->input('payment_mode'); // "gateway" or "pay_later"
+            $paymentMode = $request->input('payment_mode'); // "gateway", "gateway_bank", or "pay_later"
+            $bankId = $request->input('bank_id');
 
             // Enforce customer-group pay_later flag
             $canPayLater = (bool) optional(optional($customer)->customerGroup)->pay_later;
@@ -322,7 +321,17 @@ class OrderController extends Controller
                 ], 200);
             }
 
-            // If gateway selected, create DNA checkout session and return redirect URL.
+            if ($paymentMode === 'gateway_bank' && empty($bankId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please select a bank.',
+                    'errors' => [
+                        'bank_id' => ['Please select a bank for Pay by bank.'],
+                    ],
+                ], 200);
+            }
+
+            // If gateway (card) selected, create DNA hosted checkout and return redirect URL.
             if ($paymentMode === 'gateway') {
                 $invoiceId = (string) Str::uuid();
                 $currency = config('services.dna_payments.currency', 'GBP');
@@ -334,6 +343,8 @@ class OrderController extends Controller
                     'cart_id'            => $cart->id,
                     'delivery_method_id' => $deliveryMethod?->id,
                     'delivery_note'      => $request->input('delivery_note'),
+                    // Freeze wallet usage so callback doesn't recalculate later
+                    'wallet_credit_used' => (float) $walletCreditUsed,
                 ];
                 Cache::put('dna_invoice_'.$invoiceId, $context, now()->addDay());
 
@@ -343,6 +354,60 @@ class OrderController extends Controller
                         (float) $outstandingAmount,
                         $currency,
                         $context
+                    );
+                } catch (\RuntimeException $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => '',
+                        'errors' => [
+                            'payment_mode' => [$e->getMessage()],
+                        ],
+                    ], 200);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'requires_redirect' => true,
+                    'redirect_url' => $dna['checkoutUrl'],
+                    'payment_id' => $dna['paymentId'],
+                ]);
+            }
+
+            // If Pay by bank selected, create DNA Open Banking order and return redirect URL.
+            if ($paymentMode === 'gateway_bank') {
+                $invoiceId = (string) Str::uuid();
+                $currency = config('services.dna_payments.currency', 'GBP');
+
+                $context = [
+                    'customer_id'        => optional($customer)->id,
+                    'branch_id'          => $branch->id,
+                    'cart_id'            => $cart->id,
+                    'delivery_method_id' => $deliveryMethod?->id,
+                    'delivery_note'      => $request->input('delivery_note'),
+                    // Freeze wallet usage so callback doesn't recalculate later
+                    'wallet_credit_used' => (float) $walletCreditUsed,
+                ];
+                Cache::put('dna_invoice_'.$invoiceId, $context, now()->addDay());
+
+                $customerName = $customer ? trim($customer->name ?? $customer->company_name ?? 'Customer') : 'Customer';
+                $nameParts = preg_split('/\s+/', $customerName, 2);
+                $billingAddress = [
+                    'firstName'      => $nameParts[0] ?? 'Customer',
+                    'lastName'       => $nameParts[1] ?? '',
+                    'streetAddress1' => $branch->address_line1 ?? 'N/A',
+                    'postalCode'     => $branch->zip_code ?? '',
+                    'city'           => $branch->city ?? 'N/A',
+                    'country'        => $branch->country ?? 'GB',
+                ];
+
+                try {
+                    $dna = $dnaPayments->createBankPayment(
+                        $invoiceId,
+                        (float) $outstandingAmount,
+                        $currency,
+                        (string) $bankId,
+                        $context,
+                        $billingAddress
                     );
                 } catch (\RuntimeException $e) {
                     return response()->json([
@@ -402,31 +467,6 @@ class OrderController extends Controller
             ]);
             
             if ($adjusted) {
-                // Recompute cart totals and return adjustments response
-                $cartItemsAll = \App\Models\CartItem::where('cart_id', $cart->id)->get();
-                $subtotalRecalc = 0.0;
-                $unitsRecalc = 0;
-                foreach ($cartItemsAll as $ci0) {
-                    $p0 = Product::find($ci0->product_id);
-                    $unit0 = $p0 ? (float)$p0->price : (float)$ci0->unit_price;
-                    $qty0 = (int)$ci0->quantity;
-                    $line0 = $unit0 * $qty0;
-                    if ((float)$ci0->unit_price !== $unit0 || (float)$ci0->line_total !== $line0) {
-                        $ci0->unit_price = $unit0;
-                        $ci0->line_total = $line0;
-                        $ci0->save();
-                    }
-                    $subtotalRecalc += $line0;
-                    $unitsRecalc += $qty0;
-                }
-                $skusRecalc = (int) $cartItemsAll->count();
-                \App\Models\Cart::where('id', $cart->id)->update([
-                    'subtotal' => $subtotalRecalc,
-                    'total_discount' => 0,
-                    'total' => $subtotalRecalc,
-                    'units' => $unitsRecalc,
-                    'skus' => $skusRecalc,
-                ]);
                 return response()->json([
                     'success' => false,
                     'code' => 'stock_adjusted',

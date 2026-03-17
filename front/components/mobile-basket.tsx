@@ -14,7 +14,12 @@ interface ProductItem {
   id: number;
   name: string;
   image: string;
+  // Effective (possibly discounted) unit price as string
   price: string;
+  // Original (pre-discount) unit price
+  original_price?: number;
+  // Percentage discount applied at unit level, if any
+  applied_discount_percentage?: number;
   discount?: string;
   step_quantity?: number;
   wallet_credit?: number;
@@ -119,20 +124,24 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
     const loadCart = async () => {
       try {
         const res = await api.get('/cart');
-        const apiItems: Array<{ product_id: number; quantity: number; product?: any }> = res?.data?.cart?.items || [];
+        const apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }> = res?.data?.cart?.items || [];
         const mapped = apiItems
           .filter((it) => it?.product)
           .map((it) => {
             const productId = Number(it.product.id);
             const apiStepQty = Number(it.product.step_quantity ?? 0);
             const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
+            const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
+            const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
             
             return {
               product: {
                 id: productId,
                 name: it.product.name,
                 image: it.product.image,
-                price: String(it.product.price),
+                price: String(effectiveUnit),
+                original_price: baseUnit,
+                applied_discount_percentage: typeof it.product.applied_discount_percentage === "number" ? it.product.applied_discount_percentage : undefined,
                 wallet_credit: Number(it.product.wallet_credit ?? 0),
                 step_quantity: stepQty,
               } as ProductItem,
@@ -183,20 +192,24 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
         toast({ title: 'Quantity not available', description: msg, variant: 'destructive' });
         return;
       }
-      const apiItems: Array<{ product_id: number; quantity: number; product?: any }> = res?.data?.cart?.items || [];
+      const apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }> = res?.data?.cart?.items || [];
       const mapped = apiItems
         .filter((it) => it?.product)
         .map((it) => {
           const productId = Number(it.product.id);
           const apiStepQty = Number(it.product.step_quantity ?? 0);
           const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
+          const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
+          const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
           
           return {
             product: {
               id: productId,
               name: it.product.name,
               image: it.product.image,
-              price: String(it.product.price),
+              price: String(effectiveUnit),
+              original_price: baseUnit,
+              applied_discount_percentage: typeof it.product.applied_discount_percentage === "number" ? it.product.applied_discount_percentage : undefined,
               wallet_credit: Number(it.product.wallet_credit ?? 0),
               step_quantity: stepQty,
             } as ProductItem,
@@ -354,20 +367,24 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
                       try {
                         await api.post('/cart/set', { product_id: product.id, quantity: 0 });
                         const res = await api.get('/cart');
-                        const apiItems: Array<{ product_id: number; quantity: number; product?: any }> = res?.data?.cart?.items || [];
+                        const apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }> = res?.data?.cart?.items || [];
                         const mapped = apiItems
                           .filter((it) => it?.product)
                           .map((it) => {
                             const productId = Number(it.product.id);
                             const apiStepQty = Number(it.product.step_quantity ?? 0);
                             const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
+                            const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
+                            const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
                             
                             return {
                               product: {
                                 id: productId,
                                 name: it.product.name,
                                 image: it.product.image,
-                                price: String(it.product.price),
+                                price: String(effectiveUnit),
+                                original_price: baseUnit,
+                                applied_discount_percentage: typeof it.product.applied_discount_percentage === "number" ? it.product.applied_discount_percentage : undefined,
                                 wallet_credit: Number(it.product.wallet_credit ?? 0),
                                 step_quantity: stepQty,
                               } as ProductItem,
@@ -391,9 +408,26 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
                   </button>
                 </div>
                 <div className="pricesWrapper flex flex-col text-right justify-end w-[80px]">
-                  <span className="font-semibold text-black text-[16px]">
-                    {format((parseFloat((product.price ?? '0').replace(/[^\d.\-]+/g, '')) || 0) * quantity)}
-                  </span>
+                  {(() => {
+                    const unitPrice = parseFloat((product.price ?? '0').replace(/[^\d.\-]+/g, '')) || 0;
+                    const originalUnit =
+                      typeof product.original_price === "number" ? product.original_price : unitPrice;
+                    const total = unitPrice * quantity;
+                    const originalTotal = originalUnit * quantity;
+                    const hasDiscount = originalTotal > total + 0.0001;
+                    return (
+                      <>
+                        <span className="font-semibold text-black text-[16px]">
+                          {format(total)}
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-xs text-gray-400 line-through">
+                            {format(originalTotal)}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
                   {typeof product.wallet_credit === "number" && product.wallet_credit > 0 && (
                     <span className="inline-flex items-center gap-1 text-green-600 justify-end">
                       <FontAwesomeIcon icon={faWallet} className="text-green-600" style={{ width: "12px", height: "13px" }} />
@@ -433,7 +467,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
                     {totalWalletCredit.toFixed(2)}
                   </span>
                 </span>
-                {cartTotals.totalDiscount > 0 && <span className="text-green-600 text-xs">{format(cartTotals.totalDiscount)} off</span>}
+                {cartTotals.totalDiscount > 0 && <span className="text-green-600 text-xs ml-2">{format(cartTotals.totalDiscount)} off</span>}
               </div>
             </div>
             <div className="text-sm font-semibold text-center text-[#999] pt-1 pb-2 leading-[16px]">Includes FREE delivery</div>

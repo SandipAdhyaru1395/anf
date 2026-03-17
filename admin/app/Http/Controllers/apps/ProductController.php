@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\PriceList;
 use App\Models\ProductBrand;
 use App\Models\ProductPriceList;
+use App\Models\ProductVolumeDiscount;
+use App\Models\ProductVolumeDiscountBreakPrice;
+use App\Models\VolumeDiscountGroup;
+use App\Models\VolumeDiscountBreak;
 use App\Services\WarehouseProductSyncService;
 use App\traits\BulkDeletes;
 use Brian2694\Toastr\Facades\Toastr;
@@ -580,11 +584,30 @@ class ProductController extends Controller
   {
     $product = Product::findOrFail($id);
     $settings = Setting::all()->pluck('value', 'key');
+    $volumeDiscounts = ProductVolumeDiscount::with(['group.breaks', 'priceList'])
+      ->where('product_id', $id)
+      ->get()
+      ->keyBy(function (ProductVolumeDiscount $row) {
+        return $row->price_list_id ?? 'default';
+      });
+
+    $overridePrices = ProductVolumeDiscountBreakPrice::where('product_id', $id)->get();
+    $overridePricesByList = [];
+    foreach ($overridePrices as $row) {
+      $key = $row->price_list_id ?? 'default';
+      if (!isset($overridePricesByList[$key])) {
+        $overridePricesByList[$key] = [];
+      }
+      $overridePricesByList[$key][$row->volume_discount_break_id] = $row->override_price;
+    }
+
     $data = [
       'product' => $product,
       'currencySymbol' => $settings['currency_symbol'] ?? '₱',
       'priceLists' => PriceList::orderBy('name')->get(),
       'productPriceByList' => ProductPriceList::where('product_id', $id)->get()->keyBy('price_list_id'),
+      'volumeDiscountsByList' => $volumeDiscounts,
+      'volumeDiscountOverridePricesByList' => $overridePricesByList,
     ];
     return view('content.product.edit-pricing', $data);
   }
@@ -606,6 +629,7 @@ class ProductController extends Controller
       'price_list' => ['nullable', 'array'],
       'price_list.*.unit_price' => ['nullable', 'numeric', 'min:0'],
       'price_list.*.rrp' => ['nullable', 'numeric', 'min:0'],
+      'volume_discount_price' => ['nullable', 'array'],
     ], [
       'productPrice.required' => 'Unit price is required.',
       'productPrice.numeric' => 'Unit price must be a valid number.',
@@ -637,8 +661,241 @@ class ProductController extends Controller
       );
     }
 
+    // Save per-break override prices (optional)
+    foreach (($request->volume_discount_price ?? []) as $listKey => $breakMap) {
+      if (!is_array($breakMap)) {
+        continue;
+      }
+
+      $priceListId = null;
+      if ((string) $listKey !== 'default') {
+        $priceListId = (int) $listKey;
+        if ($priceListId <= 0 || !PriceList::where('id', $priceListId)->exists()) {
+          continue;
+        }
+      }
+
+      foreach ($breakMap as $breakId => $overrideRaw) {
+        $breakId = (int) $breakId;
+        if ($breakId <= 0) {
+          continue;
+        }
+        if (!VolumeDiscountBreak::where('id', $breakId)->exists()) {
+          continue;
+        }
+
+        $override = ($overrideRaw !== null && $overrideRaw !== '') ? (float) $overrideRaw : null;
+
+        if ($override === null) {
+          ProductVolumeDiscountBreakPrice::where('product_id', $request->id)
+            ->where('price_list_id', $priceListId)
+            ->where('volume_discount_break_id', $breakId)
+            ->delete();
+          continue;
+        }
+
+        ProductVolumeDiscountBreakPrice::updateOrCreate(
+          [
+            'product_id' => $request->id,
+            'price_list_id' => $priceListId,
+            'volume_discount_break_id' => $breakId,
+          ],
+          [
+            'override_price' => $override,
+          ]
+        );
+      }
+    }
+
     Toastr::success('Pricing updated successfully.');
     return redirect()->route('product.edit.pricing', $product->id);
+  }
+
+  public function storeVolumeDiscount(Request $request, Product $product)
+  {
+    $validated = $request->validate([
+      'group_id' => ['nullable', 'integer', 'exists:volume_discount_groups,id'],
+      'name' => ['required', 'string', 'max:255'],
+      'price_list_id' => ['nullable', 'integer', 'exists:price_lists,id'],
+      'breaks' => ['required', 'array', 'min:1'],
+      'breaks.*.from_quantity' => ['required', 'integer', 'min:1'],
+      'breaks.*.discount_percentage' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    $priceListId = $validated['price_list_id'] ?? null;
+
+    DB::beginTransaction();
+    try {
+      $group = null;
+      if (!empty($validated['group_id'])) {
+        $group = VolumeDiscountGroup::find($validated['group_id']);
+      }
+      if ($group) {
+        $group->name = $validated['name'];
+        $group->save();
+        // Replace breaks
+        VolumeDiscountBreak::where('volume_discount_group_id', $group->id)->delete();
+      } else {
+        $group = VolumeDiscountGroup::create([
+          'name' => $validated['name'],
+        ]);
+      }
+
+      foreach ($validated['breaks'] as $break) {
+        VolumeDiscountBreak::create([
+          'volume_discount_group_id' => $group->id,
+          'from_quantity' => $break['from_quantity'],
+          'discount_percentage' => $break['discount_percentage'],
+        ]);
+      }
+
+      $pvd = ProductVolumeDiscount::updateOrCreate(
+        [
+          'product_id' => $product->id,
+          'price_list_id' => $priceListId,
+        ],
+        [
+          'volume_discount_group_id' => $group->id,
+        ]
+      );
+
+      // Reload with relations
+      $pvd->load(['group.breaks']);
+
+      DB::commit();
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      return response()->json([
+        'status' => 'error',
+        'message' => $e->getMessage(),
+      ], 500);
+    }
+
+    $breaks = $pvd->group->breaks->sortBy('from_quantity')->values()->map(function (VolumeDiscountBreak $b) {
+      return [
+        'id' => $b->id,
+        'from_quantity' => $b->from_quantity,
+        'discount_percentage' => (float) $b->discount_percentage,
+      ];
+    });
+
+    return response()->json([
+      'status' => 'ok',
+      'product_id' => $product->id,
+      'price_list_id' => $priceListId,
+      'group' => [
+        'id' => $pvd->group->id,
+        'name' => $pvd->group->name,
+      ],
+      'breaks' => $breaks,
+    ]);
+  }
+
+  public function volumeDiscountGroups(Request $request, Product $product)
+  {
+    $validated = $request->validate([
+      'price_list_id' => ['nullable'],
+    ]);
+
+    $priceListIdRaw = $request->get('price_list_id');
+    $priceListId = null;
+    if ($priceListIdRaw !== null && $priceListIdRaw !== '' && (string) $priceListIdRaw !== 'default') {
+      $priceListId = (int) $priceListIdRaw;
+    }
+
+    $current = ProductVolumeDiscount::with('group.breaks')
+      ->where('product_id', $product->id)
+      ->when($priceListId === null, function ($q) {
+        $q->whereNull('price_list_id');
+      }, function ($q) use ($priceListId) {
+        $q->where('price_list_id', $priceListId);
+      })
+      ->first();
+
+    $groups = VolumeDiscountGroup::with('breaks')->orderBy('name')->get();
+
+    return response()->json([
+      'status' => 'ok',
+      'current_group_id' => $current && $current->group ? $current->group->id : null,
+      'groups' => $groups->map(function (VolumeDiscountGroup $g) use ($product) {
+        $usageCount = ProductVolumeDiscount::where('volume_discount_group_id', $g->id)
+          ->where('product_id', '!=', $product->id)
+          ->distinct('product_id')
+          ->count();
+
+          return [
+          'id' => $g->id,
+          'name' => $g->name,
+          'usage_count' => $usageCount,
+          'breaks' => $g->breaks->sortBy('from_quantity')->values()->map(function (VolumeDiscountBreak $b) {
+            return [
+              'id' => $b->id,
+              'from_quantity' => $b->from_quantity,
+              'discount_percentage' => (float) $b->discount_percentage,
+            ];
+          }),
+        ];
+      }),
+    ]);
+  }
+
+  public function selectVolumeDiscountGroup(Request $request, Product $product)
+  {
+    $validated = $request->validate([
+      'group_id' => ['required', 'integer', 'exists:volume_discount_groups,id'],
+      'price_list_id' => ['nullable', 'integer', 'exists:price_lists,id'],
+    ]);
+
+    $priceListId = $validated['price_list_id'] ?? null;
+
+    $pvd = ProductVolumeDiscount::updateOrCreate(
+      [
+        'product_id' => $product->id,
+        'price_list_id' => $priceListId,
+      ],
+      [
+        'volume_discount_group_id' => (int) $validated['group_id'],
+      ]
+    );
+
+    $pvd->load(['group.breaks']);
+    $breaks = $pvd->group && $pvd->group->breaks
+      ? $pvd->group->breaks->sortBy('from_quantity')->values()->map(function (VolumeDiscountBreak $b) {
+        return [
+          'id' => $b->id,
+          'from_quantity' => $b->from_quantity,
+          'discount_percentage' => (float) $b->discount_percentage,
+        ];
+      })
+      : collect();
+
+    return response()->json([
+      'status' => 'ok',
+      'group' => $pvd->group ? ['id' => $pvd->group->id, 'name' => $pvd->group->name] : null,
+      'breaks' => $breaks,
+    ]);
+  }
+
+  public function removeVolumeDiscount(Request $request, Product $product)
+  {
+    $validated = $request->validate([
+      'price_list_id' => ['nullable', 'integer', 'exists:price_lists,id'],
+    ]);
+
+    $priceListId = $validated['price_list_id'] ?? null;
+
+    ProductVolumeDiscount::where('product_id', $product->id)
+      ->when($priceListId === null, function ($q) {
+        $q->whereNull('price_list_id');
+      }, function ($q) use ($priceListId) {
+        $q->where('price_list_id', $priceListId);
+      })
+      ->delete();
+
+    return response()->json([
+      'status' => 'ok',
+      'breaks' => [],
+    ]);
   }
 
   public function updateInventory(Request $request)

@@ -11,9 +11,10 @@ export default function EarlyRedirect() {
       if (!path.startsWith(login)) {
         const token = localStorage.getItem("auth_token");
         if (!token) {
-          const q = new URLSearchParams({ redirect: path }).toString();
-          const sep = login.indexOf("?") === -1 ? "?" : "&";
-          window.location.replace(login + sep + q);
+          // const q = new URLSearchParams({ redirect: path }).toString();
+          // const sep = login.indexOf("?") === -1 ? "?" : "&";
+          // window.location.replace(login + sep + q);
+          window.location.replace(login);
         }
       }
     } catch {

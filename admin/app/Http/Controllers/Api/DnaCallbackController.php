@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use DNAPayments\DNAPayments;
+use App\Helpers\Helpers;
 
 class DnaCallbackController extends Controller
 {
@@ -33,7 +34,8 @@ class DnaCallbackController extends Controller
         ]);
 
         // Verify signature to ensure payload integrity
-        $secret = config('services.dna_payments.client_secret');
+        $settings = Helpers::setting();
+        $secret = $settings['dna_payments_client_secret'] ?? null;
         if (empty($secret) || !isset($payload['signature']) || !DNAPayments::isValidSignature($payload, $secret)) {
             Log::warning('DNA callback invalid signature', [
                 'id'        => $payload['id']        ?? null,
@@ -96,33 +98,7 @@ class DnaCallbackController extends Controller
                 return response()->json(['ok' => true]);
             }
 
-            // Ensure cart totals reflect latest product prices (recompute inline)
-            $cartItemsAll = \App\Models\CartItem::where('cart_id', $cart->id)->get();
-            $subtotalRecalc = 0.0;
-            $unitsRecalc = 0;
-            foreach ($cartItemsAll as $ci0) {
-                $p0 = Product::find($ci0->product_id);
-                $unit0 = $p0 ? (float)$p0->price : (float)$ci0->unit_price;
-                $qty0 = (int)$ci0->quantity;
-                $line0 = $unit0 * $qty0;
-                if ((float)$ci0->unit_price !== $unit0 || (float)$ci0->line_total !== $line0) {
-                    $ci0->unit_price = $unit0;
-                    $ci0->line_total = $line0;
-                    $ci0->save();
-                }
-                $subtotalRecalc += $line0;
-                $unitsRecalc += $qty0;
-            }
-            $skusRecalc = (int)$cartItemsAll->count();
-            \App\Models\Cart::where('id', $cart->id)->update([
-                'subtotal' => $subtotalRecalc,
-                'total_discount' => 0,
-                'total' => $subtotalRecalc,
-                'units' => $unitsRecalc,
-                'skus' => $skusRecalc,
-            ]);
-            $cart->refresh();
-
+            // Use existing cart item prices (already include volume discounts from CartController)
             $cartItems = \App\Models\CartItem::where('cart_id', $cart->id)->get();
             if ($cartItems->isEmpty()) {
                 return response()->json(['ok' => true]);
@@ -182,13 +158,15 @@ class DnaCallbackController extends Controller
                             \App\Models\CartItem::where('id', $ci->id)->delete();
                         } else {
                             $ci->quantity = $available;
-                            $ci->line_total = ((float)$product->price) * $available;
+                            // keep existing discounted unit_price, just update line_total
+                            $ci->line_total = ((float)$ci->unit_price) * $available;
                             $ci->save();
                         }
                         continue;
                     }
 
-                    $price = (float) $product->price;
+                    // Use effective cart unit price (already includes any volume discounts)
+                    $price = (float) $ci->unit_price;
                     $totalPrice = round($price * $qty, 2);
                     $unitVat = round((float)($product->vat_amount ?? 0), 2);
                     $totalVat = round($unitVat * $qty, 2);
@@ -263,12 +241,16 @@ class DnaCallbackController extends Controller
                 $orderNumber = $orderRef->so ?? 1;
                 $orderRef->update(['so' => ($orderRef->so ?? 0) + 1]);
 
-                // Mark as paid (gateway)
-                $paymentStatus = 'Paid';
-                $paidAmountInternal = $totalAmount;
+                // Amounts for DNA (card / bank) checkout:
+                // - paid_amount: what DNA actually charged
+                // - outstanding_amount: total_amount - wallet_credit_used (amount due from DNA)
+                // - payment_amount: same as outstanding_amount
+                $paidAmountInternal = round($paidAmount, 2);
+                $outstandingAmount = max(0, round($totalAmount - $walletCreditUsed, 2));
+                $paymentAmount = $outstandingAmount;
                 $unpaidAmount = 0;
-                $paymentAmount = 0;
-                $outstandingAmount = 0;
+
+                $paymentStatus = 'Paid';
 
                 $order = Order::create([
                     'order_number' => $orderNumber,
@@ -303,13 +285,15 @@ class DnaCallbackController extends Controller
                     'delivery_note' => $deliveryNote,
                 ]);
 
-                // Payment record + basic card/DNA info
+                // Payment record + basic card/DNA info (card or Pay by bank / ecospend)
                 $reference = $dnaId ?: $dnaRrn ?: $dnaScheme ?: ('DNA-' . $invoiceId);
                 $cardLast4 = null;
                 if (is_string($cardMaskedPan)) {
                     $digits = preg_replace('/\D+/', '', $cardMaskedPan);
                     if ($digits && strlen($digits) >= 4) $cardLast4 = substr($digits, -4);
                 }
+                $isPayByBank = (isset($payload['paymentMethod']) && strtolower((string) $payload['paymentMethod']) === 'ecospend');
+                $paymentNote = $isPayByBank ? 'Pay by bank' : ($dnaScheme ? ('DNA scheme reference: '.$dnaScheme) : null);
 
                 Payment::create([
                     'order_id'            => $order->id,
@@ -325,7 +309,7 @@ class DnaCallbackController extends Controller
                     'dna_transaction_id'  => $dnaId,
                     'dna_rrn'             => $dnaRrn,
                     'dna_scheme_reference'=> $dnaScheme,
-                    'note'                => $dnaScheme ? ('DNA scheme reference: '.$dnaScheme) : null,
+                    'note'                => $paymentNote,
                     'user_id'             => null,
                 ]);
 

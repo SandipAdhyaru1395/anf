@@ -21,6 +21,7 @@ use App\Http\Controllers\pages\UserProjects;
 use App\Http\Controllers\pages\UserConnections;
 use App\Http\Controllers\Auth\LoginController as AuthLoginController;
 use App\Http\Controllers\Auth\RegisterController as AuthRegisterController;
+use App\Models\Product;
 
 // Current Working Routes
 
@@ -107,6 +108,18 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/product/update-pricing', [ProductController::class, 'updatePricing'])->name('product.update.pricing');
         Route::post('/product/update-inventory', [ProductController::class, 'updateInventory'])->name('product.update.inventory');
         Route::post('/product/sync/planufac', [ProductController::class, 'syncPlanufacProducts'])->name('product.sync.planufac');
+        Route::post('/product/{product}/volume-discount/store', [ProductController::class, 'storeVolumeDiscount'])
+            ->whereNumber('product')
+            ->name('product.volume-discount.store');
+        Route::get('/product/{product}/volume-discount/groups', [ProductController::class, 'volumeDiscountGroups'])
+            ->whereNumber('product')
+            ->name('product.volume-discount.groups');
+        Route::post('/product/{product}/volume-discount/select', [ProductController::class, 'selectVolumeDiscountGroup'])
+            ->whereNumber('product')
+            ->name('product.volume-discount.select');
+        Route::post('/product/{product}/volume-discount/remove', [ProductController::class, 'removeVolumeDiscount'])
+            ->whereNumber('product')
+            ->name('product.volume-discount.remove');
         Route::get('/product/delete/{id}', [ProductController::class, 'delete'])->name('product.delete');
         Route::post('/product/delete-multiple', [ProductController::class, 'deleteMultiple']);
     });

@@ -42,6 +42,14 @@ interface DeliveryMethod {
   status: string;
 }
 
+interface BankOption {
+  bank_id: string;
+  name: string;
+  friendly_name: string;
+  logo?: string;
+  icon?: string;
+}
+
 interface MobileCheckoutProps {
   onNavigate: (page: "dashboard" | "shop" | "wallet" | "account" | "orders") => void;
   onBack: () => void;
@@ -52,7 +60,10 @@ interface MobileCheckoutProps {
 
 export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: MobileCheckoutProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<"gateway" | "pay_later" | null>("gateway");
+  const [paymentMode, setPaymentMode] = useState<"gateway" | "gateway_bank" | "pay_later" | null>("gateway");
+  const [banks, setBanks] = useState<BankOption[]>([]);
+  const [selectedBankId, setSelectedBankId] = useState<string>("");
+  const [banksLoading, setBanksLoading] = useState(false);
   const [isDispatchExpanded, setIsDispatchExpanded] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -85,6 +96,26 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
       }
     } catch (error) {
       console.error("Error fetching branches:", error);
+    }
+  };
+
+  // Fetch DNA Pay by Bank list when gateway_bank is selected
+  const fetchBanks = async () => {
+    setBanksLoading(true);
+    try {
+      const resp = await api.get("/banks");
+      if (resp.data?.success && Array.isArray(resp.data.banks)) {
+        setBanks(resp.data.banks);
+        if (resp.data.banks.length > 0 && !selectedBankId) {
+          setSelectedBankId(String(resp.data.banks[0].bank_id ?? ""));
+        }
+      } else {
+        setBanks([]);
+      }
+    } catch {
+      setBanks([]);
+    } finally {
+      setBanksLoading(false);
     }
   };
 
@@ -196,6 +227,16 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
     }
   }, [gatewayAvailable, payLaterAllowed, paymentMode]);
 
+  // Fetch banks when user selects Pay by bank
+  useEffect(() => {
+    if (paymentMode === "gateway_bank" && gatewayAvailable) {
+      fetchBanks();
+    } else {
+      setBanks([]);
+      setSelectedBankId("");
+    }
+  }, [paymentMode, gatewayAvailable]);
+
   const handleContinueToPayment = async () => {
     if (hidePaymentSection) {
       toast({
@@ -211,12 +252,15 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
     }
 
     // Require a valid payment mode
-    if (!paymentMode || (paymentMode === "pay_later" && !payLaterAllowed)) {
+    if (!paymentMode || (paymentMode === "pay_later" && !payLaterAllowed) || (paymentMode === "gateway_bank" && !selectedBankId)) {
+      const description = paymentMode === "gateway_bank" && !selectedBankId
+        ? "Please select a bank for Pay by bank."
+        : payLaterAllowed
+          ? "Please select Payment Gateway or Pay Later."
+          : "Please select Payment Gateway.";
       toast({
         title: "Choose payment option",
-        description: payLaterAllowed
-          ? "Please select Payment Gateway or Pay Later."
-          : "Please select Payment Gateway.",
+        description,
         variant: "destructive"
       });
       return;
@@ -226,20 +270,24 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
     try {
       const payloadItems = items.map(({ product, quantity }) => ({ product_id: product.id, quantity }));
 
-      const { data: result } = await api.post("/checkout", {
+      const payload: Record<string, unknown> = {
         items: payloadItems,
         total: cartTotals.total,
         units: cartTotals.units,
         skus: cartTotals.skus,
         branch_id: selectedBranch?.id,
         delivery_instructions: deliveryInstructions,
-        delivery_note: deliveryInstructions, // this is what should map to delivery_note in backend
+        delivery_note: deliveryInstructions,
         delivery_method_id: selectedDeliveryMethod?.id ?? null,
         delivery_method_name: selectedDeliveryMethod?.name ?? null,
         delivery_time: selectedDeliveryMethod?.time ?? null,
         delivery_charge: selectedDeliveryMethod?.rate ?? null,
         payment_mode: paymentMode,
-      });
+      };
+      if (paymentMode === "gateway_bank" && selectedBankId) {
+        payload.bank_id = selectedBankId;
+      }
+      const { data: result } = await api.post("/checkout", payload);
 
         if (result.success && result.requires_redirect && result.redirect_url) {
         // DNA payment gateway flow: redirect to hosted checkout
@@ -296,7 +344,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           setGatewayUnavailable(true);
           if (!payLaterAllowed) {
             setPaymentMode(null);
-          } else if (paymentMode === "gateway" || paymentMode === null) {
+          } else if (paymentMode === "gateway" || paymentMode === "gateway_bank" || paymentMode === null) {
             setPaymentMode("pay_later");
           }
         }
@@ -492,7 +540,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         </Card>
 
         {/* Payment options */}
-        {!hidePaymentSection && gatewayAvailable && (
+        {!hidePaymentSection &&  (
           <Card className="border-gray-300 mb-[10px] p-[14px]">
             <h3 className="text-[14px] mb-[10px] font-semibold leading-[16px]">Choose payment method</h3>
             <div className="space-y-3">
@@ -505,8 +553,41 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
                     checked={paymentMode === "gateway"}
                     onChange={() => setPaymentMode("gateway")}
                   />
-                  <span className="text-sm text-black">Payment Gateway (Pay now)</span>
+                  <span className="text-sm text-black">Payment Gateway (Pay by card)</span>
                 </label>
+              )}
+              {gatewayAvailable && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMode"
+                    className="w-4 h-4 border-2 border-green-600 rounded-full"
+                    checked={paymentMode === "gateway_bank"}
+                    onChange={() => setPaymentMode("gateway_bank")}
+                  />
+                  <span className="text-sm text-black">Pay by bank (DNA)</span>
+                </label>
+              )}
+              {paymentMode === "gateway_bank" && (
+                <div className="pl-6 mt-2">
+                  {banksLoading ? (
+                    <span className="text-sm text-gray-500">Loading banks...</span>
+                  ) : banks.length > 0 ? (
+                    <select
+                      value={selectedBankId}
+                      onChange={(e) => setSelectedBankId(e.target.value)}
+                      className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                    >
+                      {banks.map((b) => (
+                        <option key={b.bank_id} value={b.bank_id}>
+                          {b.friendly_name || b.name || b.bank_id}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-sm text-amber-600">No banks available. Try Pay by card instead.</span>
+                  )}
+                </div>
               )}
               {payLaterAllowed && (
                 <label className="flex items-center gap-2 cursor-pointer">
