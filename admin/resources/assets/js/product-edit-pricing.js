@@ -134,7 +134,7 @@
       var csrfMeta = document.querySelector('meta[name="csrf-token"]');
       var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
-      fetch(baseUrl+'/product/' + productId + '/volume-discount/groups?price_list_id=' + encodeURIComponent(priceListIdRaw), {
+      fetch(baseUrl+'product/' + productId + '/volume-discount/groups?price_list_id=' + encodeURIComponent(priceListIdRaw), {
         headers: {
           Accept: 'application/json',
           'X-CSRF-TOKEN': csrfToken
