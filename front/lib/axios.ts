@@ -34,7 +34,11 @@ if (typeof window !== "undefined") {
         if (!isOnAuthPage) {
           // Redirect to login
           try {
-            console.log(currentPath);
+           if(currentPath.endsWith("/login") || currentPath.includes("/login/")) {
+            window.location.href = buildPath("/login");
+           } else if(currentPath.endsWith("/register") || currentPath.includes("/register/")) {
+            window.location.href = buildPath("/register");
+           } 
             // window.location.assign(buildPath("/landing"));
           } catch {
             // Fallback
