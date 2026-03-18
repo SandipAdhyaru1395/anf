@@ -187,7 +187,7 @@ const inputStyle =
             <button 
               type="submit" 
               disabled={loading || isSubmitting}
-             className="w-full bg-[#4c91e2] hover:bg-[#3b7bc4] text-white register-action-button-text py-4 rounded-full transition-all shadow-md active:scale-[0.98]"
+             className="w-full cursor-pointer bg-[#4c91e2] hover:bg-[#3b7bc4] text-white register-action-button-text py-4 rounded-full transition-all shadow-md active:scale-[0.98]"
             >
               {loading ? "Registering..." : "Agree & Sign Up"}
             </button>
@@ -195,7 +195,7 @@ const inputStyle =
           <button 
   type="button"
   onClick={() => router.replace(buildPath("/landing"))}
-  className="w-full bg-white border border-[#4c91e2] text-[#4c91e2] register-action-button-text py-3.5 rounded-full hover:bg-blue-50 transition-all"
+  className="w-full bg-white cursor-pointer border border-[#4c91e2] text-[#4c91e2] register-action-button-text py-3.5 rounded-full hover:bg-blue-50 transition-all"
 >
   Back
 </button>

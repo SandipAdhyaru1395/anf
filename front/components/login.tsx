@@ -337,7 +337,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading || isSubmitting}
-              className="login-action-button login-primary-button login-primary-button-text text-white shadow-lg active:scale-95 disabled:opacity-60 transition-all"
+              className="login-action-button cursor-pointer login-primary-button login-primary-button-text text-white shadow-lg active:scale-95 disabled:opacity-60 transition-all"
             >
               {loading ? "Signing in..." : "Log In"}
             </button>
@@ -345,7 +345,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => router.replace(buildPath("/landing"))}
-              className="login-action-button login-back-button-text border border-blue-500 text-blue-600 hover:bg-blue-50 transition-all"
+              className="login-action-button cursor-pointer login-back-button-text border border-blue-500 text-blue-600 hover:bg-blue-50 transition-all"
             >
               Back
             </button>
