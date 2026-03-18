@@ -44,6 +44,124 @@
 
 @section('page-style')
 <style>
+  .order-list-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0;
+  }
+  .order-list-header .page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #566a7f;
+    margin: 0;
+  }
+  .order-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .order-list-actions a {
+    color: #696cff;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0 0.75rem;
+    border-right: 1px solid #d9dee3;
+  }
+  .order-list-actions a:last-child {
+    border-right: none;
+    padding-right: 0;
+  }
+  .order-list-actions a:hover {
+    color: #5f61e6;
+  }
+  .order-list-actions .dropdown .dropdown-toggle {
+    color: #696cff;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0 0.75rem;
+  }
+  .order-list-actions .dropdown .dropdown-toggle:hover {
+    color: #5f61e6;
+  }
+  /* Export dropdown items: taller hit area (same as customer list) */
+  .order-list-actions .dropdown-menu .dropdown-item {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    line-height: 1.2;
+  }
+  .order-list-filter {
+    /* same structure + sizing as customer-list-filter */
+    padding: 1.05rem 1.25rem;
+    border-radius: 0.375rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.5rem;
+    min-height: 64px;
+    margin-bottom: 1rem;
+  }
+  .order-list-filter .filter-show,
+  .order-list-filter .btn-go,
+  .order-list-filter .form-select,
+  .order-list-filter .form-control {
+    height: 44px;
+  }
+  .order-list-filter .form-control,
+  .order-list-filter .form-select {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .order-list-filter .btn-go {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    line-height: 1;
+  }
+  .order-list-filter .filter-show {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .order-list-filter .filter-show label {
+    margin: 0;
+    font-weight: 500;
+    color: #566a7f;
+    white-space: nowrap;
+  }
+  /* Show dropdown: remove background and make it wider */
+  #filter-show {
+    min-width: 220px !important;
+    width: 220px;
+    background-color: transparent !important;
+    box-shadow: none;
+  }
+  /* Slightly wider search input */
+  #order-search-input {
+    min-width: 320px;
+  }
+  .order-list-filter .form-select,
+  .order-list-filter .form-control {
+    border-radius: 0.375rem;
+    border-color: #d9dee3;
+  }
+  .order-list-filter .btn-go {
+    background-color: #e7e7ff;
+    color: #566a7f;
+    border: none;
+    padding: 0.47rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+  .order-list-filter .btn-go:hover {
+    background-color: #ddddf7;
+    color: #566a7f;
+  }
+
   .datatables-order {
     font-size: 0.8125rem;
   }
@@ -52,11 +170,17 @@
     font-size: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
+    background-color: #f5f5f9;
+    color: #566a7f;
+    border-bottom: 1px solid #d9dee3;
   }
   .datatables-order tbody td {
     padding: 0.4rem 0.6rem;
     font-size: 0.8125rem;
     vertical-align: middle;
+  }
+  .datatables-order tbody tr:hover {
+    background-color: #f5f5f9;
   }
   .datatables-order .badge {
     font-size: 0.6875rem;
@@ -83,30 +207,31 @@
   .card-datatable {
     padding: 0.75rem;
   }
-  .datatables-order thead th:nth-child(10),
-  .datatables-order thead th:nth-child(11) {
+  .datatables-order thead th:nth-child(7),
+  .datatables-order thead th:nth-child(8),
+  .datatables-order thead th:nth-child(9) {
     width: 80px;
     min-width: 80px;
     text-align: center;
     line-height: 1.2;
   }
-  .datatables-order thead th:nth-child(11) {
+  .datatables-order thead th:nth-child(8) {
     width: 90px;
     min-width: 90px;
   }
-  .datatables-order tbody td:nth-child(10),
-  .datatables-order tbody td:nth-child(11) {
+  .datatables-order tbody td:nth-child(7),
+  .datatables-order tbody td:nth-child(8),
+  .datatables-order tbody td:nth-child(9) {
     text-align: center;
     width: 80px;
   }
-  .datatables-order tbody td:nth-child(11) {
+  .datatables-order tbody td:nth-child(8) {
     width: 90px;
   }
   .datatables-order tbody tr {
     cursor: pointer;
   }
   .datatables-order tbody tr td:first-child,
-  .datatables-order tbody tr td:nth-child(2),
   .datatables-order tbody tr td:last-child {
     cursor: default;
   }
@@ -147,121 +272,59 @@
 @section('content')
 <!-- Order List Widget -->
 
-<div class="card mb-6">
-  <div class="card-widget-separator-wrapper">
-    <div class="card-body card-widget-separator">
-      <div class="row gy-4 gy-sm-1">
-        <div class="col-sm-6 col-lg-3">
-          <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-4 pb-sm-0">
-            <div>
-              <h4 class="mb-0" id="widget-grand-total">0.00</h4>
-              <p class="mb-0">Grand Total</p>
-            </div>
-            <span class="avatar me-sm-6">
-              <span class="avatar-initial bg-label-secondary rounded text-heading">
-                <i class="icon-base ti tabler-currency-dollar icon-26px text-heading"></i>
-              </span>
-            </span>
-          </div>
-          <hr class="d-none d-sm-block d-lg-none me-6" />
-        </div>
-        <div class="col-sm-6 col-lg-3">
-          <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-4 pb-sm-0">
-            <div>
-              <h4 class="mb-0" id="widget-paid">0.00</h4>
-              <p class="mb-0">Paid</p>
-            </div>
-            <span class="avatar p-2 me-lg-6">
-              <span class="avatar-initial bg-label-secondary rounded"><i
-                  class="icon-base ti tabler-checks icon-26px text-heading"></i></span>
-            </span>
-          </div>
-          <hr class="d-none d-sm-block d-lg-none" />
-        </div>
-        <div class="col-sm-6 col-lg-3">
-          <div class="d-flex justify-content-between align-items-start border-end pb-4 pb-sm-0 card-widget-3">
-            <div>
-              <h4 class="mb-0" id="widget-balance">0.00</h4>
-              <p class="mb-0">Balance</p>
-            </div>
-            <span class="avatar p-2 me-sm-6">
-              <span class="avatar-initial bg-label-secondary rounded"><i
-                  class="icon-base ti tabler-ban icon-26px text-heading"></i></span>
-            </span>
-          </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <h4 class="mb-0" id="widget-payment-status-count">0</h4>
-              <p class="mb-0">
-                <strong>SO:</strong> Due: <span id="widget-due-count-so">0</span> | Partial: <span id="widget-partial-count-so">0</span> | Paid: <span id="widget-paid-count-so">0</span><br>
-                <strong>CN:</strong> Due: <span id="widget-due-count-cn">0</span> | Partial: <span id="widget-partial-count-cn">0</span> | Paid: <span id="widget-paid-count-cn">0</span>
-              </p>
-            </div>
-            <span class="avatar p-2">
-              <span class="avatar-initial bg-label-secondary rounded"><i
-                  class="icon-base ti tabler-file-invoice icon-26px text-heading"></i></span>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Order List Table -->
 <div class="card">
-  <!-- Filters -->
-  <div class="card-header border-bottom">
-    <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label">Reference No</label>
-        <input type="text" id="filter-reference-no" class="form-control" placeholder="Search reference no..." autocomplete="off">
+  <div class="card-body">
+    <div class="order-list-header mb-4">
+      <h5 class="page-title">Orders</h5>
+      <div class="order-list-actions">
+        <a href="{{ url('order/add') }}">New Order</a>
+        <div class="dropdown d-inline-block">
+          <a href="javascript:void(0);" class="dropdown-toggle" id="order-export-trigger" data-bs-toggle="dropdown" aria-expanded="false">Export</a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="order-export-trigger">
+            <li><a class="dropdown-item order-export-action" href="javascript:void(0);" data-export="print">Print</a></li>
+            <li><a class="dropdown-item order-export-action" href="javascript:void(0);" data-export="csv">CSV</a></li>
+            <li><a class="dropdown-item order-export-action" href="javascript:void(0);" data-export="excel">Excel</a></li>
+            <li><a class="dropdown-item order-export-action" href="javascript:void(0);" data-export="pdf">PDF</a></li>
+            <li><a class="dropdown-item order-export-action" href="javascript:void(0);" data-export="copy">Copy</a></li>
+          </ul>
+        </div>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Customer</label>
-        <select id="filter-customer" class="form-select select2">
-          <option value="">All Customers</option>
-          @foreach($customers as $customer)
-            <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->email }}</option>
-          @endforeach
+    </div>
+    <div id="order-export-buttons-placeholder" class="d-none"></div>
+
+    <div class="order-list-filter">
+      <div class="filter-show">
+        <label for="filter-show">Show</label>
+        <select class="form-select form-select-sm" id="filter-show" style="width: auto; min-width: 160px;">
+          <option value="">All</option>
+          <option value="except_cancelled">All except cancelled</option>
+          <option value="cancelled">Cancelled only</option>
         </select>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Start Date</label>
-        <input type="text" id="filter-start-date" class="form-control flatpickr" placeholder="Select start date" autocomplete="off">
+      <div class="d-flex align-items-center flex-grow-1 flex-sm-grow-0" style="min-width: 200px;">
+        <input type="search" class="form-control form-control-sm" id="order-search-input" placeholder="Search orders" aria-label="Search orders">
       </div>
-      <div class="col-md-3">
-        <label class="form-label">End Date</label>
-        <input type="text" id="filter-end-date" class="form-control flatpickr" placeholder="Select end date" autocomplete="off">
-      </div>
+      <button type="button" class="btn btn-sm btn-go" id="order-search-go">Go</button>
     </div>
-    <div class="row g-3 mt-2">
-      <div class="col-md-12">
-        <button type="button" id="btn-clear-filters" class="btn btn-label-secondary">Clear Filters</button>
-      </div>
+
+    <div class="card-datatable table-responsive">
+      <table class="datatables-order table border-top">
+        <thead>
+          <tr>
+            <th>Order No</th>
+            <th>Customer</th>
+            <th>Order Date</th>
+            <th>Grand Total</th>
+            <th>Paid</th>
+            <th>Invoice</th>
+            <th>Sale<br>Status</th>
+            <th>Payment<br>Status</th>
+            <th>actions</th>
+          </tr>
+        </thead>
+      </table>
     </div>
-  </div>
-  <div class="card-datatable table-responsive">
-    <table class="datatables-order table border-top">
-      <thead>
-        <tr>
-          <th></th>
-          <th></th>
-          <th>Date</th>
-          <th>Reference No</th>
-          <th>Customer</th>
-          <th>Grand Total</th>
-          <th>Paid</th>
-          <th>Balance</th>
-          <th>Total VAT</th>
-          <th>Sale<br>Status</th>
-          <th>Payment<br>Status</th>
-          <th>actions</th>
-        </tr>
-      </thead>
-    </table>
   </div>
 </div>
 

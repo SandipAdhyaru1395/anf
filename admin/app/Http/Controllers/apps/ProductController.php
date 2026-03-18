@@ -32,6 +32,7 @@ use App\Services\Planufac\PlanufacClient;
 use App\Services\Planufac\PlanufacProductSyncService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Crypt;
 
 class ProductController extends Controller
 {
@@ -1175,6 +1176,36 @@ class ProductController extends Controller
     // We'll use queue when available; otherwise run sync inline (still chunked + optimized).
 
     try {
+      // Validate Planufac ERP credentials exist in DB settings before starting.
+      $missing = [];
+      $settings = Setting::whereIn('key', ['planufac_base_url', 'planufac_email', 'planufac_password'])
+        ->get(['key', 'value'])
+        ->pluck('value', 'key');
+
+      $baseUrl = trim((string) ($settings->get('planufac_base_url') ?? ''));
+      $email = trim((string) ($settings->get('planufac_email') ?? ''));
+
+      $passwordEnc = $settings->get('planufac_password');
+      $password = '';
+      if (is_string($passwordEnc) && $passwordEnc !== '') {
+        try {
+          $password = trim((string) Crypt::decryptString($passwordEnc));
+        } catch (\Throwable $e) {
+          $password = '';
+        }
+      }
+
+      if ($baseUrl === '') $missing[] = 'Base URL';
+      if ($email === '') $missing[] = 'Email';
+      if ($password === '') $missing[] = 'Password';
+
+      if (!empty($missing)) {
+        return response()->json([
+          'queued' => false,
+          'message' => 'Planufac ERP is not configured. Missing: ' . implode(', ', $missing) . '. Please set it in Settings → Planufac ERP.',
+        ], 422);
+      }
+
       if (Schema::hasTable('jobs') && config('queue.default') !== 'sync') {
         SyncPlanufacProductsJob::dispatch();
         return response()->json([

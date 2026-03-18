@@ -21,6 +21,8 @@ use App\Models\VatMethod;
 use App\Models\Unit;
 use App\Models\Currency;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Cache;
 
 class SettingController extends Controller
 {
@@ -983,6 +985,12 @@ class SettingController extends Controller
     return view('content.settings.payment-gateways', compact('setting'));
   }
 
+  public function viewPlanufacErp()
+  {
+    $setting = Setting::all()->pluck('value', 'key');
+    return view('content.settings.planufac-erp', compact('setting'));
+  }
+
   public function updateThemeSettings(Request $request)
   {
     $validated = $request->validate([
@@ -1030,12 +1038,48 @@ class SettingController extends Controller
 
     Setting::updateOrCreate(['key' => 'dna_payments_enabled'], ['value' => $enabled ? '1' : '0']);
     Setting::updateOrCreate(['key' => 'dna_payments_client_id'], ['value' => $validated['dna_client_id'] ?? '']);
-    Setting::updateOrCreate(['key' => 'dna_payments_client_secret'], ['value' => $validated['dna_client_secret'] ?? '']);
     Setting::updateOrCreate(['key' => 'dna_payments_terminal_id'], ['value' => $validated['dna_terminal_id'] ?? '']);
     Setting::updateOrCreate(['key' => 'dna_payments_mode'], ['value' => $validated['dna_mode'] ?? 'test']);
 
+    // Only overwrite secret if user provided a new value
+    $newSecret = trim((string) ($validated['dna_client_secret'] ?? ''));
+    if ($newSecret !== '') {
+      Setting::updateOrCreate(
+        ['key' => 'dna_payments_client_secret'],
+        ['value' => Crypt::encryptString($newSecret)]
+      );
+    }
+
     Toastr::success('Payment gateway settings updated successfully');
     return redirect()->route('settings.paymentGateways');
+  }
+
+  public function updatePlanufacErp(Request $request)
+  {
+    $validated = $request->validate([
+      'planufac_base_url' => ['required', 'url', 'max:255'],
+      'planufac_email' => ['required', 'email', 'max:255'],
+      'planufac_password' => ['nullable', 'string', 'max:512'],
+    ]);
+
+    Setting::updateOrCreate(['key' => 'planufac_base_url'], ['value' => trim($validated['planufac_base_url'])]);
+    Setting::updateOrCreate(['key' => 'planufac_email'], ['value' => trim($validated['planufac_email'])]);
+
+    // Only overwrite password if user provided a new value
+    $newPassword = trim((string) ($validated['planufac_password'] ?? ''));
+    if ($newPassword !== '') {
+      Setting::updateOrCreate(
+        ['key' => 'planufac_password'],
+        ['value' => Crypt::encryptString($newPassword)]
+      );
+    }
+
+    // Clear cached config + token so next call uses latest settings.
+    Cache::forget('planufac.api.cfg.v1');
+    Cache::forget('planufac.api.token');
+
+    Toastr::success('Planufac ERP settings updated successfully');
+    return redirect()->route('settings.planufacErp');
   }
 
   public function truncateData(Request $request)

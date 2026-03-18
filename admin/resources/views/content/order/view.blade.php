@@ -31,8 +31,11 @@
                     <li class="breadcrumb-item">
                         <a href="{{ route('order.list') }}" class="ov-bc-link">Orders</a>
                     </li>
-                    <li class="breadcrumb-item active" aria-current="page">
+                    {{-- <li class="breadcrumb-item active" aria-current="page">
                         #{{ $order->type }}{{ $order->order_number }}
+                    </li> --}}
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ $order->order_number }}
                     </li>
                 </ol>
             </nav>

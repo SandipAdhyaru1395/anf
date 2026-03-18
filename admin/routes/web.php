@@ -171,6 +171,8 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/order/details', [OrderController::class, 'getOrderDetails'])->name('order-details');
         Route::get('/order/edit/{id}', [OrderController::class, 'edit'])->name('order.edit');
         Route::get('/order/list/ajax', [OrderController::class, 'ajaxList'])->name('order.list.ajax');
+        Route::get('/order/product/search/ajax', [OrderController::class, 'productSearchAjax'])->name('order.product.search.ajax');
+        Route::get('/order/product-price/ajax', [OrderController::class, 'productPriceAjax'])->name('order.product.price.ajax');
         Route::get('/order/show/ajax/{id}', [OrderController::class, 'showAjax'])->name('order.show.ajax');
         Route::get('/order/invoice/{id}', [OrderController::class, 'showInvoice'])->name('order.invoice');
         Route::get('/order/invoice/{id}/pdf', [OrderController::class, 'generateInvoicePdf'])->name('order.invoice.pdf');
@@ -314,6 +316,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/settings/maintenance', [SettingController::class, 'viewMaintenanceSettings'])->name('settings.maintenance');
         Route::get('/settings/theme', [SettingController::class, 'viewThemeSettings'])->name('settings.theme');
         Route::get('/settings/payment-gateways', [SettingController::class, 'viewPaymentGateways'])->name('settings.paymentGateways');
+        Route::get('/settings/planufac-erp', [SettingController::class, 'viewPlanufacErp'])->name('settings.planufacErp');
         Route::get('/settings/delivery-method', [SettingController::class, 'viewDeliveryMethod'])->name('settings.deliveryMethod');
         Route::get('/settings/delivery-method/list/ajax', [SettingController::class, 'deliveryMethodListAjax'])->name('settings.deliveryMethod.list.ajax');
         Route::get('/settings/delivery-method/ajax/show', [SettingController::class, 'deliveryMethodShow'])->name('settings.deliveryMethod.ajax.show');
@@ -351,6 +354,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/settings/truncate', [SettingController::class, 'truncateData'])->name('settings.truncate');
         Route::post('/settings/theme/update', [SettingController::class, 'updateThemeSettings'])->name('settings.theme.update');
         Route::post('/settings/payment-gateways/update', [SettingController::class, 'updatePaymentGateways'])->name('settings.paymentGateways.update');
+        Route::post('/settings/planufac-erp/update', [SettingController::class, 'updatePlanufacErp'])->name('settings.planufacErp.update');
         Route::post('/settings/delivery-method/store', [SettingController::class, 'deliveryMethodStore'])->name('settings.deliveryMethod.store');
         Route::post('/settings/delivery-method/update', [SettingController::class, 'deliveryMethodUpdate'])->name('settings.deliveryMethod.update');
         Route::get('/settings/delivery-method/delete/{id}', [SettingController::class, 'deliveryMethodDelete'])->name('settings.deliveryMethod.delete');

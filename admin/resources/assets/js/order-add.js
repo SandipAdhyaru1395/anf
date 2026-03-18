@@ -369,11 +369,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       currentRequest = $.ajax({
-        url: baseUrl + 'purchase/search/ajax',
+        url: baseUrl + 'order/product/search/ajax',
         dataType: 'json',
         data: {
           q: query,
-          limit: MAX_RESULTS
+          limit: MAX_RESULTS,
+          customer_id: ($('#customer_id').val() || '').trim()
         }
       }).done(function(data) {
         if (currentQuery !== query) {
@@ -587,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Product doesn't exist, add new row
       // Always store original base price and VAT for restoration
-      var row = '<tr data-product-id="' + productId + '" data-unit-vat="' + finalVatAmount + '" data-original-vat="' + originalVat + '" data-original-price="' + originalPrice + '">' +
+      var row = '<tr data-product-id="' + productId + '" data-unit-vat="' + finalVatAmount + '" data-original-vat="' + originalVat + '" data-original-price="' + originalPrice + '" data-auto-price="1">' +
         '<td>' + productText + '<input type="hidden" name="products[' + productId + '][product_id]" value="' + productId + '"></td>' +
         '<td><input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" class="form-control form-control-sm cost-input" name="products[' + productId + '][unit_cost]" value="' + finalPrice.toFixed(2) + '" autocomplete="off"></td>' +
         '<td><input type="text" onkeypress="return /^[0-9]+$/.test(event.key)" class="form-control form-control-sm quantity-input" name="products[' + productId + '][quantity]" value="' + quantity + '" autocomplete="off"></td>' +
@@ -620,10 +621,67 @@ document.addEventListener('DOMContentLoaded', function() {
       saveFormStateDebounced();
     });
 
-    // Update totals on input change
-    $(document).on('input', '.quantity-input, .cost-input', function() {
+    function repriceRowFromServer($row) {
+      const customerId = ($('#customer_id').val() || '').trim();
+      if (!customerId) return;
+      const productId = $row.data('product-id');
+      const qty = parseInt(($row.find('.quantity-input').val() || '0'), 10) || 0;
+      const autoPrice = String($row.data('auto-price') || '0') === '1';
+      if (!productId || qty <= 0 || !autoPrice) return;
+
+      $.ajax({
+        url: baseUrl + 'order/product-price/ajax',
+        dataType: 'json',
+        data: { customer_id: customerId, product_id: productId, quantity: qty }
+      }).done(function (data) {
+        if (!data || data.status !== 'ok') return;
+        const unit = parseFloat(data.unit_price || 0);
+        const vat = parseFloat(data.vat_amount || 0);
+
+        // Preserve original base values for is_est toggle
+        $row.data('original-price', unit);
+        $row.data('original-vat', vat);
+
+        const isEst = $('#is_est').is(':checked');
+        if (isEst) {
+          $row.find('.cost-input').val((unit + vat).toFixed(2));
+          $row.data('unit-vat', 0);
+        } else {
+          $row.find('.cost-input').val(unit.toFixed(2));
+          $row.data('unit-vat', vat);
+        }
+        calculateTotal();
+        saveFormStateDebounced();
+      });
+    }
+
+    function repriceAllAutoRows() {
+      $('#products-table tbody tr:not(.total-row)').each(function () {
+        repriceRowFromServer($(this));
+      });
+    }
+
+    // Update totals / pricing on input change
+    $(document).on('input', '.quantity-input', function() {
+      const $row = $(this).closest('tr');
+      repriceRowFromServer($row);
       calculateTotal();
       saveFormStateDebounced();
+    });
+
+    $(document).on('input', '.cost-input', function() {
+      // User manually edited price -> stop auto repricing for this row
+      const $row = $(this).closest('tr');
+      $row.data('auto-price', 0);
+      calculateTotal();
+      saveFormStateDebounced();
+    });
+
+    // When customer changes, reprice all auto-priced rows
+    $customerSelect.on('change', function () {
+      setTimeout(function () {
+        repriceAllAutoRows();
+      }, 0);
     });
 
     // Calculate totals on initial load to format with currency symbol
@@ -647,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const safePrice = finalPrice.toFixed(2);
       const safeVat = finalVat.toFixed(2);
       return '' +
-        '<tr data-product-id="' + productId + '" data-unit-vat="' + safeVat + '" data-original-vat="' + (vat_amount || 0) + '" data-original-price="' + (unit_price || 0) + '">' +
+        '<tr data-product-id="' + productId + '" data-unit-vat="' + safeVat + '" data-original-vat="' + (vat_amount || 0) + '" data-original-price="' + (unit_price || 0) + '" data-auto-price="1">' +
           '<td>' + productText + '<input type="hidden" name="products[' + productId + '][product_id]" value="' + productId + '"></td>' +
           '<td><input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" class="form-control form-control-sm cost-input" name="products[' + productId + '][unit_cost]" value="' + safePrice + '" autocomplete="off"></td>' +
           '<td><input type="text" onkeypress="return /^[0-9]+$/.test(event.key)" class="form-control form-control-sm quantity-input" name="products[' + productId + '][quantity]" value="' + safeQty + '" autocomplete="off"></td>' +

@@ -33,8 +33,6 @@ document.addEventListener('DOMContentLoaded', function (e) {
   // E-commerce Products datatable
 
   if (dt_order_table) {
-    let startDatePicker, endDatePicker;
-
     const dt_products = new DataTable(dt_order_table, {
       processing: true,
       stateSave: true,
@@ -43,52 +41,60 @@ document.addEventListener('DOMContentLoaded', function (e) {
         url: baseUrl + 'order/list/ajax',
         data: function(d) {
           // Get filter values and add to request
-          d.reference_no = document.getElementById('filter-reference-no')?.value || '';
-          d.customer = document.getElementById('filter-customer')?.value || '';
-          d.start_date = document.getElementById('filter-start-date')?.value || '';
-          d.end_date = document.getElementById('filter-end-date')?.value || '';
+          d.status_filter = document.getElementById('filter-show')?.value || '';
         }
       },
       columns: [
         // columns according to JSON
-        { data: 'id' },
-        { data: 'id', orderable: false, render: DataTable.render.select() },
-        { data: 'order_date',orderable: true, searchable: true },
-        { data: 'order_number',orderable: true, searchable: true  },
-        { data: 'customer_name',orderable: true, searchable: true  },
-        { data: 'total_amount',orderable: true, searchable: true  },
-        { data: 'paid_amount',orderable: true, searchable: true  },
-        { data: 'unpaid_amount',orderable: true, searchable: true  },
-        { data: 'vat_amount',orderable: true, searchable: true  },
-        { data: 'order_status',orderable: true, searchable: true  },
-        { data: 'payment_status',orderable: true, searchable: true  },
-        { data: 'has_credit_note' },
-        { data: 'id' }
+        { data: 'order_number', orderable: true, searchable: true }, // order no
+        { data: 'customer_name', orderable: true, searchable: true }, // customer
+        { data: 'order_date', orderable: true, searchable: true }, // order date
+        { data: 'total_amount', orderable: true, searchable: true }, // grand total
+        { data: 'paid_amount', orderable: true, searchable: true }, // paid
+        { data: null, orderable: false, searchable: false, defaultContent: '' }, // invoice (blank for now)
+        { data: 'order_status', orderable: true, searchable: true }, // sale status
+        { data: 'payment_status', orderable: true, searchable: true }, // payment status
+        { data: 'id' } // actions
       ],
       columnDefs: [
         {
-          // For Responsive
-          className: 'control',
-          searchable: false,
-          orderable: false,
-          responsivePriority: 2,
+          // Reference No (Order No)
           targets: 0,
+          searchable: true,
           render: function (data, type, full, meta) {
-            return '';
+            const orderType = full['type'] || 'SO';
+            const orderNumber = full['order_number'] || '';
+            // let display = '#' + orderType + orderNumber;
+            let display = orderNumber;
+
+            // If CN type, show parent order number
+            if (orderType === 'CN' && full['parent_order_display']) {
+              display += ' (#' + full['parent_order_display'] + ')';
+            }
+            
+            // If SO type, show credit note number
+            if (orderType === 'SO' && full['credit_note_display']) {
+              display += ' (#' + full['credit_note_display'] + ')';
+            }
+            
+            return '<span>' + display + '</span>';
           }
         },
         {
-          // For Checkboxes
+          // Customer
           targets: 1,
-          orderable: false,
-          searchable: false,
-          responsivePriority: 3,
-          checkboxes: true,
-          render: function () {
-            return '<input type="checkbox" class="dt-checkboxes form-check-input">';
-          },
-          checkboxes: {
-            selectAllRender: '<input type="checkbox" class="form-check-input">'
+          responsivePriority: 1,
+          searchable: true,
+          render: function (data, type, full, meta) {
+            const name = full['customer_name'] || '';
+            const email = full['customer_email'] || '';
+            return `
+              <div class="d-flex justify-content-start align-items-center order-name text-nowrap">
+                <div class="d-flex flex-column">
+                  ${name ? `<span class="fw-medium">${name}</span>` : ''}
+                  ${email ? `<small class="text-muted">${email}</small>` : ''}
+                </div>
+              </div>`;
           }
         },
         {
@@ -112,47 +118,8 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         },
         {
-          // Reference No
-          targets: 3,
-          searchable: true,
-          render: function (data, type, full, meta) {
-            const orderType = full['type'] || 'SO';
-            const orderNumber = full['order_number'] || '';
-            let display = '#' + orderType + orderNumber;
-            
-            // If CN type, show parent order number
-            if (orderType === 'CN' && full['parent_order_display']) {
-              display += ' (#' + full['parent_order_display'] + ')';
-            }
-            
-            // If SO type, show credit note number
-            if (orderType === 'SO' && full['credit_note_display']) {
-              display += ' (#' + full['credit_note_display'] + ')';
-            }
-            
-            return '<span>' + display + '</span>';
-          }
-        },
-        {
-          // Customer
-          targets: 4,
-          responsivePriority: 1,
-          searchable: true,
-          render: function (data, type, full, meta) {
-            const name = full['customer_name'] || '';
-            const email = full['customer_email'] || '';
-            return `
-              <div class="d-flex justify-content-start align-items-center order-name text-nowrap">
-                <div class="d-flex flex-column">
-                  ${name ? `<span class="fw-medium">${name}</span>` : ''}
-                  ${email ? `<small class="text-muted">${email}</small>` : ''}
-                </div>
-              </div>`;
-          }
-        },
-        {
           // Grand Total
-          targets: 5,
+          targets: 3,
           searchable: true,
           render: function (data, type, full, meta) {
             const amount = parseFloat(full['total_amount'] || 0);
@@ -161,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         },
         {
           // Paid
-          targets: 6,
+          targets: 4,
           searchable: true,
           render: function (data, type, full, meta) {
             const amount = parseFloat(full['paid_amount'] || 0);
@@ -169,26 +136,17 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         },
         {
-          // Balance
-          targets: 7,
-          searchable: true,
-          render: function (data, type, full, meta) {
-            const amount = parseFloat(full['unpaid_amount'] || 0);
-            return `<span class="text-nowrap">${currencySymbol}${amount.toFixed(2)}</span>`;
-          }
-        },
-        {
-          // Total VAT
-          targets: 8,
-          searchable: true,
-          render: function (data, type, full, meta) {
-            const amount = parseFloat(full['vat_amount'] || 0);
-            return `<span class="text-nowrap">${currencySymbol}${amount.toFixed(2)}</span>`;
+          // Invoice (blank for now)
+          targets: 5,
+          searchable: false,
+          orderable: false,
+          render: function () {
+            return '';
           }
         },
         {
           // Sale Status
-          targets: 9,
+          targets: 6,
           width: '80px',
           searchable: true,
           render: function (data, type, full, meta) {
@@ -202,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         },
         {
           // Payment Status
-          targets: 10,
+          targets: 7,
           width: '90px',
           searchable: true,
           render: function (data, type, full, meta) {
@@ -215,17 +173,12 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         },
         {
-          // Hide has_credit_note column
-          targets: 11,
-          visible: false,
-          searchable: false
-        },
-        {
           targets: -1,
           title: 'Actions',
           searchable: false,
           orderable: false,
           render: function (data, type, full, meta) {
+            // ${(!full['has_credit_note'] || full['has_credit_note'] == 0) && full['type'] !== 'CN' && full['type'] !== 'EST' ? `<a href="${baseUrl}order/credit-note/add/${full['id']}" class="dropdown-item">Credit Note</a>` : ''}
               return `
               <div class="d-flex justify-content-sm-start align-items-sm-center">
                 <button class="btn btn-text-secondary rounded-pill waves-effect btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -237,278 +190,38 @@ document.addEventListener('DOMContentLoaded', function (e) {
                   ${(!full['has_credit_note'] || full['has_credit_note'] == 0) && (!full['type'] || full['type'] !== 'CN') ? `<a href="${baseUrl}order/edit/${full['id']}" class="dropdown-item">Edit</a>` : ''}
                   ${parseFloat(full['unpaid_amount'] || 0) > 0 ? `<a href="javascript:void(0);" class="dropdown-item add-payment-btn" data-id="${full['id']}" data-order-number="${(full['type'] || 'SO') + (full['order_number'] || '')}" data-unpaid="${full['unpaid_amount'] || 0}">Add Payment</a>` : ''}
                   ${parseFloat(full['paid_amount'] || 0) > 0 ? `<a href="javascript:void(0);" class="dropdown-item view-payments-btn" data-id="${full['id']}" data-order-number="${(full['type'] || 'SO') + (full['order_number'] || '')}">View Payments</a>` : ''}
-                  ${(!full['has_credit_note'] || full['has_credit_note'] == 0) && full['type'] !== 'CN' && full['type'] !== 'EST' ? `<a href="${baseUrl}order/credit-note/add/${full['id']}" class="dropdown-item">Credit Note</a>` : ''}
                   <a href="javascript:void(0);" class="dropdown-item delete-record" data-id="${full['id']}">Delete</a>
                 </div>
               </div>`;
           }
         }
       ],
-      select: {
-        style: 'multi+shift',
-        selector: 'td:nth-child(2)'
-      },
       // order: [2, 'desc'],
       layout: {
-        topStart: {
-          rowClass: 'card-header d-flex border-top rounded-0 flex-wrap py-0 flex-column flex-md-row align-items-start',
-          features: [
-            {
-              search: {
-                className: 'me-5 ms-n4 pe-5 mb-n6 mb-md-0',
-                placeholder: 'Search Order',
-                text: '_INPUT_'
-              }
-            },
-            {
-              buttons: [
-                {
-                  text: '<i class="icon-base ti tabler-trash me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Delete Selected</span>',
-                  className: 'btn btn-danger',
-                  enabled: false,
-                  action: function (e, dt, node, config) {
-
-                    let selectedRows = dt.rows({ selected: true }).data();
-                    let ids = [];
-
-                    selectedRows.each(function (row) {
-                      ids.push(row.id);
-                    });
-
-                    if (ids.length === 0) return;
-
-                    Swal.fire({
-                      title: 'Are you sure?',
-                      text: "You won't be able to revert this!",
-                      icon: 'warning',
-                      showCancelButton: true,
-                      confirmButtonText: 'Yes, delete them!',
-                      cancelButtonText: 'Cancel',
-                      customClass: {
-                        confirmButton: 'btn btn-danger me-3',
-                        cancelButton: 'btn btn-label-secondary'
-                      },
-                      buttonsStyling: false
-                    }).then(function (result) {
-                      if (result.isConfirmed) {
-
-                        $.ajax({
-                          url: baseUrl + 'order/delete-multiple',
-                          type: 'POST',
-                          data: {
-                            ids: ids,
-                            _token: $('meta[name="csrf-token"]').attr('content')
-                          },
-                          success: function (response) {
-                            
-                            dt.ajax.reload();
-                            
-                            dt.button(0).enable(false);
-
-                            Swal.fire({
-                              icon: 'success',
-                              title: 'Deleted!',
-                              text: 'Selected orders have been deleted.',
-                              customClass: {
-                                confirmButton: 'btn btn-success'
-                              }
-                            });
-                          },
-                          error: function (xhr) {
-
-                            let message = 'Something went wrong.';
-
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                              message = xhr.responseJSON.message;
-                            }
-
-                            Swal.fire({
-                              icon: 'error',
-                              title: 'Error!',
-                              text: message,
-                              customClass: {
-                                confirmButton: 'btn btn-danger'
-                              }
-                            });
-                          }
-                        });
-                      }
-                    });
-                  }
-                }
-              ],
-            }
-          ]
-        },
+        topStart: null,
         topEnd: {
-          rowClass: 'row mx-3 my-0 justify-content-between',
           features: [
-            {
-              pageLength: {
-                menu: [[7, 10, 25, 50, 100, -1], [7, 10, 25, 50, 100, "All"]],
-                text: '_MENU_'
-              }
-            },
             {
               buttons: [
                 {
-                  extend: 'collection',
-                  className: 'btn btn-label-primary dropdown-toggle me-4',
-                  text: '<span class="d-flex align-items-center gap-1"><i class="icon-base ti tabler-upload icon-xs"></i> <span class="d-none d-sm-inline-block">Export</span></span>',
-                  buttons: [
-                    {
-                      extend: 'print',
-                      text: `<span class="d-flex align-items-center"><i class="icon-base ti tabler-printer me-1"></i>Print</span>`,
-                      className: 'dropdown-item',
-                      exportOptions: {
-                        columns: function (idx, data, node) {
-                          // Export columns 2-10 (Date, Reference No, Customer, Grand Total, Paid, Balance, Total VAT, Sale Status, Payment Status)
-                          // Exclude: 0 (control), 1 (checkbox), 11 (has_credit_note - hidden), 12 (actions)
-                          return idx >= 2 && idx <= 10;
-                        },
-                        format: {
-                          body: function (inner, coldex, rowdex) {
-                            if (inner.length <= 0) return inner;
-                            const el = new DOMParser().parseFromString(inner, 'text/html').body.childNodes;
-                            let result = '';
-                            el.forEach(item => {
-                              if (item.classList && item.classList.contains('user-name')) {
-                                result += item.lastChild.firstChild.textContent;
-                              } else {
-                                result += item.textContent || item.innerText || '';
-                              }
-                            });
-                            return result;
-                          }
-                        }
-                      },
-                      customize: function (win) {
-                        win.document.body.style.color = headingColor;
-                        win.document.body.style.borderColor = borderColor;
-                        win.document.body.style.backgroundColor = bodyBg;
-                        const table = win.document.body.querySelector('table');
-                        table.classList.add('compact');
-                        table.style.color = 'inherit';
-                        table.style.borderColor = 'inherit';
-                        table.style.backgroundColor = 'inherit';
-                      }
-                    },
-                    {
-                      extend: 'csv',
-                      text: `<span class="d-flex align-items-center"><i class="icon-base ti tabler-file me-1"></i>Csv</span>`,
-                      className: 'dropdown-item',
-                      exportOptions: {
-                        columns: function (idx, data, node) {
-                          // Export columns 2-10 (Date, Reference No, Customer, Grand Total, Paid, Balance, Total VAT, Sale Status, Payment Status)
-                          // Exclude: 0 (control), 1 (checkbox), 11 (has_credit_note - hidden), 12 (actions)
-                          return idx >= 2 && idx <= 10;
-                        },
-                        format: {
-                          body: function (inner, coldex, rowdex) {
-                            if (inner.length <= 0) return inner;
-                            const el = new DOMParser().parseFromString(inner, 'text/html').body.childNodes;
-                            let result = '';
-                            el.forEach(item => {
-                              if (item.classList && item.classList.contains('user-name')) {
-                                result += item.lastChild.firstChild.textContent;
-                              } else {
-                                result += item.textContent || item.innerText || '';
-                              }
-                            });
-                            return result;
-                          }
-                        }
-                      }
-                    },
-                    {
-                      extend: 'excel',
-                      text: `<span class="d-flex align-items-center"><i class="icon-base ti tabler-upload me-1"></i>Excel</span>`,
-                      className: 'dropdown-item',
-                      exportOptions: {
-                        columns: function (idx, data, node) {
-                          // Export columns 2-10 (Date, Reference No, Customer, Grand Total, Paid, Balance, Total VAT, Sale Status, Payment Status)
-                          // Exclude: 0 (control), 1 (checkbox), 11 (has_credit_note - hidden), 12 (actions)
-                          return idx >= 2 && idx <= 10;
-                        },
-                        format: {
-                          body: function (inner, coldex, rowdex) {
-                            if (inner.length <= 0) return inner;
-                            const el = new DOMParser().parseFromString(inner, 'text/html').body.childNodes;
-                            let result = '';
-                            el.forEach(item => {
-                              if (item.classList && item.classList.contains('user-name')) {
-                                result += item.lastChild.firstChild.textContent;
-                              } else {
-                                result += item.textContent || item.innerText || '';
-                              }
-                            });
-                            return result;
-                          }
-                        }
-                      }
-                    },
-                    {
-                      extend: 'pdf',
-                      text: `<span class="d-flex align-items-center"><i class="icon-base ti tabler-file-text me-1"></i>Pdf</span>`,
-                      className: 'dropdown-item',
-                      exportOptions: {
-                        columns: function (idx, data, node) {
-                          // Export columns 2-10 (Date, Reference No, Customer, Grand Total, Paid, Balance, Total VAT, Sale Status, Payment Status)
-                          // Exclude: 0 (control), 1 (checkbox), 11 (has_credit_note - hidden), 12 (actions)
-                          return idx >= 2 && idx <= 10;
-                        },
-                        format: {
-                          body: function (inner, coldex, rowdex) {
-                            if (inner.length <= 0) return inner;
-                            const el = new DOMParser().parseFromString(inner, 'text/html').body.childNodes;
-                            let result = '';
-                            el.forEach(item => {
-                              if (item.classList && item.classList.contains('user-name')) {
-                                result += item.lastChild.firstChild.textContent;
-                              } else {
-                                result += item.textContent || item.innerText || '';
-                              }
-                            });
-                            return result;
-                          }
-                        }
-                      }
-                    },
-                    {
-                      extend: 'copy',
-                      text: `<i class="icon-base ti tabler-copy me-1"></i>Copy`,
-                      className: 'dropdown-item',
-                      exportOptions: {
-                        columns: function (idx, data, node) {
-                          // Export columns 2-10 (Date, Reference No, Customer, Grand Total, Paid, Balance, Total VAT, Sale Status, Payment Status)
-                          // Exclude: 0 (control), 1 (checkbox), 11 (has_credit_note - hidden), 12 (actions)
-                          return idx >= 2 && idx <= 10;
-                        },
-                        format: {
-                          body: function (inner, coldex, rowdex) {
-                            if (inner.length <= 0) return inner;
-                            const el = new DOMParser().parseFromString(inner, 'text/html').body.childNodes;
-                            let result = '';
-                            el.forEach(item => {
-                              if (item.classList && item.classList.contains('user-name')) {
-                                result += item.lastChild.firstChild.textContent;
-                              } else {
-                                result += item.textContent || item.innerText || '';
-                              }
-                            });
-                            return result;
-                          }
-                        }
-                      }
-                    }
-                  ]
+                  extend: 'print',
+                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
                 },
                 {
-                  text: '<i class="icon-base ti tabler-plus me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Add Order</span>',
-                  className: 'add-new btn btn-primary',
-                  action: function () {
-                    window.location.href = orderAdd;
-                  }
+                  extend: 'csv',
+                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                },
+                {
+                  extend: 'excel',
+                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                },
+                {
+                  extend: 'pdf',
+                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                },
+                {
+                  extend: 'copy',
+                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
                 }
               ]
             }
@@ -539,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function (e) {
               return 'Details of Order #' + orderType + orderNumber;
             }
           }),
-          type: 'column',
           renderer: function (api, rowIdx, columns) {
             const data = columns
               .map(function (col) {
@@ -615,129 +327,24 @@ document.addEventListener('DOMContentLoaded', function (e) {
       initComplete: function () {
         const api = this.api();
 
-        // Initialize Select2 for customer dropdown
-        if (typeof $ !== 'undefined' && $.fn.select2) {
-          const $customerSelect = $('#filter-customer');
-          if ($customerSelect.length && !$customerSelect.hasClass('select2-hidden-accessible')) {
-            $customerSelect.select2({
-              placeholder: 'All Customers',
-              allowClear: true,
-              width: '100%',
-              dropdownParent: $customerSelect.closest('.card-header')
-            });
-          }
-        }
-
-        // Initialize flatpickr for date filters after DataTable is created
-        if (window.flatpickr) {
-          const startDateEl = document.getElementById('filter-start-date');
-          const endDateEl = document.getElementById('filter-end-date');
-          
-          if (startDateEl && !startDatePicker) {
-            startDatePicker = flatpickr(startDateEl, {
-              dateFormat: 'd/m/Y',
-              allowInput: true,
-              onChange: function(selectedDates, dateStr, instance) {
-                dt_products.draw();
-              },
-              onClose: function(selectedDates, dateStr, instance) {
-                // Trigger refresh when date picker is closed (including when cleared)
-                dt_products.draw();
-              }
-            });
-            
-            // Also listen for manual input clearing
-            startDateEl.addEventListener('input', function() {
-              if (!this.value || this.value.trim() === '') {
-                dt_products.draw();
-              }
-            });
-            
-            // Listen for blur event to catch manual clearing
-            startDateEl.addEventListener('blur', function() {
-              if (!this.value || this.value.trim() === '') {
-                dt_products.draw();
-              }
-            });
-          }
-          
-          if (endDateEl && !endDatePicker) {
-            endDatePicker = flatpickr(endDateEl, {
-              dateFormat: 'd/m/Y',
-              allowInput: true,
-              onChange: function(selectedDates, dateStr, instance) {
-                dt_products.draw();
-              },
-              onClose: function(selectedDates, dateStr, instance) {
-                // Trigger refresh when date picker is closed (including when cleared)
-                dt_products.draw();
-              }
-            });
-            
-            // Also listen for manual input clearing
-            endDateEl.addEventListener('input', function() {
-              if (!this.value || this.value.trim() === '') {
-                dt_products.draw();
-              }
-            });
-            
-            // Listen for blur event to catch manual clearing
-            endDateEl.addEventListener('blur', function() {
-              if (!this.value || this.value.trim() === '') {
-                dt_products.draw();
-              }
-            });
-          }
-        }
-
-        // Setup filter event listeners
-        const filterReferenceNo = document.getElementById('filter-reference-no');
-        const filterCustomer = document.getElementById('filter-customer');
-        const btnClearFilters = document.getElementById('btn-clear-filters');
+        const filterShow = document.getElementById('filter-show');
+        const searchInput = document.getElementById('order-search-input');
+        const searchGo = document.getElementById('order-search-go');
         
-        // Debounce function for input filters
-        let referenceNoTimeout;
-        
-        if (filterReferenceNo) {
-          filterReferenceNo.addEventListener('input', function() {
-            clearTimeout(referenceNoTimeout);
-            referenceNoTimeout = setTimeout(function() {
-              dt_products.draw();
-            }, 500);
+        if (filterShow) {
+          filterShow.addEventListener('change', function () {
+            dt_products.draw();
           });
         }
-        
-        if (filterCustomer) {
-          // Use jQuery if Select2 is initialized, otherwise use native change event
-          if (typeof $ !== 'undefined' && $.fn.select2 && $('#filter-customer').hasClass('select2-hidden-accessible')) {
-            $('#filter-customer').on('change', function() {
-              dt_products.draw();
-            });
-          } else {
-            filterCustomer.addEventListener('change', function() {
-              dt_products.draw();
-            });
-          }
-        }
-        
-        if (btnClearFilters) {
-          btnClearFilters.addEventListener('click', function() {
-            if (filterReferenceNo) filterReferenceNo.value = '';
-            if (filterCustomer) {
-              if (typeof $ !== 'undefined' && $.fn.select2 && $('#filter-customer').hasClass('select2-hidden-accessible')) {
-                $('#filter-customer').val('').trigger('change');
-              } else {
-                filterCustomer.value = '';
-              }
+
+        if (searchGo && searchInput) {
+          searchGo.addEventListener('click', function () {
+            dt_products.search(searchInput.value).draw();
+          });
+          searchInput.addEventListener('keypress', function (e) {
+            if (e.which === 13) {
+              dt_products.search(searchInput.value).draw();
             }
-            if (startDatePicker) {
-              startDatePicker.clear();
-            }
-            if (endDatePicker) {
-              endDatePicker.clear();
-            }
-            // Trigger table refresh after clearing
-            dt_products.draw();
           });
         }
 
@@ -751,9 +358,9 @@ document.addEventListener('DOMContentLoaded', function (e) {
           const cell = e.target.closest('td');
           if (!cell) return;
           const cellIndex = cell.cellIndex;
-          // Ignore control (0), checkbox (1), actions (last)
+          // Ignore checkbox (0), actions (last)
           const lastIndex = dt_products.columns().count() - 1;
-          if (cellIndex === 0 || cellIndex === 1 || cellIndex === lastIndex) return;
+          if (cellIndex === 0 || cellIndex === lastIndex) return;
 
           const rowEl = e.target.closest('tr');
           if (!rowEl) return;
@@ -765,11 +372,6 @@ document.addEventListener('DOMContentLoaded', function (e) {
           window.location.href = baseUrl + 'order/view/' + id;
         });
       }
-    });
-
-    dt_products.on('select deselect', function () {
-      let selectedCount = dt_products.rows({ selected: true }).count();
-      dt_products.button(0).enable(selectedCount > 0);
     });
     
     // Set datatable instance for payment modal to reload after payment is added
@@ -970,6 +572,26 @@ document.addEventListener('DOMContentLoaded', function (e) {
 
     // Load order statistics
     loadOrderStatistics(currencySymbol);
+
+    // Move DataTable export buttons into hidden placeholder so header dropdown can trigger them
+    const exportPlaceholder = document.getElementById('order-export-buttons-placeholder');
+    if (exportPlaceholder) {
+      setTimeout(function () {
+        const card = dt_order_table && dt_order_table.closest ? dt_order_table.closest('.card') : null;
+        const btnContainer = card ? card.querySelector('.dt-buttons') : document.querySelector('.dt-buttons');
+        if (btnContainer) exportPlaceholder.appendChild(btnContainer);
+      }, 0);
+    }
+    // Header Export dropdown: trigger the corresponding DataTable export
+    document.addEventListener('click', function (e) {
+      const action = e.target.closest('.order-export-action');
+      if (!action || !action.getAttribute('data-export')) return;
+      e.preventDefault();
+      const type = action.getAttribute('data-export');
+      const selector = '.buttons-' + type;
+      const btn = dt_products.button(selector);
+      if (btn && btn.length) btn.trigger();
+    });
   }
 
   // Function to load and display order statistics

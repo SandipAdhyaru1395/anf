@@ -553,7 +553,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
                     checked={paymentMode === "gateway"}
                     onChange={() => setPaymentMode("gateway")}
                   />
-                  <span className="text-sm text-black">Payment Gateway (Pay by card)</span>
+                  <span className="text-sm text-black">Pay by Online ( Credit card, Debit Card, Apple, Google Pay)</span>
                 </label>
               )}
               {gatewayAvailable && (
@@ -565,7 +565,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
                     checked={paymentMode === "gateway_bank"}
                     onChange={() => setPaymentMode("gateway_bank")}
                   />
-                  <span className="text-sm text-black">Pay by bank (DNA)</span>
+                  <span className="text-sm text-black">Pay by Bank (Bank Transfer)</span>
                 </label>
               )}
               {paymentMode === "gateway_bank" && (

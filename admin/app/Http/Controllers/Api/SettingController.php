@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Models\Customer;
 use App\Models\SyncUpdate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use function asset;
 
 class SettingController extends Controller
@@ -24,7 +25,15 @@ class SettingController extends Controller
         // Determine if DNA payment gateway is available (enabled + fully configured)
         $dnaEnabled = ($settings->get('dna_payments_enabled') === '1');
         $dnaClientId = $settings->get('dna_payments_client_id');
-        $dnaClientSecret = $settings->get('dna_payments_client_secret');
+        $dnaClientSecretEnc = $settings->get('dna_payments_client_secret');
+        $dnaClientSecret = null;
+        if (is_string($dnaClientSecretEnc) && $dnaClientSecretEnc !== '') {
+            try {
+                $dnaClientSecret = Crypt::decryptString($dnaClientSecretEnc);
+            } catch (\Throwable) {
+                $dnaClientSecret = null;
+            }
+        }
         $dnaTerminalId = $settings->get('dna_payments_terminal_id');
         $dnaGatewayAvailable = $dnaEnabled && !empty($dnaClientId) && !empty($dnaClientSecret) && !empty($dnaTerminalId);
 
