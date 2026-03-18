@@ -34,13 +34,13 @@ if (typeof window !== "undefined") {
         if (!isOnAuthPage) {
           // Redirect to login
           try {
-           if(currentPath.endsWith("/login") || currentPath.includes("/login/")) {
-            window.location.href = buildPath("/login");
-            console.log('buildPath :', buildPath("/login"));
-           } else if(currentPath.endsWith("/register") || currentPath.includes("/register/")) {
-            window.location.href = buildPath("/register");
-            console.log('buildPath :', buildPath("/register"));
-           } 
+          //  if(currentPath.endsWith("/login") || currentPath.includes("/login/")) {
+          //   window.location.href = buildPath("/login");
+          //   console.log('buildPath :', buildPath("/login"));
+          //  } else if(currentPath.endsWith("/register") || currentPath.includes("/register/")) {
+          //   window.location.href = buildPath("/register");
+          //   console.log('buildPath :', buildPath("/register"));
+          //  } 
             // window.location.assign(buildPath("/landing"));
           } catch {
             // Fallback

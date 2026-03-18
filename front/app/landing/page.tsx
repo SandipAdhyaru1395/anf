@@ -1,6 +1,7 @@
 "use client";
 
 import { useSettings } from "@/components/settings-provider";
+import { buildPath } from "@/lib/utils";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -30,14 +31,14 @@ export default function LandingPage() {
       {/* Buttons Section */}
       <div className="landing-auth-actions items-center">
         <button
-          onClick={() => router.push("/login")}
+          onClick={() => window.location.href = buildPath("/login")}
           className="landing-login-button bg-[#4e91e4] hover:cursor-pointer text-white shadow-md active:scale-[0.98]"
         >
           Log In
         </button>
 
         <button
-          onClick={() => router.push("/register")}
+          onClick={() => window.location.href = buildPath("/register")}
           className="landing-login-button border-2 hover:cursor-pointer border-[#4e91e4] bg-white text-[#4e91e4]"
         >
           Sign Up
