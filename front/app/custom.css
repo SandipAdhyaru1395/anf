@@ -16,8 +16,26 @@
   font-weight: 800;
 }
 
+@font-face {
+  font-family: "roboto";
+  src: url("fonts/roboto-v51-latin-400.woff2") format("woff2");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "roboto";
+  src: url("fonts/roboto-v51-latin-500.woff2") format("woff2");
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "proxima-nova";
+  src: url("fonts/roboto-v51-latin-700.woff2") format("woff2");
+  font-weight: 700;
+}
+
 :root {
-  --site-font-family: "proxima-nova" !important;
+  --site-font-family: "roboto" !important;
   --placeholder-text-color: rgba(117, 117, 117);
   --p-10: 10px;
   --body-font-size: 16px;
@@ -142,7 +160,7 @@ input[type="password"] {
   border-radius: var(--radius-8);
   padding: 16px;
   outline: none;
-  margin-bottom: 8px;
+  /* margin-bottom: 8px; */
   line-height: 1.15;
   margin-top: 0;
 }

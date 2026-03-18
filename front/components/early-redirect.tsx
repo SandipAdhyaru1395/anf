@@ -1,27 +1,36 @@
 "use client";
-
+ 
 import React from "react";
-
+import { buildPath, getBasePath } from "@/lib/utils";
+ 
 export default function EarlyRedirect() {
   React.useEffect(() => {
     try {
       const path = window.location.pathname || "/";
-      const base = path.startsWith("/anf/front") ? "/anf/front" : "/";
-      const login = (base.replace(/\/$/, "")) + "/login";
-      if (!path.startsWith(login)) {
-        const token = localStorage.getItem("auth_token");
-        if (!token) {
-          // const q = new URLSearchParams({ redirect: path }).toString();
-          // const sep = login.indexOf("?") === -1 ? "?" : "&";
-          // window.location.replace(login + sep + q);
-          window.location.replace(login);
-        }
+      const base = getBasePath();
+
+      const publicPaths = new Set<string>([
+        `${base}/`.replace(/\/+$/, "/"),
+        buildPath("/landing"),
+        buildPath("/login"),
+        buildPath("/register"),
+        buildPath("/forgot-password"),
+        buildPath("/forgot-email"),
+        buildPath("/payment-result"),
+      ]);
+
+      // Allow public routes (and anything under them) without forced redirect
+      for (const p of publicPaths) {
+        if (path === p || path.startsWith(p.replace(/\/+$/, "") + "/")) return;
       }
+
+      const token = localStorage.getItem("auth_token");
+      if (!token) window.location.replace(buildPath("/landing"));
     } catch {
       // ignore
     }
   }, []);
   return null;
 }
-
-
+ 
+ 

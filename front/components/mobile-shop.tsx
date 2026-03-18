@@ -54,7 +54,14 @@ import { useCustomer } from "@/components/customer-provider";
 import { Banner } from "@/components/banner";
 import { startLoading, stopLoading } from "@/lib/loading";
 
-export function MobileShop({ onNavigate, cart, increment, decrement, totals, showFavorites = false }: MobileShopProps) {
+export function MobileShop({ 
+  onNavigate = () => {}, 
+  cart = {}, 
+  increment = () => {}, 
+  decrement = () => {}, 
+  totals = { units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 }, 
+  showFavorites = false 
+}: Partial<MobileShopProps>) {
   const { format, symbol } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<TreeNode[]>(initialCategories);
@@ -599,7 +606,7 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
             })}
 
           {hasProducts && (
-            <div className="product-grid-responsive gap-3 px-3">
+            <div className="grid grid-cols-3 gap-3 px-3">
               {node.products!.map((product) => {
                 const stock = Number((product as any)?.quantity ?? (product as any)?.available_qty ?? 0);
                 const allowOutOfStock = Boolean((product as any)?.allow_out_of_stock);

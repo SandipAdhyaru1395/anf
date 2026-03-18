@@ -29,29 +29,25 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null;
-    // If redirected due to account deletion, show a clear message
-    try {
-      const deleted = sessionStorage.getItem("account_deleted");
-      if (deleted === "1") {
-        sessionStorage.removeItem("account_deleted");
-        // Ensure no stale token
-        try {
-          window.localStorage.removeItem("auth_token");
-        } catch {}
-        // Show toast
-        try {
-          const { toast } = require("@/hooks/use-toast");
-          toast({ variant: "destructive", title: "Your account has been deleted", description: "Please contact support if you believe this is a mistake." });
-        } catch {}
-      }
-    } catch {}
-    if (token) {
-      const redirect = searchParams.get("redirect") || "/";
-      router.replace(redirect);
+ useEffect(() => {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null;
+
+  try {
+    const deleted = sessionStorage.getItem("account_deleted");
+    if (deleted === "1") {
+      sessionStorage.removeItem("account_deleted");
+      window.localStorage.removeItem("auth_token");
+      toast({
+        variant: "destructive",
+        title: "Your account has been deleted",
+        description: "Please contact support if you believe this is a mistake.",
+      });
     }
-  }, [router, searchParams]);
+  } catch {}
+  if (token) {
+    console.log("User is logged in, but staying on this page for manual navigation.");
+  }
+}, []);
 
   async function onSubmit(values: { email: string; password: string }) {
     setError(null);
@@ -95,11 +91,20 @@ export default function Login() {
         // Preload and cache orders and products after successful login
         try {
           const ordersRes = await api.get("/orders");
-          if (ordersRes?.data?.success && Array.isArray(ordersRes.data.orders)) {
+          if (
+            ordersRes?.data?.success &&
+            Array.isArray(ordersRes.data.orders)
+          ) {
             try {
-              sessionStorage.setItem("orders_cache", JSON.stringify({ version: orderVersion, orders: ordersRes.data.orders }));
+              sessionStorage.setItem(
+                "orders_cache",
+                JSON.stringify({
+                  version: orderVersion,
+                  orders: ordersRes.data.orders,
+                }),
+              );
               if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent('orders_cache_updated'));
+                window.dispatchEvent(new CustomEvent("orders_cache_updated"));
               }
             } catch {}
           }
@@ -112,14 +117,25 @@ export default function Login() {
             const filterNodesWithProducts = (nodes: any[]): any[] => {
               return nodes
                 .map((node: any) => {
-                  const filteredChildren = Array.isArray(node?.subcategories) ? filterNodesWithProducts(node.subcategories) : undefined;
-                  const productsCount = Array.isArray(node?.products) ? node.products.length : 0;
+                  const filteredChildren = Array.isArray(node?.subcategories)
+                    ? filterNodesWithProducts(node.subcategories)
+                    : undefined;
+                  const productsCount = Array.isArray(node?.products)
+                    ? node.products.length
+                    : 0;
                   const hasProductsHere = productsCount > 0;
-                  const hasProductsInChildren = Array.isArray(filteredChildren) && filteredChildren.length > 0;
+                  const hasProductsInChildren =
+                    Array.isArray(filteredChildren) &&
+                    filteredChildren.length > 0;
                   if (!hasProductsHere && !hasProductsInChildren) {
                     return null as unknown as any;
                   }
-                  return { ...node, ...(filteredChildren ? { subcategories: filteredChildren } : {}) };
+                  return {
+                    ...node,
+                    ...(filteredChildren
+                      ? { subcategories: filteredChildren }
+                      : {}),
+                  };
                 })
                 .filter((n: any) => Boolean(n));
             };
@@ -131,12 +147,19 @@ export default function Login() {
                   ? {
                       products: node.products.map((p: any) => ({
                         ...p,
-                        quantity: typeof p?.quantity === "number" ? p.quantity : (p?.available_qty ?? 0),
+                        quantity:
+                          typeof p?.quantity === "number"
+                            ? p.quantity
+                            : (p?.available_qty ?? 0),
                       })),
                     }
                   : {};
                 const withChildren = Array.isArray(node?.subcategories)
-                  ? { subcategories: normalizeProductQuantities(node.subcategories) }
+                  ? {
+                      subcategories: normalizeProductQuantities(
+                        node.subcategories,
+                      ),
+                    }
                   : {};
                 return { ...node, ...withProducts, ...withChildren };
               });
@@ -145,7 +168,9 @@ export default function Login() {
             // Remove duplicate products by id within each category tree
             const dedupeProductsInTree = (nodes: any[]): any[] => {
               return nodes.map((node: any) => {
-                let nextProducts = Array.isArray(node?.products) ? node.products : undefined;
+                let nextProducts = Array.isArray(node?.products)
+                  ? node.products
+                  : undefined;
                 if (Array.isArray(nextProducts)) {
                   const seen = new Set<number>();
                   nextProducts = nextProducts.filter((p: any) => {
@@ -156,15 +181,27 @@ export default function Login() {
                     return true;
                   });
                 }
-                const nextChildren = Array.isArray(node?.subcategories) ? dedupeProductsInTree(node.subcategories) : undefined;
-                return { ...node, ...(nextProducts ? { products: nextProducts } : {}), ...(nextChildren ? { subcategories: nextChildren } : {}) };
+                const nextChildren = Array.isArray(node?.subcategories)
+                  ? dedupeProductsInTree(node.subcategories)
+                  : undefined;
+                return {
+                  ...node,
+                  ...(nextProducts ? { products: nextProducts } : {}),
+                  ...(nextChildren ? { subcategories: nextChildren } : {}),
+                };
               });
             };
             const deduped = dedupeProductsInTree(filteredWithQuantities);
             try {
-              sessionStorage.setItem("products_cache", JSON.stringify({ version: productVersion, categories: deduped }));
+              sessionStorage.setItem(
+                "products_cache",
+                JSON.stringify({
+                  version: productVersion,
+                  categories: deduped,
+                }),
+              );
               if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent('products_cache_updated'));
+                window.dispatchEvent(new CustomEvent("products_cache_updated"));
               }
             } catch {}
           }
@@ -174,63 +211,161 @@ export default function Login() {
         try {
           await refreshSettings();
         } catch {}
-        toast({ title: "Hello there 👋", description: "You've logged in successfully." });
-           window.location.replace(buildPath("/"));
+        toast({
+          title: "Hello there 👋",
+          description: "You've logged in successfully.",
+        });
+        window.location.replace(buildPath("/"));
+        // router.replace("/dashboard");
       } else {
         const message = data?.message || "Login failed";
         setError(message);
-        toast({ variant: "destructive", title: "Login failed", description: message });
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: message,
+        });
       }
     } catch (err: any) {
       const message = err?.response?.data?.message || "Invalid credentials";
       setError(message);
-      toast({ variant: "destructive", title: "Login error", description: message });
+      toast({
+        variant: "destructive",
+        title: "Login error",
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto pb-50 login-main-wrap">
-      {/* Logo */}
-      <div className="flex items-center justify-center h-[50px] shadow-[0_6px_6px_-6px_#666]">
-        <img className="h-[36px] w-[67.8px] my-[7px]" src={settings?.company_logo_url || "placeholder-logo.png"} alt={settings?.company_title || "Logo"} />
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="app-container login-page-container bg-white shadow-md">
+        {/* Logo */}
+        <div className="flex flex-col items-center">
+          <img
+            className="app-logo-auth mb-2"
+            src={settings?.company_logo_url || "placeholder-logo.png"}
+            alt={settings?.company_title || "Logo"}
+          />
 
-      {/* Tabs */}
-      <div className="overflow-hidden wrapper-space">
-        <div className="grid grid-cols-2 loginRegisterWrapper">
-          <button className="bg-green-500 text-white py-3 font-medium">Login</button>
-          <Link href={buildPath("/register")} className="text-gray-700 bg-gray-100 py-3 text-center font-medium">
-            Register
-          </Link>
+          <h2 className="login-welcome-text text-gray-700 w-full text-left">
+            Welcome
+          </h2>
         </div>
 
-        <div className="border-t my-5"></div>
-
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="loginregisterform">
-          <FloatingInput type="email" label="Email Address" placeholder="Please enter your email address..." {...register("email", { required: "Email is required", pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email address" } })} error={errors.email?.message} />
-          <FloatingInput type="password" label="Password" placeholder="Please enter your password..." {...register("password", { required: "Password is required", minLength: { value: 6, message: "Password must be at least 6 characters" } })} error={errors.password?.message} />
-          {error && <p className="text-red-600 text-sm">{error}</p>}
 
-          <div className="border-t my-5"></div>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+          className="space-y-1"
+        >
+          {/* Email Field */}
+          <div className="flex flex-col">
+            <FloatingInput
+              type="email"
+              label="Email Address"
+              inputClassName="login-input-field"
+              placeholder="Please enter your email address..."
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Enter a valid email address",
+                },
+              })}
+            />
+              {errors.email && (
+            <div className="h-5">
+                <p className="text-red-500 text-[11px] ml-1">
+                  {errors.email?.message}
+                </p>
+            </div>
+              )}
+          </div>
 
-          <button type="submit" disabled={loading || isSubmitting} className="w-full bg-black text-white rounded py-3 disabled:opacity-60 hover:cursor-pointer">
-            {loading ? "Signing in..." : "Login"}
-          </button>
+          <p className="text-xs text-gray-400 mb-4">
+            Use your existing Aquavape login details.
+          </p>
 
-          <p className="text-s text-black-600 my-[16px] leading-[16px]">
+          {/* Password Field */}
+          <div className="flex flex-col">
+            <FloatingInput
+              type="password"
+              label="Password"
+              inputClassName="login-input-field"
+              placeholder="Please enter your password..."
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters",
+                },
+              })}
+            />
+              {errors.password && (
+            <div className="h-5">
+                <p className="text-red-500 text-[11px] ml-1">
+                  {errors.password?.message}
+                </p>
+            </div>
+              )}
+          </div>
+
+          <p className="login-legal-text">
             By selecting Login, you agree to our{" "}
-            <a className="text-blue-600" href="#">
-              Terms & Conditions
+            <a href="#" className="default-link">
+              Terms &amp; Conditions
             </a>{" "}
             and{" "}
-            <a className="text-blue-600" href="#">
+            <a href="#" className="default-link">
               Privacy Policy
             </a>
             .
           </p>
+
+          <div className="h-6 text-center">
+            {error && (
+              <p className="text-red-600 text-sm font-medium">{error}</p>
+            )}
+          </div>
+
+          {/* Buttons Group */}
+          <div className="mt-4 flex flex-col items-center gap-3">
+            <button
+              type="submit"
+              disabled={loading || isSubmitting}
+              className="login-action-button login-primary-button login-primary-button-text text-white shadow-lg active:scale-95 disabled:opacity-60 transition-all"
+            >
+              {loading ? "Signing in..." : "Log In"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.replace(buildPath("/landing"))}
+              className="login-action-button login-back-button-text border border-blue-500 text-blue-600 hover:bg-blue-50 transition-all"
+            >
+              Back
+            </button>
+          </div>
+          {/* Links */}
+          <div className="text-center text-sm space-y-6 mt-[60px]">
+            <Link
+              href={buildPath("/forgot-password")}
+              className="login-forgot-link text-gray-700 block"
+            >
+              Forgotten your password?
+            </Link>
+
+            <Link
+              href={buildPath("/forgot-email")}
+              className="login-forgot-link text-gray-700 block"
+            >
+              Forgotten your email?
+            </Link>
+          </div>
         </form>
       </div>
     </div>

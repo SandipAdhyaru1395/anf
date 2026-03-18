@@ -1,46 +1,81 @@
 "use client"
 
-import React, { InputHTMLAttributes, forwardRef, useId } from "react"
+import React, { InputHTMLAttributes, forwardRef, useId, useState } from "react"
+import { Eye, EyeOff } from "lucide-react"
 
 export type FloatingInputProps = {
   label: string
   containerClassName?: string
+  inputClassName?: string
   error?: string | null
 } & InputHTMLAttributes<HTMLInputElement>
 
-const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(function FloatingInput(
-  { label, containerClassName = "", type = "text", placeholder, error, ...rest },
-  ref
+const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
+function FloatingInput(
+{ label, containerClassName = "", inputClassName = "", type = "text", error, ...rest },
+ref
 ) {
-  const autoId = useId()
-  const id = rest.id || autoId
+
+const autoId = useId()
+const id = rest.id || autoId
+const [showPassword, setShowPassword] = useState(false)
+
+const inputType =
+type === "password"
+? showPassword
+? "text"
+: "password"
+: type
+
+return (
+
+<div className={`w-full ${containerClassName}`}>
+
+{/* Label */}
+
+<label
+htmlFor={id}
+className="form-field-label block mb-1"
+>
+{label}
+</label>
+
+{/* Input Wrapper */}
+
+<div className="relative">
   
-  return (
-    <div className={`relative ${containerClassName}`}>
-      <input
-        id={id}
-        ref={ref}
-        type={type}
-        className={`peer w-full rounded px-[16px] py-[16px] mt-1 outline-none placeholder-gray-400 focus:placeholder-transparent transition-all duration-150
-          focus:!px-[16px] focus:!pt-[22px] focus:!pb-[10px]
-          [&:not(:placeholder-shown)]:!px-[16px] [&:not(:placeholder-shown)]:!pt-[22px] [&:not(:placeholder-shown)]:!pb-[10px] [&:not(:placeholder-shown)]:placeholder-transparent
-          ${error ? 'border-red-500 focus:border-red-600 border' : 'border focus:border-black/70'} ${rest.className || ''}`}
-        placeholder={placeholder}
-        {...rest}
-      />
-      <label
-        htmlFor={id}
-        className={`absolute left-3 top-2 ${error ? 'text-red-600' : 'text-gray-400'} text-[10px] transition-opacity duration-150 pointer-events-none bg-transparent
-          opacity-0 peer-focus:opacity-100 peer-[:not(:placeholder-shown)]:opacity-100
-        `}
-      >
-        {label}
-      </label>
-      {error && <p className="text-red-600 text-xs mb-4 ml-4">{error}</p>}
-    </div>
-  )
-})
+<input
+  id={id}
+  ref={ref}
+  type={inputType}
+  {...rest}
+  className={`w-full mb-0 rounded-md border px-4 py-3 pr-10 outline-none transition focus:ring-1 focus:ring-blue-500 ${inputClassName}
+  ${error ? "!border-red-500 focus:!border-red-600" : ""}`}
+/>
+
+{/* Eye Icon */}
+
+{type === "password" && (
+<button
+type="button"
+onClick={() => setShowPassword(!showPassword)}
+className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+>
+{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+</button>
+)}
+
+</div>
+
+{/* Error */}
+
+{error && (
+<p className="text-red-600 text-xs mt-1">{error}</p>
+)}
+
+</div>
+)
+}
+)
 
 export default FloatingInput
-
-

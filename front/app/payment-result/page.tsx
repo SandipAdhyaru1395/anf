@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { buildPath } from "@/lib/utils"
 
 function PaymentResultHandler() {
   const router = useRouter()
@@ -26,7 +27,7 @@ function PaymentResultHandler() {
     }
 
     // Redirect back to main mobile shell
-    router.replace("/")
+    router.replace(buildPath("/"))
   }, [router, searchParams])
 
   return null

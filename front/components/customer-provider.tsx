@@ -102,7 +102,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
         try {
           if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
             const q = new URLSearchParams({ reason: 'deleted' }).toString()
-            window.location.replace(`/login?${q}`)
+            // window.location.replace(`/login?${q}`)
           }
         } catch {}
         setError('Your account has been deleted')

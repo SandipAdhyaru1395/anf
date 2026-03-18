@@ -122,6 +122,202 @@
   }
 }
 
+@layer utilities {
+  .app-container {
+    width: 100%;
+    max-width: 402px;
+    margin-inline: auto;
+  }
+
+  .register-container {
+    width: 402px;
+    max-width: 100%;
+    margin-inline: auto;
+    padding-top: 60px;
+    padding-bottom: 24px;
+    box-sizing: border-box;
+  }
+
+  .register-logo {
+    width: 402px;
+    height: 28.61px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  .register-form {
+    padding-right: 24px;
+    padding-bottom: 60px;
+    padding-left: 24px;
+    box-sizing: border-box;
+  }
+
+  .register-action-button-text {
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    text-align: center;
+  }
+
+  /* For viewport-fixed bars that should align with app-container */
+  .app-fixed {
+    width: 100%;
+    max-width: 402px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .app-logo {
+    width: 179px;
+    height: 126px;
+    object-fit: contain;
+  }
+
+  .app-logo-auth {
+    width: 214px;
+    height: 151px;
+    object-fit: contain;
+  }
+
+  .landing-auth-actions {
+    width: 402px;
+    height: 112px;
+    padding-right: 32px;
+    padding-left: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    opacity: 1;
+  }
+
+  .landing-login-button {
+    width: 338px;
+    height: 48px;
+    max-width: 477px;
+    padding-top: 15px;
+    padding-right: 26px;
+    padding-bottom: 15px;
+    padding-left: 26px;
+    border-radius: 25px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    opacity: 1;
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    text-align: center;
+  }
+
+  .login-page-container {
+    width: 402px;
+    /* height: 874px; */
+    padding-top: 65px;
+    padding-right: 16px;
+    padding-bottom: 24px;
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    opacity: 1;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .login-welcome-text {
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 24px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    opacity: 1;
+  }
+
+  .form-field-label {
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    opacity: 1;
+    color: #3D495E;
+  }
+
+  .login-legal-text {
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    opacity: 1;
+  }
+
+  /* Opt back into browser-default link styling (Tailwind preflight disables it). */
+  .default-link {
+    color: revert;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .login-input-field {
+    border: 1px solid #4A90E5 !important;
+  }
+
+  .login-action-button {
+    width: 370px;
+    height: 48px;
+    max-width: 100%;
+    padding-top: 15px;
+    padding-right: 26px;
+    padding-bottom: 15px;
+    padding-left: 26px;
+    border-radius: 25px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+  }
+
+  .login-primary-button {
+    background: linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%);
+  }
+
+  .login-primary-button-text {
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    text-align: center;
+  }
+
+  .login-back-button-text {
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    text-align: center;
+  }
+
+  .login-forgot-link {
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: 0px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
 /* Custom product grid breakpoints */
 .product-grid-responsive {
   display: grid;
