@@ -139,11 +139,13 @@
         <form id="editOrderForm" method="POST" action="{{ route('order.update') }}" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="id" value="{{ $order->id }}">
+            <input type="hidden" id="customer_id" value="{{ $order->customer_id }}">
 
             <div style="background: var(--bs-body-bg);"
                 class="py-5 px-2 card-header sticky-element d-flex justify-content-sm-between align-items-sm-center flex-column flex-sm-row">
                 <div class="d-flex flex-column justify-content-center">
-                    <h4 class="mb-1">Order Details (#{{ ($order->type ?? 'SO') . $order->order_number }})</h4>
+                    {{-- <h4 class="mb-1">Order Details (#{{ ($order->type ?? 'SO') . $order->order_number }})</h4> --}}
+                    <h4 class="mb-1">Order Details ({{ $order->order_number }})</h4>
                     <p class="mb-0">Please fill in the information below. The field labels marked with * are required input fields.</p>
                 </div>
                 <div class="d-flex align-content-center flex-wrap gap-4">

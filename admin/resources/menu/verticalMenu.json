@@ -176,6 +176,12 @@
           "icon": "menu-icon icon-base ti tabler-credit-card",
           "name": "Payment Gateways",
           "slug": "settings.paymentGateways"
+        },
+        {
+          "url": "settings/planufac-erp",
+          "icon": "menu-icon icon-base ti tabler-building-factory",
+          "name": "Planufac ERP",
+          "slug": "settings.planufacErp"
         }
       ]
     }

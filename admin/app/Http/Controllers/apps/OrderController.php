@@ -7,6 +7,9 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Branch;
+use App\Models\Customer;
+use App\Models\ProductVolumeDiscount;
+use App\Models\ProductVolumeDiscountBreakPrice;
 use App\Models\WalletTransaction;
 use App\Models\OrderRef;
 use App\Services\WarehouseProductSyncService;
@@ -18,6 +21,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -53,6 +57,145 @@ class OrderController extends Controller
       'customers' => $customers,
       'products' => $products
     ]);
+  }
+
+  /**
+   * AJAX: product search for order add/edit.
+   * Returns customer-specific unit price (price list logic), plus VAT/stock.
+   */
+  public function productSearchAjax(Request $request)
+  {
+    $q = trim((string) $request->get('q', ''));
+    $limit = (int) $request->get('limit', 10);
+    $limit = $limit > 0 ? min($limit, 50) : 10;
+
+    $customerId = $request->get('customer_id');
+    $customer = null;
+    if ($customerId !== null && $customerId !== '') {
+      $customer = Customer::find((int) $customerId);
+    }
+
+    $query = Product::select(['id', 'name', 'sku', 'price', 'cost_price', 'image_url', 'available_qty', 'vat_amount'])
+      ->where('is_active', 1);
+
+    if ($q !== '') {
+      $query->where(function ($sub) use ($q) {
+        $sub->where('name', 'like', "%{$q}%")
+          ->orWhere('sku', 'like', "%{$q}%");
+      });
+    }
+
+    $products = $query->orderBy('id', 'desc')->limit($limit)->get();
+
+    return response()->json([
+      'results' => $products->map(function ($p) use ($customer) {
+        $unit = method_exists($p, 'getPrice') ? $p->getPrice($customer) : (float) ($p->price ?? 0);
+        return [
+          'id' => $p->id,
+          'text' => $p->name . ' (' . $p->sku . ')',
+          'price' => round((float) $unit, 2),
+          // Kept for compatibility with existing UI expectations
+          'unit_cost' => $p->cost_price,
+          'vat_amount' => (float) ($p->vat_amount ?? 0),
+          'image_url' => $p->image_url,
+          'available_qty' => (float) ($p->available_qty ?? 0),
+        ];
+      })
+    ]);
+  }
+
+  /**
+   * AJAX: compute effective unit price for a product, for a given customer + quantity,
+   * applying price list logic and volume discount group/break rules.
+   */
+  public function productPriceAjax(Request $request)
+  {
+    $validated = $request->validate([
+      'customer_id' => ['required', 'integer', 'exists:customers,id'],
+      'product_id' => ['required', 'integer', 'exists:products,id'],
+      'quantity' => ['required', 'integer', 'min:1'],
+    ]);
+
+    $customer = Customer::findOrFail((int) $validated['customer_id']);
+    $product = Product::findOrFail((int) $validated['product_id']);
+    $qty = (int) $validated['quantity'];
+
+    $baseUnit = method_exists($product, 'getPrice') ? (float) $product->getPrice($customer) : (float) ($product->price ?? 0);
+    $effectiveUnit = $this->applyVolumeDiscount($product, $customer, $qty, $baseUnit);
+
+    return response()->json([
+      'status' => 'ok',
+      'product_id' => (int) $product->id,
+      'quantity' => $qty,
+      'base_unit_price' => round((float) $baseUnit, 2),
+      'unit_price' => round((float) $effectiveUnit, 2),
+      'vat_amount' => round((float) ($product->vat_amount ?? 0), 2),
+    ]);
+  }
+
+  protected function applyVolumeDiscount(Product $product, Customer $customer, int $quantity, float $baseUnit): float
+  {
+    if ($quantity <= 0) {
+      return $baseUnit;
+    }
+
+    $priceListId = $customer->price_list_id ?? null;
+
+    // Exact price list group, fallback to default group for product
+    $pvd = null;
+    if ($priceListId) {
+      $pvd = ProductVolumeDiscount::with('group.breaks')
+        ->where('product_id', $product->id)
+        ->where('price_list_id', $priceListId)
+        ->first();
+    }
+    if (!$pvd) {
+      $pvd = ProductVolumeDiscount::with('group.breaks')
+        ->where('product_id', $product->id)
+        ->whereNull('price_list_id')
+        ->first();
+    }
+    if (!$pvd || !$pvd->group) {
+      return $baseUnit;
+    }
+
+    $breaks = $pvd->group->breaks->sortBy('from_quantity');
+    $applicable = null;
+    foreach ($breaks as $break) {
+      // Keep consistent with existing cart logic
+      if ($quantity > (int) $break->from_quantity) {
+        $applicable = $break;
+      }
+    }
+    if (!$applicable) {
+      return $baseUnit;
+    }
+
+    // If admin set an override price for this exact break, use it.
+    $override = ProductVolumeDiscountBreakPrice::where('product_id', $product->id)
+      ->where('price_list_id', $priceListId)
+      ->where('volume_discount_break_id', $applicable->id)
+      ->value('override_price');
+    if ($override === null) {
+      $override = ProductVolumeDiscountBreakPrice::where('product_id', $product->id)
+        ->whereNull('price_list_id')
+        ->where('volume_discount_break_id', $applicable->id)
+        ->value('override_price');
+    }
+    if ($override !== null && $override !== '') {
+      $overrideFloat = (float) $override;
+      if ($overrideFloat >= 0) {
+        return $overrideFloat;
+      }
+    }
+
+    $pct = (float) $applicable->discount_percentage;
+    if ($pct <= 0) {
+      return $baseUnit;
+    }
+
+    $discounted = $baseUnit * (1 - ($pct / 100));
+    return $discounted >= 0 ? $discounted : $baseUnit;
   }
 
   public function create(Request $request)
@@ -1926,7 +2069,7 @@ class OrderController extends Controller
           'amount' => $validated['amount'],
           'payment_method' => $validated['payment_method'],
           'note' => $validated['note'] ?? null,
-          'user_id' => auth()->id(),
+          'user_id' => Auth::id(),
         ]);
 
         // Refresh order to ensure we have latest data

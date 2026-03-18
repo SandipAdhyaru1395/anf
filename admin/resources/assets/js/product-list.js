@@ -74,6 +74,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
             if (xhr.responseJSON && xhr.responseJSON.message) {
               message = xhr.responseJSON.message;
             }
+            // If Planufac is not configured, offer quick navigation.
+            if (xhr.status === 422 && (message || '').toLowerCase().includes('planufac')) {
+              message = message + ' (Go to Settings → Planufac ERP)';
+            }
             Swal.fire({
               icon: 'error',
               title: 'Error',

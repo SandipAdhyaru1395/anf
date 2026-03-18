@@ -26,7 +26,7 @@
                         <div class="col-12 col-lg-6 mb-3">
                             <label for="dna_mode" class="form-label">Mode</label>
                             <select class="form-select" id="dna_mode" name="dna_mode">
-                                @php $mode = $setting['dna_payments_mode'] ?? env('DNA_PAYMENTS_MODE', 'test'); @endphp
+                                @php $mode = $setting['dna_payments_mode'] ?? 'test'; @endphp
                                 <option value="test" {{ $mode === 'test' ? 'selected' : '' }}>Test</option>
                                 <option value="live" {{ $mode === 'live' ? 'selected' : '' }}>Live</option>
                             </select>
@@ -35,24 +35,29 @@
                         <div class="col-12 col-lg-6 mb-3">
                             <label for="dna_client_id" class="form-label">Client ID</label>
                             <input type="text" class="form-control" id="dna_client_id" name="dna_client_id"
-                                value="{{ old('dna_client_id', $setting['dna_payments_client_id'] ?? env('DNA_PAYMENTS_CLIENT_ID')) }}">
+                                value="{{ old('dna_client_id', $setting['dna_payments_client_id'] ?? '') }}">
                         </div>
 
                         <div class="col-12 col-xxl-8 mb-3 mb-lg-5">
                             <label for="dna_client_secret" class="form-label">Client Secret</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="dna_client_secret" name="dna_client_secret"
-                                    value="{{ old('dna_client_secret', $setting['dna_payments_client_secret'] ?? env('DNA_PAYMENTS_CLIENT_SECRET')) }}">
+                                    value=""
+                                    placeholder="{{ !empty($setting['dna_payments_client_secret']) ? 'Saved (leave blank to keep unchanged)' : 'Enter client secret' }}"
+                                    autocomplete="new-password">
                                 <button class="btn btn-outline-secondary" type="button" id="toggle-dna-secret">
                                     <i class="menu-icon icon-base ti tabler-eye-off" id="dna-secret-icon"></i>
                                 </button>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                Leave blank to keep the current secret.
                             </div>
                         </div>
 
                         <div class="col-12 col-xxl-8 mb-5">
                             <label for="dna_terminal_id" class="form-label">Terminal ID</label>
                             <input type="text" class="form-control" id="dna_terminal_id" name="dna_terminal_id"
-                                value="{{ old('dna_terminal_id', $setting['dna_payments_terminal_id'] ?? env('DNA_PAYMENTS_TERMINAL_ID')) }}">
+                                value="{{ old('dna_terminal_id', $setting['dna_payments_terminal_id'] ?? '') }}">
                         </div>
                         <div class="d-flex mt-5">
                             <button type="submit" class="btn btn-primary me-2">Save</button>

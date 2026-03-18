@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use DNAPayments\DNAPayments;
 use App\Helpers\Helpers;
+use Illuminate\Support\Facades\Crypt;
 
 class DnaCallbackController extends Controller
 {
@@ -35,7 +36,15 @@ class DnaCallbackController extends Controller
 
         // Verify signature to ensure payload integrity
         $settings = Helpers::setting();
-        $secret = $settings['dna_payments_client_secret'] ?? null;
+        $secretEnc = $settings['dna_payments_client_secret'] ?? null;
+        $secret = null;
+        if (is_string($secretEnc) && $secretEnc !== '') {
+            try {
+                $secret = Crypt::decryptString($secretEnc);
+            } catch (\Throwable) {
+                $secret = null;
+            }
+        }
         if (empty($secret) || !isset($payload['signature']) || !DNAPayments::isValidSignature($payload, $secret)) {
             Log::warning('DNA callback invalid signature', [
                 'id'        => $payload['id']        ?? null,

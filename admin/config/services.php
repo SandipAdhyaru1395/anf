@@ -41,9 +41,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'planufac' => [
-        'base_url' => env('PLANUFAC_BASE_URL', 'https://sandbox.planufac.com'),
-        'email' => env('PLANUFAC_EMAIL'),
-        'password' => env('PLANUFAC_PASSWORD'),
+        // Credentials are stored in DB (settings) and loaded by PlanufacClient.
+        // Keep only non-secret defaults here.
+        'base_url' => 'https://sandbox.planufac.com',
         'timeout' => env('PLANUFAC_TIMEOUT', 20),
     ],
 

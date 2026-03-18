@@ -5,6 +5,7 @@ namespace App\Services;
 use DNAPayments\DNAPayments;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Crypt;
 
 class DnaPaymentsService
 {
@@ -19,11 +20,21 @@ class DnaPaymentsService
         $apiUrl = $isTest ? 'https://test-api.dnapayments.com' : 'https://api.dnapayments.com';
         $authUrl = $isTest ? 'https://test-oauth.dnapayments.com/oauth2/token' : 'https://oauth.dnapayments.com/oauth2/token';
 
+        $secretEnc = $settings['dna_payments_client_secret'] ?? null;
+        $secret = null;
+        if (is_string($secretEnc) && $secretEnc !== '') {
+            try {
+                $secret = Crypt::decryptString($secretEnc);
+            } catch (\Throwable) {
+                $secret = null;
+            }
+        }
+
         return [
             'enabled' => ($settings['dna_payments_enabled'] ?? '0') === '1',
             'mode' => $mode,
             'clientId' => $settings['dna_payments_client_id'] ?? env('DNA_PAYMENTS_CLIENT_ID'),
-            'clientSecret' => $settings['dna_payments_client_secret'] ?? env('DNA_PAYMENTS_CLIENT_SECRET'),
+            'clientSecret' => $secret ?? env('DNA_PAYMENTS_CLIENT_SECRET'),
             'terminalId' => $settings['dna_payments_terminal_id'] ?? env('DNA_PAYMENTS_TERMINAL_ID'),
             'returnUrl' => env('DNA_PAYMENTS_RETURN_URL'),
             'failureUrl' => env('DNA_PAYMENTS_FAILURE_URL'),

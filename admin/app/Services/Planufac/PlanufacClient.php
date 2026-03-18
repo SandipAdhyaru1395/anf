@@ -6,10 +6,13 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use App\Models\Setting;
+use Illuminate\Support\Facades\Crypt;
 
 class PlanufacClient
 {
     private const CACHE_TOKEN_KEY = 'planufac.api.token';
+    private const CACHE_CFG_KEY = 'planufac.api.cfg.v1';
 
     private ?string $baseUrl;
     private ?string $email;
@@ -18,12 +21,41 @@ class PlanufacClient
 
     public function __construct(?string $baseUrl = null, ?string $email = null, ?string $password = null, int $timeoutSeconds = 20)
     {
-        $cfg = (array) config('services.planufac');
+        $cfg = $this->loadConfigFromSettings();
 
-        $this->baseUrl = $baseUrl ?? ($cfg['base_url'] ?? null);
+        $this->baseUrl = $baseUrl ?? ($cfg['base_url'] ?? null) ?? 'https://sandbox.planufac.com';
         $this->email = $email ?? ($cfg['email'] ?? null);
         $this->password = $password ?? ($cfg['password'] ?? null);
-        $this->timeoutSeconds = (int) ($cfg['timeout'] ?? $timeoutSeconds);
+
+        // Timeout is not a credential; keep default/configurable via services.php if present.
+        $svc = (array) config('services.planufac');
+        $this->timeoutSeconds = (int) ($svc['timeout'] ?? $timeoutSeconds);
+    }
+
+    private function loadConfigFromSettings(): array
+    {
+        return Cache::remember(self::CACHE_CFG_KEY, 60, function () {
+            $rows = Setting::whereIn('key', ['planufac_base_url', 'planufac_email', 'planufac_password'])
+                ->get(['key', 'value'])
+                ->pluck('value', 'key')
+                ->toArray();
+
+            $pwdEnc = $rows['planufac_password'] ?? null;
+            $pwd = null;
+            if (is_string($pwdEnc) && $pwdEnc !== '') {
+                try {
+                    $pwd = Crypt::decryptString($pwdEnc);
+                } catch (\Throwable) {
+                    $pwd = null;
+                }
+            }
+
+            return [
+                'base_url' => isset($rows['planufac_base_url']) ? trim((string) $rows['planufac_base_url']) : null,
+                'email' => isset($rows['planufac_email']) ? trim((string) $rows['planufac_email']) : null,
+                'password' => $pwd !== null ? trim((string) $pwd) : null,
+            ];
+        });
     }
 
     private function http(?string $token = null): PendingRequest
@@ -58,7 +90,7 @@ class PlanufacClient
     public function login(): string
     {
         if (!$this->baseUrl || !$this->email || !$this->password) {
-            throw new \RuntimeException('Planufac ERP credentials not configured. Set PLANUFAC_BASE_URL, PLANUFAC_EMAIL, PLANUFAC_PASSWORD.');
+            throw new \RuntimeException('Planufac ERP credentials not configured. Go to Settings → Planufac ERP and save Base URL, Email, and Password.');
         }
 
         $resp = $this->http()->post('/api/auth/login', [
