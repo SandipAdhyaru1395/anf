@@ -245,7 +245,7 @@ export default function Login() {
         {/* Logo */}
         <div className="flex flex-col items-center">
           <img
-            className="app-logo-auth mb-2"
+            className="app-logo-auth" style={{ marginBottom: '32px' }}
             src={settings?.company_logo_url || "placeholder-logo.png"}
             alt={settings?.company_title || "Logo"}
           />
@@ -357,13 +357,6 @@ export default function Login() {
               className="login-forgot-link text-gray-700 block"
             >
               Forgotten your password?
-            </Link>
-
-            <Link
-              href={buildPath("/forgot-email")}
-              className="login-forgot-link text-gray-700 block"
-            >
-              Forgotten your email?
             </Link>
           </div>
         </form>
