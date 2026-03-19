@@ -394,7 +394,7 @@ export function MobileShop({
   return (
     <div className="min-h-screen flex flex-col w-full max-w-[1000px] mx-auto">
       {/* Header */}
-      <div className="h-[50px] bg-white flex items-center border-b">
+      <div className="bg-white flex items-center border-b">
         <Thumbnail />
       </div>
 
