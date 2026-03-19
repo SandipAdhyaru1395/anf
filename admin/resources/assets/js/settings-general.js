@@ -28,17 +28,17 @@ document.addEventListener('DOMContentLoaded', function (e) {
                           </div>`;
 
 
-  const dropzoneBasic = document.querySelector('#dropzone-basic');
-  
-  if (dropzoneBasic) {
-    
-    const myDropzone = new Dropzone(dropzoneBasic, {
+  const initSingleFileDropzone = function (dropzoneSelector, inputId) {
+    const dropzoneElement = document.querySelector(dropzoneSelector);
+    if (!dropzoneElement) return;
+
+    const myDropzone = new Dropzone(dropzoneElement, {
       url: "#",
       previewTemplate: previewTemplate,
       autoProcessQueue: false,
       parallelUploads: 1,
       maxFilesize: 5,
-      acceptedFiles: '.jpg,.jpeg,.png',
+      acceptedFiles: '.jpg,.jpeg,.png,.svg',
       addRemoveLinks: true,
       maxFiles: 1
     });
@@ -46,10 +46,13 @@ document.addEventListener('DOMContentLoaded', function (e) {
     myDropzone.on("addedfile", function (file) {
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
-      const input = document.getElementById("companyLogo");
+      const input = document.getElementById(inputId);
       if (input) input.files = dataTransfer.files;
     });
-  }
+  };
+
+  initSingleFileDropzone('#dropzone-basic', 'companyLogo');
+  initSingleFileDropzone('#dropzone-thumbnail', 'companyThumbnail');
 
   // End Dropzone
   

@@ -150,7 +150,7 @@
                   @enderror
                 </div>
 
-                <div class="col-12">
+                <div class="col-12 col-md-6">
                   <label class="form-label mb-1" for="company-logo">Logo</label>
                   <!-- Media -->
                   <div class="card">
@@ -167,6 +167,31 @@
                           </div>
                       </div>
                       @error('companyLogo')
+                      <span class="text-danger text-center mb-5" role="alert">
+                          <strong>{{ $message }}</strong>
+                      </span>
+                      @enderror
+                  </div>
+                  <!-- /Media -->
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label mb-1" for="company-thumbnail">Thumbnail</label>
+                  <!-- Media -->
+                  <div class="card">
+                      <img class="align-self-center pt-5" height="200px" width="300px" src="{{ isset($setting['company_thumbnail']) ? asset('storage/'.$setting['company_thumbnail']) : '' }}" alt="Company Thumbnail" />
+                      <div class="card-body form-control-validation">
+                          <input type="file" name="companyThumbnail" id="companyThumbnail" hidden>
+                          <div class="dropzone needsclick p-0" id="dropzone-thumbnail">
+                              <div class="dz-message needsclick">
+                                  <p class="h4 needsclick pt-3 mb-2">Drag and drop thumbnail here</p>
+                                  <p class="h6 text-body-secondary d-block fw-normal mb-2">or</p>
+                                  <span class="needsclick btn btn-sm btn-label-primary">Browse
+                                      image</span>
+                              </div>
+                          </div>
+                      </div>
+                      @error('companyThumbnail')
                       <span class="text-danger text-center mb-5" role="alert">
                           <strong>{{ $message }}</strong>
                       </span>

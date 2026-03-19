@@ -18,6 +18,7 @@ type Settings = {
   currency?: string | null
   currency_symbol?: string | null
   banner?: string | null
+  thumbnail?: string | null
   maintenance_mode?: boolean | null
   payment_gateway_available?: boolean | null
   theme?: Theme | null
@@ -60,6 +61,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         currency: s?.currency ?? null,
         currency_symbol: s?.currency_symbol ?? null,
         banner: s?.banner ?? null,
+        thumbnail: s?.thumbnail ?? null,
         maintenance_mode: typeof s?.maintenance_mode === 'boolean' ? s.maintenance_mode : null,
         payment_gateway_available: typeof s?.payment_gateway_available === 'boolean' ? s.payment_gateway_available : null,
         theme: s?.theme ? {
@@ -267,6 +269,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         if (cachedSettings) {
           if (!cachedSettings.hasOwnProperty('banner')) {
             cachedSettings.banner = null
+          }
+          if (!cachedSettings.hasOwnProperty('thumbnail')) {
+            cachedSettings.thumbnail = null
           }
           if (!cachedSettings.hasOwnProperty('payment_gateway_available')) {
             cachedSettings.payment_gateway_available = null

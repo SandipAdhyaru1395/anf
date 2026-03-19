@@ -52,6 +52,7 @@ const initialCategories: TreeNode[] = [];
 import { useCurrency } from "@/components/currency-provider";
 import { useCustomer } from "@/components/customer-provider";
 import { Banner } from "@/components/banner";
+import { Thumbnail } from "@/components/thumbnail";
 import { startLoading, stopLoading } from "@/lib/loading";
 
 export function MobileShop({ 
@@ -394,10 +395,7 @@ export function MobileShop({
     <div className="min-h-screen flex flex-col w-full max-w-[1000px] mx-auto">
       {/* Header */}
       <div className="h-[50px] bg-white flex items-center border-b">
-        <div className="w-[66px] h-[25px] flex items-center justify-center">
-          {showFavorites ? <FontAwesomeIcon icon={faShop} className="text-green-600" style={{ width: "30px", height: "24px" }} /> : <FontAwesomeIcon icon={faShop} className="text-green-600" style={{ width: "30px", height: "24px" }} />}
-        </div>
-        <h1 className="text-[16px] font-semibold">Shop</h1>
+        <Thumbnail />
       </div>
 
       {/* Search Bar */}

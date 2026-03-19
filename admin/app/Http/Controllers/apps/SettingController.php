@@ -844,7 +844,8 @@ class SettingController extends Controller
   {
     $validated = $request->validate([
       'companyTitle' => 'required|string|max:255',
-      'companyLogo' => 'nullable|image|mimes:jpg,jpeg,png',
+      'companyLogo' => 'nullable|mimes:jpg,jpeg,png,svg',
+      'companyThumbnail' => 'nullable|mimes:jpg,jpeg,png,svg',
       'companyName' => 'required|string|max:255',
       'companyAddress' => 'nullable|string|max:500',
       'companyEmail' => 'nullable|email|max:255',
@@ -886,7 +887,8 @@ class SettingController extends Controller
 
     if ($request->hasFile('companyLogo')) {
       $file = $request->file('companyLogo');
-      $image = Setting::where('key', 'company_logo')->first()->value;
+      $existingLogo = Setting::where('key', 'company_logo')->first();
+      $image = $existingLogo ? $existingLogo->value : null;
 
       if ($image) {
         Storage::disk('public')->delete($image);
@@ -894,7 +896,21 @@ class SettingController extends Controller
 
       $path = $file->store('settings', 'public');
 
-      Setting::where('key', 'company_logo')->update(['value' => $path]);
+      Setting::updateOrCreate(['key' => 'company_logo'], ['value' => $path]);
+    }
+
+    if ($request->hasFile('companyThumbnail')) {
+      $file = $request->file('companyThumbnail');
+      $existingThumbnail = Setting::where('key', 'company_thumbnail')->first();
+      $image = $existingThumbnail ? $existingThumbnail->value : null;
+
+      if ($image) {
+        Storage::disk('public')->delete($image);
+      }
+
+      $path = $file->store('settings', 'public');
+
+      Setting::updateOrCreate(['key' => 'company_thumbnail'], ['value' => $path]);
     }
 
     Toastr::success('General settings updated successfully');

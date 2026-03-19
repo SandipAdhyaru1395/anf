@@ -22,6 +22,9 @@ class SettingController extends Controller
         $bannerPath = $settings->get('banner');
         $bannerUrl = $bannerPath ? asset('storage/'.$bannerPath) : null;
 
+        $thumbnailPath = $settings->get('company_thumbnail');
+        $thumbnailUrl = $thumbnailPath ? asset('storage/'.$thumbnailPath) : null;
+
         // Determine if DNA payment gateway is available (enabled + fully configured)
         $dnaEnabled = ($settings->get('dna_payments_enabled') === '1');
         $dnaClientId = $settings->get('dna_payments_client_id');
@@ -56,6 +59,7 @@ class SettingController extends Controller
                 'company_logo_url' => $logoUrl,
                 'currency_symbol' => $settings->get('currency_symbol') ?? '',
                 'banner' => $bannerUrl,
+                'thumbnail' => $thumbnailUrl,
                 'maintenance_mode_store' => $settings->get('maintenance_mode_store') === '1',
                 'payment_gateway_available' => $dnaGatewayAvailable,
                 'theme' => [
