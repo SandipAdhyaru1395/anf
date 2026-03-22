@@ -12,7 +12,17 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import api from "@/lib/axios"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faBuilding, faCircleCheck, faGauge, faShop, faUser, faWallet } from "@fortawesome/free-solid-svg-icons"
+import {
+  faBuilding,
+  faCircleCheck,
+  faGauge,
+  faShop,
+  faUser,
+  faWallet,
+  faChevronLeft,
+  faChartSimple,
+  faHeart
+} from "@fortawesome/free-solid-svg-icons";
 
 // Validation schema
 const companyDetailsSchema = z.object({
@@ -22,12 +32,13 @@ const companyDetailsSchema = z.object({
   city: z.string().min(1, "City is required").max(255, "City must be less than 255 characters"),
   country: z.string().max(255, "Country must be less than 255 characters").optional(),
   postcode: z.string().min(1, "Postcode is required").max(255, "Postcode must be less than 255 characters"),
+  contact_number: z.string().max(50, "Contact number must be less than 50 characters").optional(),
 })
 
 type CompanyDetailsForm = z.infer<typeof companyDetailsSchema>
 
 interface MobileCompanyDetailsProps {
-  onNavigate: (page: "dashboard" | "shop" | "basket" | "wallet" | "account") => void
+  onNavigate: (page: any, favorites?: boolean) => void
   onBack: () => void
 }
 
@@ -47,6 +58,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
       city: "",
       country: "",
       postcode: "",
+      contact_number: "",
     }
   })
 
@@ -60,6 +72,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
         city: customer.city || "",
         country: customer.country || "",
         postcode: customer.postcode || "",
+        contact_number: (customer as any).phone || "",
       })
       setLoading(false)
     }
@@ -105,132 +118,128 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
   }
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto min-h-screen">
-      {/* Header */}
-      <div className="bg-white flex items-center border-b h-[50px]">
-        {/* <button onClick={onBack} className="p-2 hover:bg-gray-100 hover:cursor-pointer rounded-full">
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </button> */}
-        <div className="flex items-center">
-          <div className="w-[66px] h-[25px] rounded-full flex items-center justify-center">
-            <FontAwesomeIcon icon={faBuilding} className="text-green-600" style={{ width: "21px", height: "24px" }} />
-          </div>
-          <span onClick={onBack} className="text-sm text-[#ccc] text-[12px] hover:cursor-pointer hover:underline">Account</span>
-          &nbsp;<span className="text-sm text-[#ccc] text-[12px]"> /</span>
-          &nbsp;<span className="text-[16px] font-semibold">My Company</span>
+    <div className="min-h-screen bg-[#F8F7FC] flex flex-col items-center p-4">
+      {/* Container */}
+      <div className="w-full max-w-[402px] bg-white p-8 rounded-[4px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col">
+        {/* Logo Section */}
+        <div className="flex justify-center mb-8">
+          <img
+            src="/assets/img/logo.png"
+            alt="AQUAVAPE"
+            className="w-48 h-auto object-contain"
+          />
         </div>
-      </div>
 
-      {/* Banner */}
-      <Banner />
+        {/* Form Section */}
+        <form
+          onSubmit={form.handleSubmit(saveCompanyDetails)}
+          noValidate
+          className="flex flex-col"
+        >
+          {/* Company Name */}
+          <div className="flex flex-col mb-6">
+            <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
+              Company Name
+            </label>
+            <input
+              type="text"
+              placeholder="Please enter your company name"
+              {...form.register("company_name")}
+              className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+            />
+            {form.formState.errors.company_name?.message && (
+              <p className="text-red-500 text-[10px] mt-1 ml-1">
+                {form.formState.errors.company_name.message}
+              </p>
+            )}
+          </div>
 
-      {/* Company Details Form */}
-      <div className="bg-white p-[10px] mb-[82px]">
-        {loading ? (
-          <div className="p-4">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-10 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-              <div className="space-y-3">
-                <div className="h-10 bg-gray-200 rounded"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
-              </div>
+          {/* Company Address Section */}
+          <div className="flex flex-col mb-6">
+            <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
+              Company Address
+            </label>
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                placeholder="Invoice address line 1"
+                {...form.register("address_line1")}
+                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+              />
+              <input
+                type="text"
+                placeholder="Invoice address line 2"
+                {...form.register("address_line2")}
+                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+              />
+              <input
+                type="text"
+                placeholder="Invoice address city"
+                {...form.register("city")}
+                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+              />
+              <input
+                type="text"
+                placeholder="Invoice address county"
+                {...form.register("country")}
+                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+              />
+              <input
+                type="text"
+                placeholder="Invoice address postcode"
+                {...form.register("postcode")}
+                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+              />
             </div>
           </div>
-        ) : (
-          <>
-            {/* Company Name Section */}
-            <FloatingInput
-              label="Company Name"
-              placeholder="Please enter your company name..."
-              {...form.register("company_name")}
-              error={form.formState.errors.company_name?.message as string}
-            />
-            <hr className="my-[20px]" />
-            {/* Invoice Address Section */}
-            <p className="text-[16px] my-[16px] leading-[16px]">Invoice Address</p>
 
-            {/* Line 1 */}
-            <FloatingInput
-              label="Line 1"
-              placeholder="Please enter invoice address line 1.."
-              {...form.register("address_line1")}
-              error={form.formState.errors.address_line1?.message as string}
+          {/* Contact Number Section */}
+          <div className="flex flex-col mb-6">
+            <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
+              Contact Number
+            </label>
+            <input
+              type="text"
+              placeholder="Please enter your contact number"
+              {...form.register("contact_number")}
+              className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
             />
+          </div>
 
-            {/* Line 2 */}
-            <FloatingInput
-              label="Line 2"
-              placeholder="Please enter invoice address line 2..."
-              {...form.register("address_line2")}
-              error={form.formState.errors.address_line2?.message as string}
+          {/* Login Details Section */}
+          <div className="flex flex-col mb-10">
+            <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
+              Login Details
+            </label>
+            <input
+              type="email"
+              placeholder="Please enter your email"
+              value={customer?.email || ""}
+              readOnly
+              className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:outline-none placeholder:text-gray-400 text-gray-500 bg-gray-50/50 transition-all shadow-sm cursor-not-allowed"
             />
+          </div>
 
-            {/* City */}
-            <FloatingInput
-              label="City"
-              placeholder="Please enter invoice address city..."
-              {...form.register("city")}
-              error={form.formState.errors.city?.message as string}
-            />
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full h-[54px] bg-[#4A90E5] text-white rounded-[27px] font-bold text-[17px] shadow-lg active:scale-[0.98] disabled:opacity-70 transition-all"
+            >
+              {saving ? "Signing in..." : "Agree & Sign Up"}
+            </button>
 
-            {/* Country */}
-            <FloatingInput
-              label="Country"
-              placeholder="Please enter invoice address county..."
-              {...form.register("country")}
-              error={form.formState.errors.country?.message as string}
-            />
-           
-
-            {/* Postcode */}
-            <FloatingInput
-              label="Postcode"
-              placeholder="Please enter invoice address postcode..."
-              {...form.register("postcode")}
-              error={form.formState.errors.postcode?.message as string}
-            />
-            <hr className="my-[20px]" />
-            {/* Save Button */}
-              <Button
-                onClick={form.handleSubmit(saveCompanyDetails)}
-                disabled={saving}
-                className="w-full gap-0 cursor-pointer leading-[16px] h-[45px] bg-green-600 text-[16px] text-white !p-[14px] rounded font-medium flex items-center justify-center"
-              >
-                <FontAwesomeIcon className="mx-[4px] leading-[16px]" icon={faCircleCheck}  style={{ width: "16px", height: "16px" }} />
-                <span className="mx-[4px] font-semibold leading-[16px]">
-                  {saving ? "Saving..." : "Save"}
-                  </span>
-              </Button>
-          </>
-        )}
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-full h-[54px] bg-white border-2 border-[#4A90E5] text-[#4A90E5] rounded-[27px] font-bold text-[17px] active:scale-[0.98] transition-all"
+            >
+              Back
+            </button>
+          </div>
+        </form>
       </div>
-
-       {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[1000px] bg-white border-t z-50 px-[18px]">
-              <div className="flex flex-row items-center justify-between h-[72px] footer-nav-col">
-                <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-                  <FontAwesomeIcon icon={faGauge} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-                  <span className="text-xs mt-[5px]">Dashboard</span>
-                </button>
-                <button onClick={() => onNavigate("shop", false)} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-                  <FontAwesomeIcon icon={faShop} className="text-[#607565]" style={{ width: "30px", height: "24px" }} />
-                  <span className="text-xs mt-[5px]">Shop</span>
-                </button>
-                <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-                  <FontAwesomeIcon icon={faWallet} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-                  <span className="text-xs mt-[5px]">Wallet</span>
-                </button>
-                <button onClick={() => onNavigate("account")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-                  <FontAwesomeIcon icon={faUser} className="text-[#607565]" style={{ width: "21px", height: "24px" }} />
-                  <span className="text-xs mt-[5px]">Account</span>
-                </button>
-              </div>
-            </nav>
     </div>
-  )
+  );
 }

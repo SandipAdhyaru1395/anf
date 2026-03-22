@@ -4,12 +4,25 @@ import { ArrowLeft, Home, ShoppingBag, User, Wallet, Package, ChevronRight } fro
 import { Card } from "@/components/ui/card";
 import api from "@/lib/axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGauge, faShop, faWallet, faUser, faBars, faTruck, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import {
+  faGauge,
+  faShop,
+  faUser,
+  faWallet,
+  faBars,
+  faTruck,
+  faChevronRight,
+  faChevronLeft,
+  faBox,
+  faChartSimple,
+  faHeart,
+  faCalendarAlt
+} from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import { Banner } from "@/components/banner";
 
 interface MobileOrdersProps {
-  onNavigate: (page: "dashboard" | "shop" | "wallet" | "account" | "orders") => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   onBack: () => void;
   onOpenOrder?: (orderNumber: string) => void;
 }
@@ -51,26 +64,16 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
   }, []);
 
   return (
-    <div className="min-h-screen w-full max-w-[1000px] mx-auto">
+    <div className="min-h-screen w-full max-w-[402px] mx-auto bg-[#F8F7FC] flex flex-col">
       {/* Header */}
-      {/* <header className="bg-white px-4 py-3 flex items-center gap-3 border-b">
-        <button onClick={onBack} className="p-2 hover:cursor-pointer rounded-full">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+      <div className="bg-[#F8F7FC] flex items-center justify-between px-4 h-[56px] sticky top-0 z-50">
+        <button onClick={onBack} className="flex items-center gap-1 text-[#8F98AD] font-bold text-[13px]">
+          <FontAwesomeIcon icon={faChevronLeft} className="text-[14px]" />
+          <span>Back</span>
         </button>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-            <Package className="w-4 h-4 text-green-600" />
-          </div>
-          <span className="text-sm text-gray-600">Orders</span>
-        </div>
-      </header> */}
-
-      <header className="bg-white flex items-center border-b h-[50px]">
-        <div className="w-[66px] h-[25px] flex items-center justify-center">
-          <FontAwesomeIcon icon={faTruck} className="text-green-600" style={{ width: "30px", height: "24px" }} />
-        </div>
-        <span className="text-[16px] font-semibold">Orders</span>
-      </header>
+        <h1 className="text-[16px] font-bold text-[#3D495E]">My Orders</h1>
+        <div className="w-[40px]"></div> {/* Spacer for centering */}
+      </div>
 
       {/* Banner */}
       <Banner />
@@ -85,55 +88,49 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
             </div>
           </div>
         ) : (
-          <div>
+          <div className="space-y-0 flex-1">
             {orders.length === 0 ? (
-              <div className="text-center text-gray-500 text-sm">No orders found</div>
+              <div className="text-center text-gray-500 py-10 bg-white">No orders found</div>
             ) : (
               orders.map((o, idx) => (
-                <Card key={o.order_number + idx} className="mb-[10px] border-gray-300">
-                  <div className="py-[12px] pl-[12px] mb-[10px] flex">
-                    <div className="d-grid text-sm w-full pr-[12px] border-r border-gray-300">
-                      <div className="flex justify-between mb-0">
-                        <span className="text-black">Order No:</span>
-                        <span className="text-black">{o.order_number}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">Ordered:</span>
-                        <span className="text-black">{o.ordered_at}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">Payment Status:</span>
-                        <span className="text-black">{o.payment_status}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">Fulfillment Status:</span>
-                        <span className="text-black">{o.fulfillment_status}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">Units:</span>
-                        <span className="text-black">{o.units}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">SKUs:</span>
-                        <span className="text-black">{o.skus}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">Total Paid:</span>
-                        <span className="text-black" dir="ltr">
-                          {o.currency_symbol}
-                          {o.total_paid.toFixed(2)}
+                <div key={o.order_number + idx} className="bg-white border-b border-[#F1F2F7] p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-[42px] h-[42px] bg-[#EAF0FA] rounded-full flex items-center justify-center flex-shrink-0">
+                      <FontAwesomeIcon icon={faBox} className="text-[#4A90E5] text-[20px]" />
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-[#EAF0FA] text-[#4A90E5] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-[#DCE1EE]">
+                          {o.fulfillment_status}
+                        </span>
+                        <span className="bg-[#E4FAE7] text-[#34C759] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-[#D2EBD5]">
+                          {o.payment_status}
                         </span>
                       </div>
-                    </div>
-                    {/* <ChevronRight
-                      
-                      className="w-6 h-6 text-green-600 self-center ml-2 cursor-pointer"
-                    /> */}
-                    <div className="w-[36.5px] h-[140px] flex items-center text-center">
-                      <FontAwesomeIcon onClick={() => onOpenOrder && onOpenOrder(o.order_number)} icon={faChevronRight} className="text-green-600 hover:cursor-pointer" style={{ width: "36.5px", height: "21px" }} />
+                      <div className="flex items-center gap-1 text-[#3D495E] font-bold text-[14px]">
+                        <span>Order: {o.order_number}</span>
+                        <span className="text-[#8F98AD] mx-1">•</span>
+                        <span>Total: {o.currency_symbol}{o.total_paid.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[#8F98AD] text-[11px] font-medium flex-wrap">
+                        <span>{o.skus} SKUs</span>
+                        <span className="opacity-50">•</span>
+                        <span>{o.units} Items</span>
+                        <span className="opacity-50">•</span>
+                        <div className="flex items-center gap-1">
+                          <FontAwesomeIcon icon={faCalendarAlt} className="text-[10px]" />
+                          <span>{o.ordered_at}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </Card>
+                  <div className="flex items-center h-full">
+                    <div className="h-[40px] w-[1px] bg-[#F1F2F7] mx-2"></div>
+                    <button onClick={() => onOpenOrder && onOpenOrder(o.order_number)} className="p-2 cursor-pointer hover:bg-[#EAF0FA] rounded-full transition-colors">
+                      <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[18px]" />
+                    </button>
+                  </div>
+                </div>
               ))
             )}
           </div>
@@ -141,23 +138,27 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[1000px] bg-white border-t z-50 px-[18px]">
-        <div className="flex flex-row items-center justify-between h-[72px] footer-nav-col">
-          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faGauge} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Dashboard</span>
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
+        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
+          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+            <span>Dashboard</span>
           </button>
-          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faShop} className="text-[#607565]" style={{ width: "30px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Shop</span>
+          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+            <span>Shop</span>
           </button>
-          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faWallet} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Wallet</span>
+          <button onClick={() => onNavigate("shop", true)} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+            <span>Favourites</span>
           </button>
-          <button onClick={() => onNavigate("account")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faUser} className="text-[#607565]" style={{ width: "21px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Account</span>
+          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+            <span>Wallet</span>
+          </button>
+          <button onClick={() => onNavigate("account")} className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+            <span>Account</span>
           </button>
         </div>
       </nav>

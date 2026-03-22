@@ -10,7 +10,7 @@ export function Banner() {
   }
 
   return (
-    <div className="w-full" style={{ height: 266.66 }}>
+    <div className="w-[380px] h-[94px]"  style={{ borderRadius: "10px", overflow: "hidden" }}>
       <img
         src={settings.banner}
         alt="Banner"

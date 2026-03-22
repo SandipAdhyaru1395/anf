@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, X, ShoppingBag, ChevronDown, ChevronUp, Plus, Minus, Star, Home, Wallet, User, Bell } from "lucide-react";
+import { Search, Filter, X, ShoppingBag, ChevronDown, ChevronUp, Plus, Minus, Star, Home, Wallet, User, Heart, RefreshCw, Scan, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGauge, faShop, faWallet, faUser, faBars, faStar, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faGauge, faShop, faWallet, faUser, faBars, faStar, faSearch, faChartSimple, faHeart } from "@fortawesome/free-solid-svg-icons";
 import api from "@/lib/axios";
 
 interface MobileShopProps {
-  onNavigate: (page: "dashboard" | "shop" | "basket" | "wallet" | "account", favorites?: boolean) => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   cart: Record<number, { product: ProductItem; quantity: number }>;
   increment: (product: ProductItem) => void;
   decrement: (product: ProductItem) => void;
@@ -55,13 +55,13 @@ import { Banner } from "@/components/banner";
 import { Thumbnail } from "@/components/thumbnail";
 import { startLoading, stopLoading } from "@/lib/loading";
 
-export function MobileShop({ 
-  onNavigate = () => {}, 
-  cart = {}, 
-  increment = () => {}, 
-  decrement = () => {}, 
-  totals = { units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 }, 
-  showFavorites = false 
+export function MobileShop({
+  onNavigate = () => { },
+  cart = {},
+  increment = () => { },
+  decrement = () => { },
+  totals = { units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 },
+  showFavorites = false
 }: Partial<MobileShopProps>) {
   const { format, symbol } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
@@ -113,7 +113,7 @@ export function MobileShop({
           total: Number(c?.total || 0),
         });
         setWalletCreditTotal(Number(c?.wallet_credit_total || wallet));
-      } catch {}
+      } catch { }
     };
     loadCart();
     try {
@@ -153,7 +153,7 @@ export function MobileShop({
               const settingsRes = await api.get("/settings");
               const vers = settingsRes?.data?.versions;
               productVersion = Number(vers?.Product || 0) || 0;
-            } catch {}
+            } catch { }
 
             const res = await api.get("/products");
             const data = res.data;
@@ -180,12 +180,12 @@ export function MobileShop({
               };
               const deduped = dedupeProductsInTree(filtered);
               setCategories(deduped);
-              try { sessionStorage.setItem("products_cache", JSON.stringify({ version: productVersion, categories: deduped })); } catch {}
+              try { sessionStorage.setItem("products_cache", JSON.stringify({ version: productVersion, categories: deduped })); } catch { }
             }
-          } catch {}
+          } catch { }
         })();
       }
-    } catch {}
+    } catch { }
     // Listen for cache updates to re-render with latest data
     const onProductsCacheUpdated = () => {
       try {
@@ -199,7 +199,7 @@ export function MobileShop({
         }
         // Also refresh cart totals using latest prices from backend reprice logic
         loadCart();
-      } catch {}
+      } catch { }
     };
     if (typeof window !== "undefined") {
       window.addEventListener("products_cache_updated", onProductsCacheUpdated);
@@ -342,9 +342,9 @@ export function MobileShop({
       // Calculate new quantity after decrement
       const nextQty = Math.max(0, current - step);
       const decrementQty = current > 0 ? step : 0;
-      
+
       if (decrementQty === 0) return;
-      
+
       const res = await api.post('/cart/decrement', { product_id: product.id, quantity: decrementQty });
       const items: Array<{ product_id: number; quantity: number; product?: { wallet_credit?: number } }> = res?.data?.cart?.items || [];
       const map: Record<number, number> = {};
@@ -391,24 +391,56 @@ export function MobileShop({
     }
   };
 
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white w-full max-w-[402px] mx-auto transition-opacity duration-500">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <img
+            src="/assets/img/logo.png"
+            alt="AQUAVAPE"
+            className="w-48 h-auto object-contain animate-pulse"
+          />
+          <div className="w-12 h-12 border-4 border-[#4A90E5] border-t-transparent rounded-full animate-spin mt-8 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-[1000px] mx-auto">
+    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-[#fffff]">
       {/* Header */}
       <div className="bg-white flex items-center border-b">
         <Thumbnail />
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white border-b box-shadow-bottom mb-2 sticky top-0 z-50 h-[50px]">
-        <div className="relative flex items-center pt-[7px] pb-[6px]">
-          <div className="flex-1 relative">
-            <FontAwesomeIcon icon={faSearch} className="text-green-600 absolute top-1/2 transform -translate-y-1/2" style={{ width: "24px", height: "24px" }} />
-            <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-[32px] pr-9 bg-transparent shadow-none border-none focus:border-none focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none py-0" style={{ border: 'none', outline: 'none', boxShadow: 'none' }} placeholder="Start typing to filter products..." />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <X className="cursor-pointer w-4 h-4 text-gray-400" />
-              </button>
-            )}
+      {/* Sticky top area */}
+      <div className="sticky top-0 z-[60] bg-white">
+
+        {/* Search Bar */}
+        <div className="px-[12px] pb-[12px] pt-[2px] bg-white border-b border-[#F1F2F7]">
+          <div className="flex items-center gap-[10px]">
+            <div className="flex-1 relative flex items-center h-[42px] rounded-[21px] bg-[#F3F4F9] px-[16px]">
+              <Search className="text-[#8A94A6] w-4 h-4 mr-2" strokeWidth={2.5} />
+              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-0 pr-10 h-full bg-transparent shadow-none border-none text-[14px] text-[#3D495E] placeholder:text-[#8A94A6] focus-visible:ring-0 w-full" style={{ border: "none", boxShadow: "none" }} placeholder="Search products, brands, SKUs..." />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-[46px] top-1/2 -translate-y-1/2">
+                  <X className="cursor-pointer w-4 h-4 text-[#8A94A6]" />
+                </button>
+              )}
+              <SlidersHorizontal className="w-[18px] h-[18px] text-[#8A94A6] absolute right-[16px] top-1/2 -translate-y-1/2 cursor-pointer" />
+            </div>
+            <button className="w-[42px] h-[42px] rounded-[14px] bg-[#F3F4F9] text-[#8A94A6] flex items-center justify-center">
+              <Scan className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
@@ -419,57 +451,60 @@ export function MobileShop({
       </div> */}
 
       {/* Categories (recursive) */}
-      <div className="space-y-2 overflow-y-auto pb-56">
+      <div className="space-y-2 overflow-y-auto pb-56 px-4">
         {displayedCategories.map((node) => (
           <CategoryNode key={node.name} node={node} path={node.name} depth={0} expandedPaths={expandedPaths} togglePath={togglePath} cart={cart} onIncrement={handleIncrement} onDecrement={handleDecrement} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} cartQuantities={cartQuantities} topAncestorIsSpecial={node.is_special === 1} />
         ))}
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[1000px] bg-white border-t z-50">
-        {/* Basket Summary (shows when items in cart) */}
-        {cartTotals.units > 0 && (
-          <div className="bg-white border-b px-4 py-2 box-shadow-top">
-            <div className="flex items-center justify-center text-sm gap-2 pt-1 h-[20px]">
-              <span className="text-black font-semibold">{cartTotals.units} Units</span>
-              <span className="spacer"> | </span>
-              <span className="text-black font-semibold">{cartTotals.skus} SKUs</span>
-              <span className="spacer"> | </span>
-              <span className="font-semibold text-black">{format(cartTotals.total)}</span>
-              <span className="spacer"> | </span>
-              <div className="flex items-center">
-                <span className="inline-flex items-center gap-1 text-green-600 text-sm font-semibold">
-                  <FontAwesomeIcon icon={faWallet} className="text-green-600" style={{ width: "14px", height: "14px" }} />
-                  <span>
-                    {symbol}
-                    {totalWalletCredit.toFixed(2)}
-                  </span>
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
+        {/* Basket Summary */}
+        <div className="bg-[#F3F4F9] border-t border-[#DCE1EE] px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Left Side: Stats and Delivery Info */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5 text-[13px] text-[#4E5667] font-bold">
+                <span>{cartTotals.units} Units</span>
+                <span className="text-[#DCE1EE] font-normal px-[1px]">|</span>
+                <span>{cartTotals.skus} SKUs</span>
+                <span className="text-[#DCE1EE] font-normal px-[1px]">|</span>
+                <span>{format(cartTotals.total)}</span>
+                <span className="text-[#DCE1EE] font-normal px-[1px]">|</span>
+                <span className="inline-flex items-center gap-[2px] text-[#4A90E5]">
+                  <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" />
+                  <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
                 </span>
-                {cartTotals.totalDiscount > 0 && <span className="text-green-600 text-xs ml-2">{format(cartTotals.totalDiscount)} off</span>}
               </div>
+              <div className="text-[11px] text-[#8F98AD] mt-0.5 font-bold tracking-tight">Includes FREE delivery</div>
             </div>
-            <div className="text-sm font-semibold text-center text-[#999] py-1">Includes FREE delivery</div>
-            <button onClick={() => onNavigate("basket")} className="w-full bg-green-600 text-white py-2 rounded-sm font-semibold hover:cursor-pointer text-lg box-shadow-bottom">
+            {/* Right Side: Action Button */}
+            <button onClick={() => onNavigate("basket")} className="bg-[#4A90E5] text-white px-3.5 py-2.5 rounded-[6px] font-bold text-[14px] hover:bg-[#3B7DCF] transition-colors whitespace-nowrap leading-none">
               View Basket
             </button>
           </div>
-        )}
-        <div className="flex flex-row items-center justify-between h-[72px] footer-nav-col px-[18px]">
-          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faGauge} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Dashboard</span>
+        </div>
+
+        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
+          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+            <span>Dashboard</span>
           </button>
-          <button onClick={() => onNavigate("shop", false)} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faShop} className="text-[#607565]" style={{ width: "30px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Shop</span>
+          <button onClick={() => onNavigate("shop", false)} className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+            <span>Shop</span>
           </button>
-          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faWallet} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Wallet</span>
+          <button onClick={() => onNavigate("shop", true)} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+            <span>Favourites</span>
           </button>
-          <button onClick={() => onNavigate("account")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faUser} className="text-[#607565]" style={{ width: "21px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Account</span>
+          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+            <span>Wallet</span>
+          </button>
+          <button onClick={() => onNavigate("account")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+            <span>Account</span>
           </button>
         </div>
       </nav>
@@ -497,17 +532,17 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
   const isOpen = expandedPaths.includes(path);
   const hasChildren = Array.isArray(node.subcategories) && node.subcategories.length > 0;
   const hasProducts = Array.isArray(node.products) && node.products.length > 0;
-  
+
   // Get API base URL (without /api) to access admin assets
   const getApiBaseUrl = () => {
     if (typeof window === 'undefined') return 'http://localhost:8000';
     const rawBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
     return rawBase.replace(/\/api$/, '').replace(/\/$/, '');
   };
-  
+
   const defaultImagePath = `${getApiBaseUrl()}/public/assets/img/default_product.png`;
   const defaultBrandImagePath = `${getApiBaseUrl()}/public/assets/img/default_brand.png`;
-  
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;
     if (target.src !== defaultImagePath && !target.src.includes('default_product.png')) {
@@ -522,81 +557,58 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
     }
   };
 
-  // Indentation only: increase left padding by depth
-  const depthPad = ["", "", "", "", "", ""];
-  // Left margin by depth to visually indent levels
-  const depthMargin = ["", "", "", "", "", ""];
   const depthColors = [
-    "bg-green-600", // depth 0
-    "bg-green-50 !pl-[6px]", // depth 1
-    "bg-gray-100", // depth 2
-    "", // depth 3
-    "", // depth 4
+    "bg-[#E9007F]", // depth 0 - Deep Pink
+    "bg-[#E2EFFF]", // depth 1 - Light Blue
+    "bg-[#F3F4F6]", // depth 2 - Light Gray
+    "bg-gray-100", // depth 3
+    "bg-gray-50", // depth 4
     "", // depth 5+
   ];
 
-  const padClass = depthPad[Math.min(depth, depthPad.length - 1)];
-  const marginClass = depthMargin[Math.min(depth, depthMargin.length - 1)];
-
   if (node.is_special == 1) {
-    var bgClass = "bg-yellow-400";
+    var bgClass = "bg-[#E9007F]";
   } else {
     var bgClass = depthColors[Math.min(depth, depthColors.length - 1)];
   }
 
-  const buttonClasses = `w-full ${bgClass} mb-2 flex items-center justify-between ${depth === 0 ? "font-medium" : ""}`;
-  // Vertical gap between levels increases with depth
-  const depthGap = ["mt-2", "mt-2", "mt-2", "mt-2", "mt-2", "mt-2"];
-  const gapClass = depthGap[Math.min(depth, depthGap.length - 1)];
+  const buttonClasses = depth === 0
+    ? `w-full h-[46px] mx-auto ${bgClass} flex items-center justify-between pl-[14px] pr-[14px] rounded-[6px] font-bold`
+    : `w-full h-[52px] mx-auto ${bgClass} flex items-center justify-between pl-[10px] pr-[14px] rounded-[6px] font-bold`;
 
-  const nameTextColorClass = depth === 0 && node.is_special !== 1 ? "text-white" : "text-gray-800";
-  const iconColorClass = nameTextColorClass;
+  const nameTextColorClass = depth === 0 || node.is_special === 1 ? "text-white text-[15.5px]" : "text-[#1E293B] text-[15.5px]";
+  const iconColorClass = depth === 0 || node.is_special === 1 ? "text-white opacity-100" : "text-[#4A90E5] opacity-100";
 
   return (
-    <div className="space-y-2">
-      <button onClick={() => togglePath(path, depth === 0)} className={`${buttonClasses} ${marginClass} hover:cursor-pointer h-[50px]`}>
-        <div className={`flex items-center gap-2 ${padClass}`}>
+    <div className="space-y-0 relative pb-[6px]">
+      <button onClick={() => togglePath(path, depth === 0)} className={`${buttonClasses} hover:cursor-pointer transition-colors relative z-10`}>
+        <div className={`flex items-center gap-3`}>
           {hasProducts && (
-            <div className="w-[42px] h-[42px] bg-white rounded-md border overflow-hidden flex items-center justify-center offer-products">
-              <img 
-                src={node?.image || defaultBrandImagePath} 
-                alt="" 
-                className="w-[42px] h-[42px] object-cover" 
-                onError={handleBrandImageError}
-              />
+            <div className="w-[42px] h-[42px] bg-white rounded-md border border-[#DCE1EE] overflow-hidden flex items-center justify-center p-0.5 offer-products">
+              <img src={node?.image || defaultBrandImagePath} alt="" className="w-[36px] h-[36px] object-contain" onError={handleBrandImageError} />
             </div>
           )}
-          <span className={`font-semibold ${nameTextColorClass}`}>{node.name}</span>
+          <span className={`font-bold ${nameTextColorClass}`}>{node.name}</span>
           {/* Render tags if provided */}
           {(() => {
             const raw = node.tags;
-            const tags = Array.isArray(raw)
-              ? raw
-              : typeof raw === "string" && raw.trim().length
-              ? raw
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter(Boolean)
-              : [];
+            const tags = Array.isArray(raw) ? raw : typeof raw === "string" && raw.trim().length ? raw.split(",").map((t) => t.trim()).filter(Boolean) : [];
             if (!tags.length) return null;
-            const colors = ["bg-green-600", "bg-orange-500", "bg-red-600"];
             return (
               <div className="flex items-center gap-1">
                 {tags.map((tag, idx) => (
-                  <span key={`${tag}-${idx}`} className={`text-white text-[13px] leading-none px-4 py-2 rounded-full ${colors[idx % colors.length]}`}>
-                    {tag.toUpperCase()}
-                  </span>
+                  <span key={`${tag}-${idx}`} className="text-white bg-[#0AB386] text-[10px] font-black tracking-widest px-[6px] py-[2px] rounded-[4px] ml-1 uppercase">{tag}</span>
                 ))}
               </div>
             );
           })()}
-          {node.badge && <Badge className={`${node.badgeColor} text-white text-xs px-2 py-1`}>{node.badge}</Badge>}
+          {node.badge && <Badge className={`${node.badgeColor} text-white bg-[#0AB386] text-[10px] font-black tracking-widest px-[6px] py-[2px] rounded-[4px] ml-1 uppercase`}>{node.badge}</Badge>}
         </div>
-        {isOpen ? <ChevronUp className={`w-9 h-9 ${iconColorClass}`} /> : <ChevronDown className={`w-9 h-9 ${iconColorClass}`} />}
+        {isOpen ? <ChevronUp className={`w-6 h-6 ${iconColorClass}`} /> : <ChevronDown className={`w-6 h-6 ${iconColorClass}`} />}
       </button>
 
       {isOpen && (
-        <div className={`space-y-3 ${gapClass}`}>
+        <div className="space-y-3 mt-2">
           {hasChildren &&
             node.subcategories!.map((child) => {
               const childPath = `${path}::${child.name}`;
@@ -604,84 +616,64 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
             })}
 
           {hasProducts && (
-            <div className="grid grid-cols-3 gap-3 px-3">
+            <div className="grid grid-cols-3 w-[370px] gap-[5px] pb-[16px] mx-auto">
               {node.products!.map((product) => {
                 const stock = Number((product as any)?.quantity ?? (product as any)?.available_qty ?? 0);
                 const allowOutOfStock = Boolean((product as any)?.allow_out_of_stock);
                 const isOut = !allowOutOfStock && stock <= 0;
                 return (
-                  <div key={product.id} className={`group bg-white border-b relative pb-2 offer-plus-sign z-10 w-[113px] ${isOut ? 'opacity-60' : ''}`}>
-                    {(() => {
-                      if (isOut) {
-                        return (
-                          <div className="offer-increase-sign absolute z-10 right-0 flex items-center justify-center rounded-full w-8 h-8 bg-black">
-                            <Bell className="cursor-pointer w-5 h-5 text-green-400" />
-                          </div>
-                        )
-                      }
-                      if (cartQuantities[product.id]) {
-                        return (
-                          <div className="offer-increase-sign absolute z-10 right-0 flex items-center gap-2 bg-black rounded-full px-1 shadow-sm w-[113px]">
-                            <button onClick={() => onDecrement(product)} className="w-8 h-8 text-green-500 flex items-center justify-center hover:cursor-pointer">
-                              <Minus className="w-6 h-6" />
-                            </button>
-                            <span className="min-w-[1.5rem] text-center text-lg font-medium text-white">{cartQuantities[product.id]}</span>
-                            <button onClick={() => onIncrement(product)} className={`w-8 h-8 text-green-500 flex items-center justify-center hover:cursor-pointer`}>
-                              <Plus className="w-6 h-6" />
-                            </button>
-                          </div>
-                        )
-                      }
-                      return (
-                        <button onClick={() => onIncrement(product)} className={`offer-plus-sign z-10 absolute right-0 w-8 h-8 bg-black rounded-full flex items-center justify-center hover:cursor-pointer`}>
-                          <Plus className="w-6 h-6 text-green-500" />
-                        </button>
-                      )
-                    })()}
-
-                  <div className="aspect-square mb-2 flex items-center relative justify-center">
-                    <img 
-                      src={product.image || defaultImagePath} 
-                      alt={product.name} 
-                      className="w-full h-[113px] object-contain" 
-                      onError={handleImageError}
-                    />
-                    {isOut && (
-                      <div className="absolute inset-0 bg-white/60" />
-                    )}
-                    <div className="absolute right-0 bottom-0">
-                      <button onClick={() => onToggleFavorite(product)} className="w-8 h-8 rounded-full border-2 flex items-center justify-center hover:cursor-pointer bg-white" aria-label="Toggle favourite" title="Toggle favourite">
-                        <Star className={`w-[16px] h-[16px] ${isFavorite(product.id) ? "text-[#3dbe59] fill-[#3dbe59]" : "text-[#c0d3c4] fill-[#c0d3c4]"}`} />
+                  <div key={product.id} className="group bg-white border border-[#E9ECF4] rounded-[10px] overflow-hidden shadow-[0_2px_4px_0_rgba(0,0,0,0.02)] flex flex-col w-[115px] h-[222px] relative mx-auto">
+                    <div className="relative h-[105px] bg-white flex items-center justify-center pt-2 pb-1 px-1">
+                      <img src={product.image || defaultImagePath} alt={product.name} className="w-full h-[95px] object-contain mix-blend-multiply" onError={handleImageError} />
+                      {/* Heart Icon Top Right */}
+                      <button onClick={() => onToggleFavorite(product)} className="absolute top-[4px] right-[4px] w-[22px] h-[22px] rounded-full border border-[#C7CFDE] flex items-center justify-center bg-[#EEF2F8] shadow-sm z-10 transition-colors cursor-pointer">
+                        <Heart className={`w-[13px] h-[13px] ${isFavorite(product.id) ? "text-[#35D6EC] fill-[#35D6EC]" : "text-[#5B667E]"}`} strokeWidth={3} />
                       </button>
-                    </div>
-                  </div>
 
-                  <div className="space-y-1">
-                    <div className="relative">
-                      {/* Current price */}
-                      <span className="font-bold p-[2px] bg-[#f0f5f1] flex justify-between offer-product-price gap-3">
-                      {symbol}{product.price}
+                      {/* Plus / Cart Floating Widget overlapping bottom boundary */}
+                      <div className="absolute right-[6px] -bottom-[12px] z-10">
+                        {(() => {
+                          if (cartQuantities[product.id]) {
+                            return (
+                              <div className="flex bg-[#1E2A44] rounded-full shadow-md items-center h-[26px] px-[2px] gap-[1px]">
+                                <button onClick={() => onDecrement(product)} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
+                                  <Minus className="w-[14px] h-[14px]" strokeWidth={3} />
+                                </button>
+                                <span className="text-white text-[10px] font-bold min-w-[14px] text-center">{cartQuantities[product.id]}</span>
+                                <button onClick={() => onIncrement(product)} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
+                                  <Plus className="w-[14px] h-[14px]" strokeWidth={3} />
+                                </button>
+                              </div>
+                            )
+                          }
+                          return (
+                            <button onClick={() => !isOut && onIncrement(product)} className={`w-[26px] h-[26px] bg-[#1E2A44] border-[1.5px] border-[#35D6EC] shadow-md rounded-full flex items-center justify-center cursor-pointer ${isOut ? 'opacity-80' : ''}`}>
+                              <Plus className="w-4 h-4 text-[#35D6EC]" strokeWidth={3} />
+                            </button>
+                          )
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col pt-4 px-[8px] pb-1 relative bg-white overflow-hidden">
+                      <div className="h-[24px] -mx-[8px] px-[6px] mb-[4px] bg-[#EAF0FA] flex items-center justify-between">
+                        <span className="font-bold text-[13px] text-[#131A44] leading-none">{symbol}{product.price}</span>
                         {typeof product.wallet_credit === "number" && (
-                          <span className="inline-flex items-center text-green-600 text-xs font-semibold">
-                            <Wallet className="w-3 h-3 mr-1" />
-                            <span>
-                              {symbol}
-                              {product.wallet_credit.toFixed(2)}
-                            </span>
+                          <span className="inline-flex items-center gap-[2px] text-[#4A90E5] font-semibold text-[8px] whitespace-nowrap">
+                            <Wallet className="w-[10px] h-[10px] opacity-90" strokeWidth={2.2} />
+                            <span>{symbol}{product.wallet_credit.toFixed(2)}</span>
                           </span>
                         )}
+                      </div>
+                      <span className="text-[10px] text-[#64748B] font-bold leading-[1.3] uppercase tracking-tight" style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {product.name}
                       </span>
-                      {/* Custom tooltip with RRP on hover */}
-                      {product.rrp && (
-                        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-6 bg-black text-white text-[10px] px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap">
-                          RRP: {product.rrp}
-                        </div>
-                      )}
                     </div>
-                    <div className="text-left offer-product-name p-1">
-                      <span className="text-sm text-black">{product.name}</span>
-                    </div>
-                  </div>
+
+                    <button type="button" className="w-full h-[32px] bg-[#4A90E5] text-white text-[10px] font-bold flex items-center justify-center gap-1.5 transition-colors mt-auto flex-shrink-0 cursor-pointer">
+                      <RefreshCw className="w-3 h-3 opacity-90" strokeWidth={2.5} />
+                      Quick View
+                    </button>
                   </div>
                 )
               })}

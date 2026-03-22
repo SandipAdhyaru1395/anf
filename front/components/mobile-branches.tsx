@@ -14,6 +14,10 @@ import {
   faStore,
   faPlus,
   faChevronRight,
+  faChevronLeft,
+  faHome,
+  faChartSimple,
+  faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import { MobileNewBranch } from "./mobile-new-branch";
 import { MobileEditBranch } from "./mobile-edit-branch";
@@ -32,7 +36,7 @@ interface Branch {
 }
 
 interface MobileBranchesProps {
-  onNavigate: (page: any) => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   onBack: () => void;
 }
 
@@ -100,62 +104,63 @@ export function MobileBranches({ onNavigate, onBack }: MobileBranchesProps) {
   }
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto bg-white">
+    <div className="w-full max-w-[402px] mx-auto bg-[#F8F7FC] min-h-screen flex flex-col">
       {/* Header */}
-      <div className="bg-white flex items-center border-b h-[50px]">
-        <div className="flex items-center">
-          <div className="w-[66px] h-[25px] rounded-full flex items-center justify-center">
-            <FontAwesomeIcon icon={faStore} className="text-green-600" style={{ width: "27px", height: "24px" }} />
-          </div>
-          <span onClick={onBack} className="text-sm text-[#ccc] text-[12px] hover:cursor-pointer hover:underline">Account</span>
-          &nbsp;<span className="text-sm text-[#ccc] text-[12px]"> /</span>
-          &nbsp;<span className="text-[16px] font-semibold">My Branches</span>
-        </div>
+      <div className="bg-[#F8F7FC] flex items-center justify-between px-4 h-[56px] sticky top-0 z-50">
+        <button onClick={onBack} className="flex items-center gap-1 text-[#8F98AD] font-bold text-[13px]">
+          <FontAwesomeIcon icon={faChevronLeft} className="text-[14px]" />
+          <span>Back</span>
+        </button>
+        <h1 className="text-[16px] font-bold text-[#3D495E]">My Branches</h1>
+        <div className="w-[40px]"></div> {/* Spacer for centering */}
       </div>
 
       <Banner />
 
-      <div className="p-[10px] mb-[82px]">
+      <div className="px-4 py-4 flex-1">
         <Button
           onClick={() => setShowNewBranch(true)}
-          className="w-full h-[45px] cursor-pointer rounded bg-green-600 text-white font-semibold flex items-center justify-center"
+          className="w-full h-[52px] cursor-pointer rounded-[26px] bg-[#4A90E5] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#3B7DCF] transition-colors shadow-sm"
         >
-          <FontAwesomeIcon icon={faPlus} style={{ width: "14px", height: "16px" }} />
-          <span className="text-[16px] leading-[15px]">New Branch</span>
+          <div className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center">
+            <FontAwesomeIcon icon={faPlus} className="text-[14px]" />
+          </div>
+          <span className="text-[17px]">Add Branch</span>
         </Button>
 
-        <hr className="my-[20px]" />
+        <div className="mt-8 space-y-4">
 
         {branches.length > 0 ? (
           branches.map((branch) => (
             <div
               key={branch.id}
               onClick={() => handleBranchClick(branch.id)}
-              className="min-h-[42px] leading-[16px] border border-green-600 mb-[10px] p-[12px] rounded-md cursor-pointer flex items-center justify-between"
+              className="bg-white border border-[#DCE1EE] p-4 rounded-[10px] cursor-pointer flex items-center justify-between shadow-sm hover:border-[#4A90E5] transition-all"
             >
-              <div className="flex items-center">
-                <FontAwesomeIcon
-                  icon={faStore}
-                  className="text-green-600"
-                  style={{ width: "18px", height: "16px" }}
-                />
-                <div className="mx-[8px]">
-                  <strong className="text-[14px] font-semibold">{branch.name ? ` ${branch.name},` : ""}</strong>&nbsp;
-                  <strong className="text-[14px] font-semibold">
+              <div className="flex items-center gap-4">
+                <div className="w-[42px] h-[42px] bg-[#EAF0FA] rounded-full flex items-center justify-center">
+                  <FontAwesomeIcon
+                    icon={faHome}
+                    className="text-[#4A90E5] text-[20px]"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[14px] font-bold text-[#3D495E]">{branch.name || "Company Name"}</span>
+                  <span className="text-[12px] text-[#8F98AD] font-medium leading-tight">
                     {branch.address_line1}
                     {branch.address_line2 ? `, ${branch.address_line2}` : ""}
                     {branch.city ? `, ${branch.city}` : ""}
-                    {branch.state ? `, ${branch.state}` : ""}
-                    {branch.country ? `, ${branch.country}` : ""}
-                    {branch.zip_code ? `, ${branch.zip_code.replace(/^(\w{3})(\w{3})$/, '$1 $2')}` : ""}
-                  </strong>
+                    {branch.zip_code ? `, ${branch.zip_code}` : ""}
+                  </span>
                 </div>
               </div>
-              <FontAwesomeIcon
-                icon={faChevronRight}
-                className="text-green-600"
-                style={{ width: "12.5px", height: "21px" }}
-              />
+              <div className="flex items-center">
+                <div className="h-[32px] w-[1px] bg-[#F1F2F7] mx-2"></div>
+                <FontAwesomeIcon
+                  icon={faChevronRight}
+                  className="text-[#4A90E5] text-[18px] ml-2"
+                />
+              </div>
             </div>
           ))
         ) : (
@@ -166,24 +171,29 @@ export function MobileBranches({ onNavigate, onBack }: MobileBranchesProps) {
           </div>
         )}
       </div>
+    </div>
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[1000px] bg-white border-t z-50 px-[18px]">
-        <div className="flex flex-row items-center justify-between h-[72px] footer-nav-col">
-          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faGauge} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Dashboard</span>
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
+        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
+          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+            <span>Dashboard</span>
           </button>
-          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faShop} className="text-[#607565]" style={{ width: "30px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Shop</span>
+          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+            <span>Shop</span>
           </button>
-          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faWallet} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Wallet</span>
+          <button onClick={() => onNavigate("shop", true)} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+            <span>Favourites</span>
           </button>
-          <button onClick={() => onNavigate("account")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faUser} className="text-[#607565]" style={{ width: "21px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Account</span>
+          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+            <span>Wallet</span>
+          </button>
+          <button onClick={() => onNavigate("account")} className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+            <span>Account</span>
           </button>
         </div>
       </nav>

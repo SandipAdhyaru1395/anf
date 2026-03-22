@@ -10,7 +10,7 @@ import { Banner } from "@/components/banner";
 
 interface MobileOrderDetailsProps {
   orderNumber: string;
-  onNavigate: (page: "dashboard" | "shop" | "wallet" | "account" | "orders" | "order-details") => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   onBack: () => void;
   onReorder: (items: Array<{ product: any; quantity: number }>) => void;
 }

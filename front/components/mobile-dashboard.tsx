@@ -4,37 +4,46 @@ import { useCurrency } from "@/components/currency-provider";
 import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
+import Image from "next/image";
 import api from "@/lib/axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faGauge,
+  faChartSimple,
+  faHeart,
   faShop,
+  faStar,
   faWallet,
   faUser,
-  faStar,
   faBell,
   faChevronRight,
+  faCreditCard,
+  faCoins,
+  faGift,
 } from "@fortawesome/free-solid-svg-icons";
 import { useCustomer } from "@/components/customer-provider";
 import { Banner } from "@/components/banner";
 import { startLoading, stopLoading } from "@/lib/loading";
+import { useSettings } from "@/components/settings-provider";
 
 interface MobileDashboardProps {
-  onNavigate: (
-    page: "dashboard" | "shop" | "wallet" | "account" | "orders",
-    favorites?: boolean,
-  ) => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   onOpenOrder?: (orderNumber: string) => void;
+  cart: Record<number, { product: any; quantity: number }>;
+  totals: { units: number; skus: number; subtotal: number; totalDiscount: number; total: number };
 }
 
 export function MobileDashboard({
   onNavigate,
   onOpenOrder,
+  cart,
+  totals,
 }: MobileDashboardProps) {
   const { symbol } = useCurrency();
   const { customer } = useCustomer();
-  const wallet = Number(customer?.wallet_balance || 0);
+  const { settings } = useSettings();
 
+  const wallet = Number(customer?.wallet_balance || 0);
+  const logoSrc = settings?.company_logo_url;
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
@@ -51,7 +60,7 @@ export function MobileDashboard({
           setOrders(json.orders);
           try {
             sessionStorage.setItem("orders_cache", JSON.stringify(json.orders));
-          } catch {}
+          } catch { }
         }
       } catch (e) {
       } finally {
@@ -60,7 +69,7 @@ export function MobileDashboard({
         }
         try {
           sessionStorage.removeItem("orders_needs_refresh");
-        } catch {}
+        } catch { }
       }
     };
 
@@ -71,7 +80,7 @@ export function MobileDashboard({
         refreshed = true;
         fetchOrders();
       }
-    } catch {}
+    } catch { }
 
     if (!refreshed) {
       try {
@@ -104,7 +113,7 @@ export function MobileDashboard({
         } else if (Array.isArray(parsed?.orders)) {
           setOrders(parsed.orders);
         }
-      } catch {}
+      } catch { }
     };
 
     if (typeof window !== "undefined") {
@@ -125,183 +134,244 @@ export function MobileDashboard({
   }, []);
 
   return (
-    <div className="min-h-screen app-container bg-[#f4f2f9]">
+    <div className="min-h-screen flex flex-col mx-auto w-full max-w-[402px] bg-[#F8F7FC] relative shadow-sm">
       {/* HEADER */}
-      <header className="bg-white px-3 py-2 flex items-center justify-center shadow-sm">
-        <div className="w-full flex justify-center"></div>
+      <header className="w-full h-[60px] bg-white flex items-center justify-center border-b border-[#F1F2F7] sticky top-0 z-50">
+        {logoSrc ? (
+          <Image
+            src={logoSrc}
+            alt="logo"
+            width={160}
+            height={36}
+            className="object-contain"
+            priority
+          />
+        ) : (
+          <h1 className="text-[20px] font-bold text-[#4E5667] tracking-widest">AQUAVAPE</h1>
+        )}
       </header>
 
-      <main className="pb-20">
-        <Banner />
+      {/* SCROLLABLE CONTENT */}
+      <main className="w-full flex-1 overflow-y-auto pb-[150px]">
+        {/* Banner */}
+        <div className="px-3 py-3 relative z-0">
+          <Banner />
+        </div>
 
-        {/* TOP SECTION */}
-        <div className="p-3 space-y-3">
+        <div className="px-3 flex flex-col gap-2.5">
           {/* REFERRAL */}
-          <Card className="bg-green-500 text-white rounded-md px-3 py-2">
-            <h3 className="font-semibold">Referral Rewards</h3>
-            <p className="text-xs text-black font-semibold">
-              Refer a Retailer to earn Rewards
-            </p>
-          </Card>
+        <div className="w-full bg-[#4A90E5] text-white rounded-[6px] px-3.5 py-3 pr-[80px] relative overflow-hidden shadow-[0_2px_4px_0_#4A90E530]">
+          <h2 className="font-bold text-[14px]">Referral Rewards</h2>
+          <p className="text-[12px] opacity-90 mt-0.5 relative z-10 leading-tight">
+            Refer a friend to earn Rewards
+          </p>
+          {/* Custom SVG Illustration Mock */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-90 scale-90">
+             <div className="relative text-[#1E293B]">
+               <FontAwesomeIcon icon={faCreditCard} className="text-[28px] -rotate-[15deg] transform shadow-sm" />
+             </div>
+             <div className="absolute left-[-10px] bottom-0 text-[#F59E0B] z-10">
+               <FontAwesomeIcon icon={faCoins} className="text-[18px]" />
+             </div>
+             <div className="text-[#10B981] z-0 -ml-1 mt-3">
+               <FontAwesomeIcon icon={faGift} className="text-[20px]" />
+             </div>
+          </div>
+        </div>
 
           {/* WALLET */}
-          <Card
+          <button
             onClick={() => onNavigate("wallet")}
-            className="flex justify-between items-center px-4 py-2 border rounded-md cursor-pointer"
+            className="w-full h-[38px] flex items-center justify-between px-3 border border-[#4A90E5] rounded-[6px] bg-white"
           >
             <div className="flex items-center gap-2">
-              <FontAwesomeIcon
-                icon={faWallet}
-                className="text-green-600 text-sm"
-              />
-              <span className="text-sm font-semibold">
-                {symbol}
-                {wallet.toFixed(2)} credit in your wallet
+              <FontAwesomeIcon icon={faWallet} className="text-[#4A90E5] text-[15px]" />
+              <span className="text-[12.5px] font-bold text-[#4E5667]">
+                {symbol}{wallet.toFixed(2)} credit in your wallet
               </span>
-              <FontAwesomeIcon
-                icon={faChevronRight}
-                className="text-green-600 text-lg"
-              />
             </div>
-          </Card>
+            <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[12px] opacity-80" />
+          </button>
 
           {/* BUTTONS */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
+          <div className="w-full flex gap-2">
+            <button
               onClick={() => onNavigate("shop")}
-              className="bg-green-500 text-white h-11"
+              className="flex-1 h-[36px] flex items-center justify-center gap-2 rounded-[6px] text-white text-[13px] bg-[#4A90E5] font-bold shadow-sm cursor-pointer"
             >
-              <FontAwesomeIcon icon={faShop} className="mr-2" />
+              <FontAwesomeIcon icon={faShop} className="text-[14px]" />
               Shop
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={() => onNavigate("shop", true)}
-              className="bg-green-500 text-white h-11"
+              className="flex-1 h-[36px] flex items-center justify-center gap-2 rounded-[6px] text-white text-[13px] bg-[#4A90E5] font-bold shadow-sm cursor-pointer"
             >
-              <FontAwesomeIcon icon={faStar} className="mr-2" />
+              <FontAwesomeIcon icon={faHeart} className="text-[14px] " />
               Favourites
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* NOTIFICATIONS */}
-        <div className="flex flex-col items-center mt-[10px]">
-          <h3 className="w-[370px] text-[15px] font-bold text-gray-700 mb-[6px]">
+        <div className="px-3 mt-6">
+          <h3 className="text-[15.5px] font-bold text-[#4E5667] mb-2.5 ml-0.5">
             Recent Notifications
           </h3>
-
-          {[1, 2].map((n) => (
-            <Card
-              key={n}
-              className="w-[370px] h-[34px] flex items-center justify-between px-[16px] border border-[#4A90E5] rounded-[5px] mb-[8px]"
-            >
-              <div className="flex items-center gap-3">
-                <FontAwesomeIcon icon={faBell} className="text-[#4A90E5]" />
-                <span className="text-[13px] font-bold text-gray-700">
-                  "You've left products in your basket",
-                </span>
-                <FontAwesomeIcon
-                  icon={faChevronRight}
-                  className="text-[#4A90E5]"
-                />
-              </div>
-            </Card>
-          ))}
+          <div className="flex flex-col gap-2">
+            {[1, 2, 3].map((n) => (
+              <button
+                key={n}
+                className="w-full h-[38px] flex items-center justify-between px-3 border border-[#A7C8F2] rounded-[6px] bg-white shadow-sm cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <FontAwesomeIcon icon={faBell} className="text-[#4A90E5] text-[14px]" />
+                  <span className="text-[12.5px] font-bold text-[#4E5667]">
+                    Notification
+                  </span>
+                </div>
+                <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[12px] opacity-80" />
+              </button>
+            ))}
+          </div>
         </div>
-        {/* LEADING BRANDS */}
-        <div className="w-[370px] mx-auto mt-[20px] border-t pt-[10px]">
-          <h3 className="text-[14px] font-bold text-gray-700 mb-[10px]">
+
+        {/* BRANDS */}
+        <div className="px-3 mt-6">
+          <h3 className="text-[15.5px] font-bold text-[#4E5667] mb-2.5 ml-0.5">
             Leading Brands
           </h3>
-
-          <div className="flex gap-[10px] overflow-x-auto">
-            {["Lost Mary", "Elfbar", "Ske", "IVG", "Oxva"].map((b, i) => (
-              <div key={i} className="flex flex-col items-center min-w-[70px]">
-                <div className="w-[60px] h-[60px] bg-white rounded-full shadow flex items-center justify-center text-[10px] font-bold">
-                  {b}
-                </div>
-
-                <span className="text-[10px] text-gray-400 mt-[4px]">{b}</span>
-              </div>
-            ))}
+          <div className="brand-scroll-wrapper w-full bg-[#4A90E5]/5 rounded-[8px] py-3 px-1 overflow-hidden">
+            <div className="brand-scroll-inner flex items-center min-w-max px-2 gap-[14px]">
+              {["Lost Mary", "Elfbar", "Ske", "IVG", "Oxva"].map((b, i) => {
+                const textColors = ["text-[#6D3996]", "text-[#EC9BBB]", "text-[#3D495E]", "text-[#E61D24]", "text-[#EA2428]"];
+                return (
+                  <div key={i} className="flex flex-col items-center justify-center w-[56px] gap-1">
+                    <div className="w-[56px] h-[56px] bg-white rounded-full shadow-[0_2px_8px_0_rgba(0,0,0,0.06)] flex items-center justify-center border border-white flex-shrink-0">
+                      <span className={`text-[10px] font-black uppercase text-center leading-[1.0] px-[2px] ${textColors[i % textColors.length]}`} style={{ wordBreak: 'break-word', letterSpacing: '-0.02em' }}>
+                        {b.split(" ").map(w => <span key={w} className="block">{w}</span>)}
+                      </span>
+                    </div>
+                    <span className="text-[11.5px] font-bold text-[#8A94A6] text-center w-full truncate leading-tight">
+                      {b}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 
         {/* ORDERS */}
         {orders.length > 0 && (
-          <div className="px-3 mt-4 border-t pt-3">
-            <h3 className="text-[15px] font-bold mb-2">Recent Orders</h3>
-
-            {orders.map((o, i) => (
-              <Card key={i} className="p-3 mb-3 border rounded-md">
-                <div className="flex justify-between text-sm">
-                  <div className="space-y-1">
-                    <p>Order No: {o.order_number}</p>
-                    <p>Units: {o.units}</p>
-                    <p>SKUs: {o.skus}</p>
-                    <p className="font-semibold">
-                      {o.currency_symbol}
-                      {o.total_paid.toFixed(2)}
-                    </p>
+          <div className="px-3 mt-6">
+            <h3 className="text-[16px] font-bold text-[#3D495E] mb-3 ml-0.5 tracking-tight">
+              Recent Orders
+            </h3>
+            <div className="flex flex-col gap-2.5">
+              {orders.map((o, idx) => (
+                <div key={o.order_number + idx} onClick={() => onOpenOrder && onOpenOrder(o.order_number)} className="bg-white border border-[#E2E2E2] rounded-[6px] px-3 py-2.5 cursor-pointer hover:bg-gray-50 flex items-stretch shadow-sm">
+                  <div className="flex-1 space-y-[5px] text-[13px] text-[#3D495E] pr-3 border-r border-[#E2E2E2]">
+                    <div className="flex justify-between">
+                      <span className="text-[#64748B]">Order No:</span>
+                      <span>{o.order_number}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#64748B]">Ordered:</span>
+                      <span>{o.ordered_at || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#64748B]">Payment Status:</span>
+                      <span className="uppercase">{o.payment_status || "PENDING"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#64748B]">Fulfillment Status:</span>
+                      <span className="uppercase">{o.fulfillment_status || "PROCESSING"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#64748B]">Units:</span>
+                      <span>{o.units || "0"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#64748B]">SKUs:</span>
+                      <span>{o.skus || "0"}</span>
+                    </div>
+                    <div className="flex justify-between font-bold pt-1">
+                      <span>Total Paid:</span>
+                      <span>{o.currency_symbol}{(Number(o.total_paid) || 0).toFixed(2)}</span>
+                    </div>
                   </div>
-
-                  <ChevronRight
-                    onClick={() => onOpenOrder && onOpenOrder(o.order_number)}
-                    className="text-green-600 cursor-pointer"
-                  />
+                  <div className="pl-3 flex items-center justify-center">
+                    <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[14px]" />
+                  </div>
                 </div>
-              </Card>
-            ))}
-
-            <Button
-              onClick={() => onNavigate("orders")}
-              className="w-full border border-green-600 bg-white text-black"
-            >
-              View All Orders
-            </Button>
+              ))}
+            </div>
           </div>
         )}
       </main>
-      {/* BASKET */}
-      <div className="fixed app-fixed bottom-[72px] bg-gradient-to-r from-[#E8E8ED] to-[#F4F2F9] px-[8px] py-[12px] flex justify-between items-center">
-        <div className="text-[11px]">
-          <div className="font-bold">0 Units | 0 SKUs | {symbol}0.00</div>
-          <div className="text-gray-500 text-[10px]">
-            Includes FREE delivery
-          </div>
-        </div>
 
-        <Button className="bg-[#4A90E5] h-[32px] text-[12px]">
-          View Basket
-        </Button>
+      {/* BASKET BAR */}
+      <div className="fixed bottom-[74px] left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-[#F3F4F9] border-t border-[#DCE1EE] px-4 py-3 z-40">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5 text-[13.5px] text-[#424B5E] font-bold whitespace-nowrap tracking-tight">
+              <span>{totals.units} Units</span>
+              <span className="text-[#DCE1EE] font-normal px-[2px]">|</span>
+              <span>{totals.skus} SKUs</span>
+              <span className="text-[#DCE1EE] font-normal px-[2px]">|</span>
+              <span>{symbol}{totals.total.toFixed(2)}</span>
+            </div>
+            <div className="text-[12px] text-[#8F98AD] mt-[2px] font-medium">
+              Includes FREE delivery
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigate("basket")}
+            className="bg-[#4A90E5] text-white px-3 py-2 rounded-[6px] font-bold text-[14.5px] shadow-sm"
+          >
+            View Basket
+          </button>
+        </div>
       </div>
 
       {/* BOTTOM NAV */}
-      <nav className="fixed app-fixed bottom-0 bg-white border-t flex justify-around py-3">
-        <button className="flex flex-col items-center text-gray-500">
-          <FontAwesomeIcon icon={faGauge} />
-          <span className="text-xs">Dashboard</span>
+      <nav className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0] z-50">
+        <button
+          onClick={() => onNavigate("dashboard")}
+          className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none"
+        >
+          <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+          <span>Dashboard</span>
         </button>
         <button
           onClick={() => onNavigate("shop")}
-          className="flex flex-col items-center text-gray-500"
+          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
         >
-          <FontAwesomeIcon icon={faShop} />
-          <span className="text-xs">Shop</span>
+          <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+          <span>Shop</span>
         </button>
         <button
-          onClick={() => onNavigate("wallet")}
-          className="flex flex-col items-center text-gray-500"
+          onClick={() => onNavigate("shop", true)}
+          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
         >
-          <FontAwesomeIcon icon={faWallet} />
-          <span className="text-xs">Wallet</span>
+          <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+          <span>Favourites</span>
+        </button>
+
+        <button
+          onClick={() => onNavigate("wallet")}
+          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
+        >
+          <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+          <span>Wallet</span>
         </button>
         <button
           onClick={() => onNavigate("account")}
-          className="flex flex-col items-center text-gray-500"
+          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
         >
-          <FontAwesomeIcon icon={faUser} />
-          <span className="text-xs">Account</span>
+          <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+          <span>Account</span>
         </button>
       </nav>
     </div>

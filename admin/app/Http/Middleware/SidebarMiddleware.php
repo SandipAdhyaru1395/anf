@@ -20,11 +20,11 @@ class SidebarMiddleware
 
         $sidebarMenuData = Menu::with([
             'children' => function ($query) {
-                $query->with('children');
-            }
+            $query->with('children');
+        }
         ])->where('parent_id', null)->get()->toArray();
 
-        if(auth()->user()->role_id != 1){
+        if (auth()->user()->role_id != 1) {
 
             if (!empty($sidebarMenuData)) {
 
@@ -42,42 +42,44 @@ class SidebarMiddleware
                                         ->where('slug', $subChild['slug'])
                                         ->where('action', 'read')
                                         ->exists();
-    
+
                                     if (!$hasPermission) {
                                         unset($child['children'][$key2]);
                                     }
                                 }
-    
+
                                 // Remove child if all sub-children are gone
                                 if (empty($child['children'])) {
                                     unset($menu['children'][$key1]);
                                 }
 
-                            } else {
+                            }
+                            else {
 
                                 $hasPermission = Permission::where('role_id', auth()->user()->role_id)
                                     ->where('slug', $child['slug'])
                                     ->where('action', 'read')
                                     ->exists();
-    
+
                                 if (!$hasPermission) {
                                     unset($menu['children'][$key1]);
                                 }
                             }
                         }
-    
+
                         // Remove menu if all children are gone
                         if (empty($menu['children'])) {
                             unset($sidebarMenuData[$key]);
                         }
 
-                    } else {
+                    }
+                    else {
 
                         $hasPermission = Permission::where('role_id', auth()->user()->role_id)
                             ->where('slug', $menu['slug'])
                             ->where('action', 'read')
                             ->exists();
-    
+
                         if (!$hasPermission) {
                             unset($sidebarMenuData[$key]);
                         }

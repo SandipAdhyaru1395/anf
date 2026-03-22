@@ -1,5 +1,5 @@
 "use client"
- 
+
 import { useEffect, useMemo, useState } from "react"
 import { MobileDashboard } from "@/components/mobile-dashboard"
 import { MobileShop } from "@/components/mobile-shop"
@@ -12,8 +12,8 @@ import { MobileCompanyDetails } from "@/components/mobile-company-details"
 import { MobileOrders } from "@/components/mobile-orders"
 import { MobileOrderDetails } from "@/components/mobile-order-details"
 import { MobileBranches } from "@/components/mobile-branches"
-import SplashScreen from "./Welcompage"
- 
+import SplashScreen from "./welcome-screen"
+
 type PageKey =
   | "dashboard"
   | "shop"
@@ -33,23 +33,22 @@ export default function Home() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<string | null>(null)
   const [cart, setCart] = useState<Record<number, { product: any; quantity: number }>>({})
- 
-  useEffect(() => {
-    try {
-      const token = window.localStorage.getItem("auth_token")
-      setHasToken(Boolean(token))
-    } catch {
-      setHasToken(false)
-    }
-  }, [])
 
-  const parseMoney = (value?: string): number => {
-    if (!value) return 0
-    const match = value.replace(/[^0-9.\-]/g, "")
-    const num = parseFloat(match)
-    return Number.isFinite(num) ? num : 0
+  // Navigation and State Helpers
+  const handleNavigate = (page: PageKey, favorites = false) => {
+    setCurrentPage(page)
+    setShowFavorites(favorites)
   }
- 
+
+  const openOrder = (orderNumber: string) => {
+    setSelectedOrderNumber(orderNumber)
+    handleNavigate("order-details")
+  }
+
+  const clearCart = () => {
+    setCart({})
+  }
+
   const increment = (product: any) => {
     setCart((prev) => {
       const step = Number(product?.step_quantity) > 0 ? Number(product.step_quantity) : 1
@@ -57,7 +56,7 @@ export default function Home() {
       return { ...prev, [product.id]: { product, quantity: current + step } }
     })
   }
- 
+
   const decrement = (product: any) => {
     setCart((prev) => {
       const step = Number(product?.step_quantity) > 0 ? Number(product.step_quantity) : 1
@@ -72,36 +71,44 @@ export default function Home() {
       return next
     })
   }
- 
-  const clearCart = () => {
-    setCart({})
+
+  const parseMoney = (value?: string): number => {
+    if (!value) return 0
+    const match = value.replace(/[^0-9.\-]/g, "")
+    const num = parseFloat(match)
+    return Number.isFinite(num) ? num : 0
   }
- 
+
+  // Auth initialization
+  useEffect(() => {
+    try {
+      const token = window.localStorage.getItem("auth_token")
+      setHasToken(Boolean(token))
+    } catch {
+      setHasToken(false)
+    }
+  }, [])
+
   // Handle redirects from /payment-result based on stored flags
   useEffect(() => {
     try {
       const target = sessionStorage.getItem("post_payment_page")
       const shouldClearCart = sessionStorage.getItem("post_payment_clear_cart")
- 
+
       if (shouldClearCart === "1") {
         setCart({})
         sessionStorage.removeItem("post_payment_clear_cart")
       }
- 
+
       if (target === "checkout" || target === "dashboard") {
-        setCurrentPage(target as typeof currentPage)
+        handleNavigate(target as PageKey)
         sessionStorage.removeItem("post_payment_page")
       }
     } catch {
       // ignore
     }
   }, [])
- 
-  const handleNavigate = (page: PageKey, favorites = false) => {
-    setCurrentPage(page)
-    setShowFavorites(favorites)
-  }
- 
+
   const totals = useMemo(() => {
     const entries = Object.values(cart)
     const units = entries.reduce((sum, item) => sum + item.quantity, 0)
@@ -111,66 +118,56 @@ export default function Home() {
     const total = Math.max(0, subtotal - totalDiscount)
     return { units, skus, subtotal, totalDiscount, total }
   }, [cart])
- 
-  // Entry gate: if not authenticated, show splash then land on Landing page.
-  // (Splash handles the timed redirect itself.)
+
+  // Entry gate
   if (hasToken === false) return <SplashScreen />
   if (hasToken === null) return <SplashScreen delayMs={0} />
 
+  // Page Routing
   if (currentPage === "shop") {
     return (
-      <MobileShop
-        onNavigate={handleNavigate}
-        cart={cart}
-        increment={increment}
-        decrement={decrement}
-        totals={totals}
-        showFavorites={showFavorites}
-      />
+      <div className="bg-[#F6F4FA]">
+        <MobileShop
+          onNavigate={handleNavigate}
+          cart={cart}
+          increment={increment}
+          decrement={decrement}
+          totals={totals}
+          showFavorites={showFavorites}
+        />
+      </div>
     )
   }
+
   if (currentPage === "basket") {
     return (
       <MobileBasket
-        onNavigate={setCurrentPage}
+        onNavigate={handleNavigate}
         cart={cart}
         increment={increment}
         decrement={decrement}
         totals={totals}
         clearCart={clearCart}
-        onBack={() => setCurrentPage("shop")}
+        onBack={() => handleNavigate("shop")}
       />
     )
   }
- 
+
   if (currentPage === "checkout") {
     return (
       <MobileCheckout
-        onNavigate={setCurrentPage}
-        onBack={() => setCurrentPage("basket")}
+        onNavigate={handleNavigate}
+        onBack={() => handleNavigate("basket")}
         cart={cart}
         totals={totals}
         clearCart={clearCart}
       />
     )
   }
- 
+
   if (currentPage === "wallet") {
     return (
       <MobileWallet
-        onNavigate={setCurrentPage}
-        cart={cart}
-        increment={increment}
-        decrement={decrement}
-        totals={totals}
-        clearCart={clearCart}
-      />
-    )
-  }
- 
-  if(currentPage === "account") {
-    return (
-      <MobileAccount
         onNavigate={handleNavigate}
         cart={cart}
         increment={increment}
@@ -180,56 +177,66 @@ export default function Home() {
       />
     )
   }
- 
-  if(currentPage === "rep-details") {
+
+  if (currentPage === "account") {
+    return (
+      <div className="bg-[#F6F4FA]">
+        <MobileAccount
+          onNavigate={handleNavigate}
+          cart={cart}
+          increment={increment}
+          decrement={decrement}
+          totals={totals}
+          clearCart={clearCart}
+        />
+      </div>
+    )
+  }
+
+  if (currentPage === "rep-details") {
     return (
       <MobileRepDetails
         onNavigate={handleNavigate}
-        onBack={() => setCurrentPage("account")}
+        onBack={() => handleNavigate("account")}
       />
     )
   }
- 
-  if(currentPage === "company-details") {
+
+  if (currentPage === "company-details") {
     return (
       <MobileCompanyDetails
         onNavigate={handleNavigate}
-        onBack={() => setCurrentPage("account")}
+        onBack={() => handleNavigate("account")}
       />
     )
   }
- 
-  if(currentPage === "branches") {
+
+  if (currentPage === "branches") {
     return (
       <MobileBranches
         onNavigate={handleNavigate}
-        onBack={() => setCurrentPage("account")}
+        onBack={() => handleNavigate("account")}
       />
     )
   }
- 
-  if(currentPage === "orders") {
-    const openOrder = (orderNumber: string) => {
-    setSelectedOrderNumber(orderNumber)
-    setCurrentPage("order-details")
-  }
+
+  if (currentPage === "orders") {
     return (
       <MobileOrders
         onNavigate={handleNavigate}
-        onBack={() => setCurrentPage("dashboard")}
+        onBack={() => handleNavigate("dashboard")}
         onOpenOrder={openOrder}
       />
     )
   }
- 
-  if(currentPage === "order-details" && selectedOrderNumber) {
+
+  if (currentPage === "order-details" && selectedOrderNumber) {
     return (
       <MobileOrderDetails
-        orderNumber={selectedOrderNumber}
+        orderNumber={selectedOrderNumber || ""}
         onNavigate={handleNavigate}
-        onBack={() => setCurrentPage("orders")}
+        onBack={() => handleNavigate("orders")}
         onReorder={(items) => {
-          // Replace cart contents with reordered items, then go to basket
           setCart(() => {
             const next: Record<number, { product: any; quantity: number }> = {}
             for (const it of items) {
@@ -238,17 +245,12 @@ export default function Home() {
             }
             return next
           })
-          setCurrentPage('basket')
+          handleNavigate('basket')
         }}
       />
     )
   }
- 
-  const openOrder = (orderNumber: string) => {
-    setSelectedOrderNumber(orderNumber)
-    setCurrentPage("order-details")
-  }
- 
-  return <MobileDashboard onNavigate={handleNavigate} onOpenOrder={openOrder} />
 
+  // Dashboard is the default landing page for authenticated users
+  return <MobileDashboard onNavigate={handleNavigate} onOpenOrder={openOrder} cart={cart} totals={totals} />
 }

@@ -29,25 +29,25 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
- useEffect(() => {
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null;
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null;
 
-  try {
-    const deleted = sessionStorage.getItem("account_deleted");
-    if (deleted === "1") {
-      sessionStorage.removeItem("account_deleted");
-      window.localStorage.removeItem("auth_token");
-      toast({
-        variant: "destructive",
-        title: "Your account has been deleted",
-        description: "Please contact support if you believe this is a mistake.",
-      });
+    try {
+      const deleted = sessionStorage.getItem("account_deleted");
+      if (deleted === "1") {
+        sessionStorage.removeItem("account_deleted");
+        window.localStorage.removeItem("auth_token");
+        toast({
+          variant: "destructive",
+          title: "Your account has been deleted",
+          description: "Please contact support if you believe this is a mistake.",
+        });
+      }
+    } catch { }
+    if (token) {
+      console.log("User is logged in, but staying on this page for manual navigation.");
     }
-  } catch {}
-  if (token) {
-    console.log("User is logged in, but staying on this page for manual navigation.");
-  }
-}, []);
+  }, []);
 
   async function onSubmit(values: { email: string; password: string }) {
     setError(null);
@@ -66,12 +66,12 @@ export default function Login() {
           if (!Number.isNaN(ver) && ver > 0) {
             sessionStorage.setItem("customer_cache_version", String(ver));
           }
-        } catch {}
+        } catch { }
         // Clear any stale caches first
         try {
           sessionStorage.removeItem("orders_cache");
           sessionStorage.removeItem("products_cache");
-        } catch {}
+        } catch { }
 
         // Pull versions from settings to tag caches
         let productVersion = 0;
@@ -83,7 +83,7 @@ export default function Login() {
             productVersion = Number(vers?.Product || 0) || 0;
             orderVersion = Number(vers?.Order || 0) || 0;
           }
-        } catch {}
+        } catch { }
 
         // Refresh customer; CustomerProvider will persist customer_cache (with version)
         await refresh();
@@ -106,9 +106,9 @@ export default function Login() {
               if (typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent("orders_cache_updated"));
               }
-            } catch {}
+            } catch { }
           }
-        } catch {}
+        } catch { }
 
         try {
           const productsRes = await api.get("/products");
@@ -145,21 +145,21 @@ export default function Login() {
               return nodes.map((node: any) => {
                 const withProducts = Array.isArray(node?.products)
                   ? {
-                      products: node.products.map((p: any) => ({
-                        ...p,
-                        quantity:
-                          typeof p?.quantity === "number"
-                            ? p.quantity
-                            : (p?.available_qty ?? 0),
-                      })),
-                    }
+                    products: node.products.map((p: any) => ({
+                      ...p,
+                      quantity:
+                        typeof p?.quantity === "number"
+                          ? p.quantity
+                          : (p?.available_qty ?? 0),
+                    })),
+                  }
                   : {};
                 const withChildren = Array.isArray(node?.subcategories)
                   ? {
-                      subcategories: normalizeProductQuantities(
-                        node.subcategories,
-                      ),
-                    }
+                    subcategories: normalizeProductQuantities(
+                      node.subcategories,
+                    ),
+                  }
                   : {};
                 return { ...node, ...withProducts, ...withChildren };
               });
@@ -203,14 +203,14 @@ export default function Login() {
               if (typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent("products_cache_updated"));
               }
-            } catch {}
+            } catch { }
           }
-        } catch {}
+        } catch { }
 
         // Refresh settings last
         try {
           await refreshSettings();
-        } catch {}
+        } catch { }
         toast({
           title: "Hello there 👋",
           description: "You've logged in successfully.",
@@ -240,35 +240,34 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="app-container login-page-container bg-white shadow-md">
-        {/* Logo */}
-        <div className="flex flex-col items-center">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8F7FC] p-4">
+      <div className="w-full max-w-[402px] bg-white rounded-[4px] p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col">
+        {/* Logo Section */}
+        <div className="flex flex-col items-center mb-4 mt-2">
           <img
-            className="app-logo-auth" style={{ marginBottom: '32px' }}
-            src={settings?.company_logo_url || "placeholder-logo.png"}
+            className="app-logo-auth block mx-auto mb-8"
+            src={settings?.company_logo_url || "/assets/img/logo.png"}
             alt={settings?.company_title || "Logo"}
           />
-
-          <h2 className="login-welcome-text text-gray-700 w-full text-left">
+          <h2 className="w-full text-left text-[24px] font-bold text-[#4E5667] mt-9">
             Welcome
           </h2>
         </div>
 
-        {/* Form */}
-
+        {/* Form Section */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           noValidate
-          className="space-y-1"
+          className="space-y-4"
         >
           {/* Email Field */}
           <div className="flex flex-col">
             <FloatingInput
               type="email"
               label="Email Address"
-              inputClassName="login-input-field"
+              inputClassName="h-[50px] border-[#DCE1EE] focus:ring-[#4A90E5] focus:border-[#4A90E5] rounded-[4px]"
               placeholder="Please enter your email address..."
+              error={errors.email?.message}
               {...register("email", {
                 required: "Email is required",
                 pattern: {
@@ -277,26 +276,19 @@ export default function Login() {
                 },
               })}
             />
-              {errors.email && (
-            <div className="h-5">
-                <p className="text-red-500 text-[11px] ml-1">
-                  {errors.email?.message}
-                </p>
-            </div>
-              )}
+            <p className="text-[12px] text-[#8F98AD] mt-1 ml-1 font-medium">
+              Use your existing Aquavape login details.
+            </p>
           </div>
-
-          <p className="text-xs text-gray-400 mb-4">
-            Use your existing Aquavape login details.
-          </p>
 
           {/* Password Field */}
           <div className="flex flex-col">
             <FloatingInput
               type="password"
               label="Password"
-              inputClassName="login-input-field"
+              inputClassName="h-[50px] border-[#DCE1EE] focus:ring-[#4A90E5] focus:border-[#4A90E5] rounded-[4px]"
               placeholder="Please enter your password..."
+              error={errors.password?.message}
               {...register("password", {
                 required: "Password is required",
                 minLength: {
@@ -305,39 +297,34 @@ export default function Login() {
                 },
               })}
             />
-              {errors.password && (
-            <div className="h-5">
-                <p className="text-red-500 text-[11px] ml-1">
-                  {errors.password?.message}
-                </p>
-            </div>
-              )}
           </div>
 
-          <p className="login-legal-text">
+          {/* Legal Text */}
+          <p className="text-[11px] text-[#8F98AD] font-medium leading-relaxed">
             By selecting Login, you agree to our{" "}
-            <a href="#" className="default-link">
+            <a href="#" className="text-[#4A90E5] underline">
               Terms &amp; Conditions
             </a>{" "}
             and{" "}
-            <a href="#" className="default-link">
+            <a href="#" className="text-[#4A90E5] underline">
               Privacy Policy
             </a>
             .
           </p>
 
-          <div className="h-6 text-center">
+          {/* Error Message */}
+          <div className="h-4 text-center">
             {error && (
-              <p className="text-red-600 text-sm font-medium">{error}</p>
+              <p className="text-red-500 text-xs font-semibold">{error}</p>
             )}
           </div>
 
           {/* Buttons Group */}
-          <div className="mt-4 flex flex-col items-center gap-3">
+          <div className="flex flex-col gap-3">
             <button
               type="submit"
               disabled={loading || isSubmitting}
-              className="login-action-button cursor-pointer login-primary-button login-primary-button-text text-white shadow-lg active:scale-95 disabled:opacity-60 transition-all"
+              className="w-full h-[43px] bg-[#4A90E5] text-white rounded-full font-bold text-[17px] shadow-lg active:scale-[0.98] disabled:opacity-70 transition-all"
             >
               {loading ? "Signing in..." : "Log In"}
             </button>
@@ -345,18 +332,26 @@ export default function Login() {
             <button
               type="button"
               onClick={() => router.replace(buildPath("/landing"))}
-              className="login-action-button cursor-pointer login-back-button-text border border-blue-500 text-blue-600 hover:bg-blue-50 transition-all"
+              className="w-full h-[43px] bg-white border-2 border-[#4A90E5] text-[#4A90E5] rounded-full font-bold text-[17px] active:scale-[0.98] transition-all"
             >
               Back
             </button>
           </div>
-          {/* Links */}
-          <div className="text-center text-sm space-y-6 mt-[60px]">
+
+          {/* Footer Links */}
+          <div className="flex flex-col items-center gap-6 pt-6 pb-2">
             <Link
               href={buildPath("/forgot-password")}
-              className="login-forgot-link text-gray-700 block"
+              className="text-[#4E5667] text-[13px] font-bold hover:text-[#4A90E5] transition-colors underline underline-offset-4"
             >
               Forgotten your password?
+            </Link>
+
+            <Link
+              href={buildPath("/forgot-email")}
+              className="text-[#4E5667] text-[13px] font-bold hover:text-[#4A90E5] transition-colors underline underline-offset-4"
+            >
+              Forgotten your email?
             </Link>
           </div>
         </form>

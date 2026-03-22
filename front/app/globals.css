@@ -117,6 +117,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -131,11 +132,24 @@
 
   .register-container {
     width: 402px;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
     max-width: 100%;
     margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background-color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .register-header {
     padding-top: 60px;
     padding-bottom: 24px;
-    box-sizing: border-box;
+    flex-shrink: 0;
   }
 
   .register-logo {
@@ -145,11 +159,46 @@
     object-fit: contain;
   }
 
-  .register-form {
-    padding-right: 24px;
-    padding-bottom: 60px;
+  .register-scroll-area {
+    flex: 1;
+    overflow-y: auto;
     padding-left: 24px;
-    box-sizing: border-box;
+    padding-right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 20px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .register-scroll-area::-webkit-scrollbar {
+    display: none;
+  }
+
+  .register-footer {
+    padding: 20px 24px;
+    padding-bottom: 30px; /* Reduced from 60px */
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    background-color: white;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .register-action-button {
+    width: 338px;
+    height: 43px; /* Reduced from 48px at user's request */
+    max-width: 100%;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    font-size: 20px;
+    font-weight: 500;
   }
 
   .register-action-button-text {
@@ -188,7 +237,7 @@
     padding-left: 32px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 11px;
     opacity: 1;
   }
 
@@ -207,12 +256,17 @@
     justify-content: center;
     gap: 11px;
     opacity: 1;
+    transform: rotate(0deg);
     font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
     font-weight: 500;
     font-size: 20px;
     line-height: 18px;
     letter-spacing: 0px;
     text-align: center;
+  }
+
+  .landing-primary-button {
+    background: linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%);
   }
 
   .login-page-container {
@@ -352,4 +406,28 @@
   .product-grid-responsive {
     grid-template-columns: repeat(8, minmax(0, 1fr));
   }
+}
+
+/* BRAND HOVER SCROLL */
+@keyframes scrollX {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.brand-scroll-wrapper {
+  overflow: hidden;
+}
+
+.brand-scroll-inner {
+  display: flex;
+  width: max-content;
+}
+
+.brand-scroll-wrapper:hover .brand-scroll-inner {
+  animation: scrollX 10s linear infinite;
 }

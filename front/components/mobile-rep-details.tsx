@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGauge, faShop, faUser, faUserTie, faWallet } from "@fortawesome/free-solid-svg-icons";
 
 interface MobileRepDetailsProps {
-  onNavigate: (page: "dashboard" | "shop" | "basket" | "wallet" | "account") => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   onBack: () => void;
 }
 

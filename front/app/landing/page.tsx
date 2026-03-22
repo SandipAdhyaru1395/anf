@@ -31,7 +31,7 @@ export default function LandingPage() {
       {/* Buttons Section */}
       <div className="landing-auth-actions items-center">
         <button
-          onClick={() => window.location.href = buildPath("/login")}
+          onClick={() => (window.location.href = buildPath("/login"))}
           className="landing-login-button bg-[#4e91e4] hover:cursor-pointer text-white shadow-md active:scale-[0.98]"
         >
           Log In

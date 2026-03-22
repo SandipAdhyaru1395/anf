@@ -1,10 +1,35 @@
 "use client";
 
-import { ArrowLeft, Home, ShoppingBag, User, Wallet, Package, ChevronRight, ChevronDown } from "lucide-react";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  ChevronDown, 
+  ChevronUp, 
+  Home as HomeIcon, 
+  Package as PackageIcon, 
+  Check, 
+  Star,
+  User,
+  Wallet,
+  ShoppingBag,
+  ArrowLeft
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import api from "@/lib/axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGauge, faShop, faWallet, faUser, faBars, faTruck, faChevronUp, faChevronDown, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { 
+  faGauge, 
+  faShop, 
+  faWallet, 
+  faUser, 
+  faBars, 
+  faTruck, 
+  faChevronUp, 
+  faChevronDown, 
+  faCheck,
+  faChartSimple,
+  faHeart 
+} from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Banner } from "@/components/banner";
 import { useToast } from "@/hooks/use-toast";
@@ -51,7 +76,7 @@ interface BankOption {
 }
 
 interface MobileCheckoutProps {
-  onNavigate: (page: "dashboard" | "shop" | "wallet" | "account" | "orders") => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   onBack: () => void;
   cart: Record<number, { product: ProductItem; quantity: number }>;
   totals: { units: number; skus: number; subtotal: number; totalDiscount: number; total: number };
@@ -367,250 +392,251 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
     }
   };
   return (
-    <div className="min-h-screen w-full max-w-[1000px] mx-auto">
+    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-[#F8F9FB]">
       {/* Header */}
-      <div className="bg-white flex items-center border-b h-[50px]">
-        <div className="flex items-center">
-          <div className="w-[66px] h-[25px] rounded-full flex items-center justify-center">
-            <FontAwesomeIcon icon={faTruck} className="text-green-600" style={{ width: "27px", height: "24px" }} />
-          </div>
-          <span onClick={() => onNavigate("account")} className="text-sm text-[#ccc] text-[12px] hover:cursor-pointer hover:underline leading-[16px]">Shop</span>
-          &nbsp;<span className="text-sm text-[#ccc] text-[12px]"> /</span>
-          &nbsp;<span onClick={onBack} className="text-sm text-[#ccc] text-[12px] hover:cursor-pointer hover:underline leading-[16px]">Basket</span>
-          &nbsp;<span className="text-sm text-[#ccc] text-[12px]"> /</span>
-          &nbsp;<span className="text-[16px] font-semibold">Checkout</span>
-        </div>
+      <div className="bg-white flex items-center justify-between px-4 h-[60px] border-b border-gray-100 relative">
+        <button 
+          onClick={onBack} 
+          className="flex items-center gap-1 text-[#8A94A6] hover:text-black transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          <span className="text-[15px] font-medium">Back</span>
+        </button>
+        
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-bold text-[#1E293B]">
+          Checkout
+        </h1>
+        
+        <div className="w-[60px]"></div> {/* Spacer for balance */}
       </div>
 
       {/* Banner */}
       <Banner />
 
-      <main className="mx-[10px] mb-[82px]">
-        {/* Delivery Section */}
-        <Card className="mb-[10px] border-none gap-0">
-          <h2 className="text-[16px] font-semibold mt-[20px] mb-[10px] leading-[16px]">Delivery</h2>
-          <div className="p-[14px] mb-[10px] rounded-md border border-gray-300 leading-[16px]">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 h-full items-center border-r border-gray-300">
-                <h3 className="font-semibold text-black mb-[10px] leading-[16px] text-[14px]">Dispatch To:</h3>
-                <div className="text-sm text-black leading-[16px]">
-                  {selectedBranch ? (
-                    <>
-                      <span className="font-semibold">{selectedBranch.name}</span>, {selectedBranch.address_line1}
-                      {selectedBranch.address_line2 && `, ${selectedBranch.address_line2}`}, {selectedBranch.city}, {selectedBranch.country}, {selectedBranch.zip_code}
-                    </>
-                  ) : (
-                    <span className="text-gray-500">No branch selected</span>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setIsDispatchExpanded(!isDispatchExpanded)}
-                className="cursor-pointer rounded !leading-[16px]"
-              >
-                <FontAwesomeIcon
-                  icon={isDispatchExpanded ? faChevronUp : faChevronDown}
-                  className="text-green-600 ml-[10px] px-[8px] border-left border-gray-300 leading-[16px]"
-                  style={{ width: "21px", height: "24px" }}
-                />
-              </button>
+      <main className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-48">
+        {/* Dispatch To Section */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <button 
+            onClick={() => setIsDispatchExpanded(!isDispatchExpanded)}
+            className="w-full flex items-center p-4 gap-4"
+          >
+            <div className="w-10 h-10 rounded-full bg-[#EAF2FF] flex items-center justify-center flex-shrink-0">
+              <HomeIcon className="w-5 h-5 text-[#4A90E5]" />
             </div>
-
-            {isDispatchExpanded && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                {branches.map((branch) => (
-                  <div key={branch.id} className="flex items-center mb-2">
-                    <input
-                      type="radio"
-                      id={`branch-${branch.id}`}
-                      name="selectedBranch"
-                      value={branch.id}
-                      checked={selectedBranch?.id === branch.id}
-                      onChange={() => setSelectedBranch(branch)}
-                      className="w-4 h-4 border-2 border-blue-500 rounded-full mr-3"
-                    />
-                    <label htmlFor={`branch-${branch.id}`} className="text-sm text-black cursor-pointer flex-1">
-                      <span className="font-semibold">{branch.name}</span>, {branch.address_line1}
-                      {branch.address_line2 && `, ${branch.address_line2}`}, {branch.city}, {branch.country}, {branch.zip_code}
-                    </label>
-                  </div>
-                ))}
+            <div className="flex-1 text-left">
+              <span className="block text-[12px] font-bold text-[#8F98AD] uppercase tracking-wider">Dispatch To:</span>
+              <div className="text-[14px] text-[#131A44] font-medium line-clamp-2">
+                {selectedBranch ? (
+                  <>
+                    <span className="font-bold">{selectedBranch.name}</span>, {selectedBranch.address_line1} {selectedBranch.address_line2}
+                  </>
+                ) : "Select a branch"}
               </div>
-            )}
-          </div>
-          <div className="p-[14px] mb-[10px] rounded-md border border-gray-300 leading-[16px]">
-            <h3 className="text-[14px] mb-[10px] font-semibold leading-[16px]">Delivery Method:</h3>
-            <div className="pt-1 space-y-3">
-              {deliveryMethods.length === 0 && (
-                <div className="text-sm text-gray-400">No delivery methods available.</div>
-              )}
-              {deliveryMethods.map((method) => (
-                <label key={method.id} className="flex items-start gap-2 cursor-pointer py-1">
+            </div>
+            <ChevronDown className={`w-5 h-5 text-[#4A90E5] transition-transform ${isDispatchExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {isDispatchExpanded && (
+            <div className="px-4 pb-4 space-y-2 border-t border-gray-50 pt-3">
+              {branches.map((branch) => (
+                <label key={branch.id} className="flex items-center p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
                   <input
                     type="radio"
-                    name="deliveryMethod"
-                    checked={selectedDeliveryMethod?.id === method.id}
-                    onChange={() => setSelectedDeliveryMethod(method)}
-                    className="mt-1 w-4 h-4 border-2 border-green-600 rounded-full"
+                    name="selectedBranch"
+                    checked={selectedBranch?.id === branch.id}
+                    onChange={() => setSelectedBranch(branch)}
+                    className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
                   />
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-[14px] text-base font-semibold text-black">{method.name}</span>
-                    <span className="text-[14px] text-green-600 font-normal block -mt-[1px]">{method.time && `Estimated: ${method.time} (${format(method.rate)})`}</span>
+                  <div className="ml-3 text-[13px] text-[#131A44]">
+                    <span className="font-bold">{branch.name}</span>, {branch.address_line1}
                   </div>
                 </label>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Delivery Method Section */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="w-full flex items-center p-4 gap-4 border-b border-gray-50 hover:cursor-pointer">
+            <div className="w-10 h-10 rounded-full bg-[#EAF2FF] flex items-center justify-center flex-shrink-0">
+              <PackageIcon className="w-5 h-5 text-[#4A90E5]" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="block text-[12px] font-bold text-[#8F98AD] uppercase tracking-wider">Delivery Method:</span>
+              <div className="text-[14px] text-[#131A44] font-medium">
+                {selectedDeliveryMethod ? selectedDeliveryMethod.name : "Select method"}
+              </div>
+              {selectedDeliveryMethod?.time && (
+                <div className="text-[12px] text-[#4A90E5] font-medium">
+                  Estimated: {selectedDeliveryMethod.time} ({format(selectedDeliveryMethod.rate)})
+                </div>
+              )}
+            </div>
+            <ChevronDown className="w-5 h-5 text-[#4A90E5]" />
           </div>
-          <FloatingInput
-            label="Delivery Instructions"
-            placeholder="Additional delivery instructions..."
+          
+          <div className="p-4 space-y-3">
+            {deliveryMethods.map((method) => (
+              <label key={method.id} className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="deliveryMethod"
+                  checked={selectedDeliveryMethod?.id === method.id}
+                  onChange={() => setSelectedDeliveryMethod(method)}
+                  className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
+                />
+                <div className="flex-1 text-[13px]">
+                  <span className="font-bold text-[#131A44] block">{method.name}</span>
+                  <span className="text-[#4A90E5] font-medium">{format(method.rate)}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Additional Instructions */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+          <input
+            type="text"
+            placeholder="Additional delivery instructions"
+            className="w-full text-[14px] text-[#131A44] placeholder:text-[#BDC7DE] border-none focus:ring-0 p-0"
             value={deliveryInstructions}
             onChange={(e) => setDeliveryInstructions(e.target.value)}
           />
-        </Card>
+        </div>
 
-        <h2 className="mt-[12px] mb-[10px] text-[16px] font-semibold leading-[16px]">Order Summary</h2>
-        {/* Order Summary Section */}
-        <Card className="border-gray-300 mb-[10px] p-[14px] gap-0">
-          {/* Order details sub-card */}
-          <Card className="border-none mt-[4px]">
-            <div className="grid grid-cols-[1fr_120px_80px] grid-rows-[auto_16px_16px] text-right gap-x-[4px] gap-y-[8px]">
-              <span className="text-[14px] font-semibold text-left leading-[16px]">Order details</span>
-              <span className="text-sm text-black leading-[16px]">Units</span>
-              <span className="text-sm text-black leading-[16px]">{cartTotals.units}</span>
-              <span className="text-[14px] font-semibold leading-[16px]"></span>
-              <span className="text-sm text-black leading-[16px]">SKUs</span>
-              <span className="text-sm text-black leading-[16px]">{cartTotals.skus}</span>
-              <span className="text-[14px] font-semibold leading-[16px]"></span>
-              <span className="text-sm text-black leading-[16px]">Subtotal</span>
-              <span className="text-sm text-black leading-[16px]">{format(cartTotals.subtotal)}</span>
-              <span className="text-[14px] font-semibold leading-[16px]"></span>
-              <span className="text-sm text-black leading-[16px]">Credit Awarded</span>
-              <span className="text-sm text-black leading-[16px]">{format(totalWalletCredit)}</span>
-            </div>
-          </Card>
-          <hr className="border-gray-300 my-[20px] leading-[16px]" />
-          {/* Delivery sub-card */}
-          <Card className="border-none">
-            <div className="grid grid-cols-[1fr_200px] text-right gap-x-[4px] gap-y-[4px] leading-[16px]">
-              <span className="text-[14px] font-semibold text-left leading-[16px]">Delivery</span>
-              <span className="text-sm text-black leading-[16px]">
-                {selectedDeliveryMethod ? (
-                  <span className="text-[14px] font-semibold text-black">{selectedDeliveryMethod.name}</span>
-                ) : (
-                  <span className="text-gray-400">No delivery method selected</span>
-                )}
-              </span>
-              <span className="min-h-[64px]"></span>
-              <div className="text-sm text-black min-h-[64px] leading-[16px]">
-                {selectedBranch ? (
-                  <>
-                    <span className="font-semibold">{selectedBranch.name},</span> {selectedBranch.address_line1}
-                    {selectedBranch.address_line2 && `, ${selectedBranch.address_line2}`}, {selectedBranch.city}, {selectedBranch.country}, {selectedBranch.zip_code}
-                  </>
-                ) : (
-                  <span className="text-gray-500">No branch selected</span>
-                )}
+        {/* Combined Summary Card */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50 text-[13px]">
+          {/* Order Details */}
+          <div className="p-4">
+            <h4 className="font-bold text-[#131A44] mb-2 uppercase text-[12px] tracking-wider opacity-60">Order Details</h4>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-[#8F98AD] font-bold">SKUs</span>
+                <span className="text-[#131A44] font-bold">{cartTotals.skus}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#8F98AD] font-bold">Items</span>
+                <span className="text-[#131A44] font-bold">{cartTotals.units}</span>
               </div>
             </div>
-          </Card>
-          <hr className="border-gray-300 my-[20px] leading-[16px]" />
-          {/* Summary sub-card */}
-          <Card className="mb-[8px] border-none">
-            {showSummary ? (
-              <div className="grid grid-cols-[1fr_120px_80px] grid-rows-[auto_16px_16px] text-right gap-x-[4px] gap-y-[8px]">
-                <span className="text-[14px] font-semibold text-left leading-[16px]">Summary</span>
-                <span className="text-sm text-black leading-[16px]">Subtotal</span>
-                <span className="text-sm text-black leading-[16px]">{format(subtotal)}</span>
-                <span className="text-sm text-black leading-[16px]"></span>
-                <span className="text-sm text-black leading-[16px]">Wallet Discount</span>
-                <span className="text-sm text-black leading-[16px]">-{format(discount)}</span>
-                <span className="text-sm text-black leading-[16px]"></span>
-                <span className="text-sm text-black leading-[16px]">Delivery</span>
-                <span className="text-sm text-black leading-[16px]">{format(deliveryRate)}</span>
-                <span className="text-sm text-black leading-[16px]"></span>
-                <span className="text-sm text-black leading-[16px]">VAT</span>
-                <span className="text-sm text-black leading-[16px]">{format(vat)}</span>
-                <span className="text-sm text-black leading-[16px]"></span>
-                <span className="text-sm text-black leading-[16px] font-semibold">Payment Total</span>
-                <span className="text-sm text-black leading-[16px] font-semibold">{format(paymentTotal)}</span>
+          </div>
+
+          {/* Delivery Details */}
+          <div className="p-4">
+            <div className="flex justify-between mb-2">
+              <h4 className="font-bold text-[#131A44] uppercase text-[12px] tracking-wider opacity-60">Delivery</h4>
+              <span className="font-bold text-[#131A44]">{selectedDeliveryMethod?.name} - {format(deliveryRate)}</span>
+            </div>
+            <div className="text-[#8F98AD] leading-relaxed">
+              {selectedBranch ? (
+                <>
+                  <div className="font-bold text-[#131A44]">{selectedBranch.name}</div>
+                  <div>{selectedBranch.address_line1}</div>
+                  {selectedBranch.address_line2 && <div>{selectedBranch.address_line2}</div>}
+                  <div>{selectedBranch.city}</div>
+                  <div>{selectedBranch.zip_code}</div>
+                </>
+              ) : "No address selected"}
+            </div>
+          </div>
+
+          {/* Summary Details */}
+          <div className="p-4">
+            <h4 className="font-bold text-[#131A44] mb-3 uppercase text-[12px] tracking-wider opacity-60">Summary</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-[#8F98AD] font-bold">Subtotal</span>
+                <span className="text-[#131A44] font-bold">{format(subtotal)}</span>
               </div>
-            ) : null}
-          </Card>
-        </Card>
+              <div className="flex justify-between">
+                <span className="text-[#8F98AD] font-bold">Wallet Discount</span>
+                <span className="text-[#131A44] font-bold">-{format(discount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#8F98AD] font-bold">Delivery</span>
+                <span className="text-[#131A44] font-bold">{format(deliveryRate)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#8F98AD] font-bold">VAT ({subtotal > 0 ? ((vat/subtotal)*100).toFixed(2) : '20.00'}%)</span>
+                <span className="text-[#131A44] font-bold">{format(vat)}</span>
+              </div>
+              <div className="flex justify-between text-[16px] pt-3 border-t border-gray-100 mt-2">
+                <span className="text-[#4A90E5] font-bold">Payment Total</span>
+                <span className="text-[#4A90E5] font-bold">{format(paymentTotal)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Payment options */}
-        {!hidePaymentSection &&  (
-          <Card className="border-gray-300 mb-[10px] p-[14px]">
-            <h3 className="text-[14px] mb-[10px] font-semibold leading-[16px]">Choose payment method</h3>
+        {!hidePaymentSection && (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <h3 className="text-[13px] font-bold text-[#131A44] mb-4 uppercase tracking-wider opacity-60">Payment Method</h3>
             <div className="space-y-3">
               {gatewayAvailable && (
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="radio"
                     name="paymentMode"
-                    className="w-4 h-4 border-2 border-green-600 rounded-full"
+                    className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
                     checked={paymentMode === "gateway"}
                     onChange={() => setPaymentMode("gateway")}
                   />
-                  <span className="text-sm text-black">Pay by Online ( Credit card, Debit Card, Apple, Google Pay)</span>
+                  <span className="text-[13px] text-[#131A44] font-medium leading-tight">Online (Card, Apple/Google Pay)</span>
                 </label>
               )}
               {gatewayAvailable && (
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="radio"
                     name="paymentMode"
-                    className="w-4 h-4 border-2 border-green-600 rounded-full"
+                    className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
                     checked={paymentMode === "gateway_bank"}
                     onChange={() => setPaymentMode("gateway_bank")}
                   />
-                  <span className="text-sm text-black">Pay by Bank (Bank Transfer)</span>
+                  <span className="text-[13px] text-[#131A44] font-medium leading-tight">Bank Transfer</span>
                 </label>
               )}
               {paymentMode === "gateway_bank" && (
-                <div className="pl-6 mt-2">
-                  {banksLoading ? (
-                    <span className="text-sm text-gray-500">Loading banks...</span>
-                  ) : banks.length > 0 ? (
-                    <select
-                      value={selectedBankId}
-                      onChange={(e) => setSelectedBankId(e.target.value)}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    >
-                      {banks.map((b) => (
-                        <option key={b.bank_id} value={b.bank_id}>
-                          {b.friendly_name || b.name || b.bank_id}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-sm text-amber-600">No banks available. Try Pay by card instead.</span>
-                  )}
+                <div className="pl-7 mt-2">
+                  <select
+                    value={selectedBankId}
+                    onChange={(e) => setSelectedBankId(e.target.value)}
+                    className="w-full text-[13px] border border-gray-100 rounded-lg px-3 py-2 bg-gray-50 focus:ring-[#4A90E5] outline-none"
+                  >
+                    <option value="">Select your bank</option>
+                    {banks.map((b) => (
+                      <option key={b.bank_id} value={b.bank_id}>
+                        {b.friendly_name || b.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
               {payLaterAllowed && (
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="radio"
                     name="paymentMode"
-                    className="w-4 h-4 border-2 border-green-600 rounded-full"
+                    className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
                     checked={paymentMode === "pay_later"}
                     onChange={() => setPaymentMode("pay_later")}
                   />
-                  <span className="text-sm text-black">Pay Later (Order on credit)</span>
+                  <span className="text-[13px] text-[#131A44] font-medium leading-tight">Pay Later (Order on credit)</span>
                 </label>
               )}
             </div>
-          </Card>
+          </div>
         )}
 
-        {/* Continue / Pay Button */}
-        <div className="mt-4">
+        {/* Checkout Button */}
+        <div className="pt-4 pb-12">
           <button
             onClick={handleContinueToPayment}
             disabled={isProcessing || !selectedBranch}
-            className="w-full bg-green-600 disabled:bg-gray-400 text-white py-4 rounded-lg font-semibold text-lg hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-[#4A90E5] disabled:bg-[#BDC7DE] text-white py-4 rounded-xl font-bold text-[18px] hover:bg-[#3B7DCF] transition-colors shadow-lg shadow-[#4A90E53D] active:scale-[0.98] transform transition-transform"
           >
             {isProcessing ? "Processing..." : "Continue to Payment"}
           </button>
@@ -618,23 +644,28 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[1000px] bg-white border-t z-50 px-[18px]">
-        <div className="flex flex-row items-center justify-between h-[72px] footer-nav-col">
-          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faGauge} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Dashboard</span>
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
+        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
+          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+            <span>Dashboard</span>
           </button>
-          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faShop} className="text-[#607565]" style={{ width: "30px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Shop</span>
+          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none relative h-full justify-center">
+            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+            <span>Shop</span>
+            <div className="absolute bottom-[2px] w-[20px] h-[2px] bg-[#4A90E5] rounded-full"></div>
           </button>
-          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faWallet} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Wallet</span>
+          <button onClick={() => onNavigate("shop", true)} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+            <span>Favourites</span>
           </button>
-          <button onClick={() => onNavigate("account")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faUser} className="text-[#607565]" style={{ width: "21px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Account</span>
+          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+            <span>Wallet</span>
+          </button>
+          <button onClick={() => onNavigate("account")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+            <span>Account</span>
           </button>
         </div>
       </nav>

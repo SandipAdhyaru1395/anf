@@ -5,10 +5,11 @@ import { useEffect, useState, useMemo } from "react";
 import { Minus, Plus, Home, ShoppingBag, User, Wallet, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGauge, faShop, faWallet, faUser, faBars, faBagShopping, faPlus, faMinus, faStar } from "@fortawesome/free-solid-svg-icons";
+import { faGauge, faShop, faWallet, faUser, faBars, faBagShopping, faPlus, faMinus, faStar, faChartSimple, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { useCustomer } from "@/components/customer-provider";
 import { useCurrency } from "@/components/currency-provider";
 import { Banner } from "@/components/banner";
+import { ChevronLeft, Trash2, Heart } from "lucide-react";
 
 interface ProductItem {
   id: number;
@@ -26,7 +27,7 @@ interface ProductItem {
 }
 
 interface MobileBasketProps {
-  onNavigate: (page: "dashboard" | "shop" | "basket" | "checkout" | "wallet" | "account") => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
   cart: Record<number, { product: ProductItem; quantity: number }>;
   increment: (product: ProductItem) => void;
   decrement: (product: ProductItem) => void;
@@ -42,15 +43,15 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
   const { refresh } = useCustomer();
   const [adjustments, setAdjustments] = useState<Array<{ product_id: number; product_name?: string; old_quantity: number; new_quantity: number }>>([]);
 
-   // Get API base URL (without /api) to access admin assets
+  // Get API base URL (without /api) to access admin assets
   const getApiBaseUrl = () => {
     if (typeof window === 'undefined') return 'http://localhost:8000';
     const rawBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
     return rawBase.replace(/\/api$/, '').replace(/\/$/, '');
   };
-  
+
   const defaultImagePath = `${getApiBaseUrl()}/public/assets/img/default_product.png`;
-  
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;
     if (target.src !== defaultImagePath && !target.src.includes('default_product.png')) {
@@ -86,14 +87,14 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
     if (product?.step_quantity && Number(product.step_quantity) > 0) {
       return Number(product.step_quantity);
     }
-    
+
     // Try to find it in products_cache
     try {
       const raw = sessionStorage.getItem('products_cache');
       if (raw) {
         const parsed = JSON.parse(raw);
         const categories = Array.isArray(parsed) ? parsed : (parsed?.categories || []);
-        
+
         const findProductInNodes = (nodes: any[]): any => {
           for (const node of nodes) {
             if (Array.isArray(node.products)) {
@@ -107,14 +108,14 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
           }
           return null;
         };
-        
+
         const productFromCache = findProductInNodes(categories);
         if (productFromCache && productFromCache.step_quantity && Number(productFromCache.step_quantity) > 0) {
           return Number(productFromCache.step_quantity);
         }
       }
-    } catch {}
-    
+    } catch { }
+
     // Default to 1
     return 1;
   };
@@ -133,7 +134,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
             const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
             const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
             const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
-            
+
             return {
               product: {
                 id: productId,
@@ -160,7 +161,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
           totalDiscount: Number(c?.total_discount || 0),
           total: Number(c?.total || 0),
         });
-      } catch {}
+      } catch { }
     };
     loadCart();
     // If checkout adjusted quantities, show a banner to the user
@@ -171,7 +172,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
         if (Array.isArray(adj)) setAdjustments(adj);
         sessionStorage.removeItem('cart_adjustments');
       }
-    } catch {}
+    } catch { }
     const onProductsCacheUpdated = () => { loadCart(); };
     if (typeof window !== 'undefined') {
       window.addEventListener('products_cache_updated', onProductsCacheUpdated);
@@ -201,7 +202,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
           const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
           const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
           const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
-          
+
           return {
             product: {
               id: productId,
@@ -237,9 +238,9 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
       // Calculate new quantity after decrement
       const nextQty = Math.max(0, currentQty - step);
       const decrementQty = currentQty > 0 ? step : 0;
-      
+
       if (decrementQty === 0) return;
-      
+
       const res = await api.post('/cart/decrement', { product_id: product.id, quantity: decrementQty });
       const apiItems: Array<{ product_id: number; quantity: number; product?: any }> = res?.data?.cart?.items || [];
       const mapped = apiItems
@@ -248,7 +249,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
           const productId = Number(it.product.id);
           const apiStepQty = Number(it.product.step_quantity ?? 0);
           const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
-          
+
           return {
             product: {
               id: productId,
@@ -294,8 +295,8 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
     }
   };
   return (
-    <div className="min-h-screen  flex flex-col w-full max-w-[1000px] mx-auto">
-      
+    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-white">
+
       {/* <div className="h-[50px] bg-white flex items-center">
         <div className="w-[66px] h-[25px] flex items-center justify-center">
           <FontAwesomeIcon icon={faBagShopping} className="text-green-600" style={{ width: "21px", height: "24px" }} />
@@ -306,15 +307,20 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
       </div> */}
 
       {/* Header */}
-      <div className="bg-white flex items-center border-b h-[50px]">
-        <div className="w-[66px] h-[25px] flex items-center justify-center">
-          <FontAwesomeIcon icon={faBagShopping} className="text-green-600" style={{ width: "21px", height: "24px" }} />
-        </div>
-        <span onClick={onBack} className="text-sm text-[#ccc] text-[12px] hover:cursor-pointer hover:underline">
-          Shop
-        </span>
-        &nbsp;<span className="text-sm text-[#ccc] text-[12px]"> /</span>
-        &nbsp;<span className="text-[16px] font-semibold">Basket</span>
+      <div className="bg-white flex items-center justify-between px-4 h-[60px] border-b border-gray-100 relative">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 text-[#8A94A6] hover:text-black transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          <span className="text-[15px] font-medium">Back</span>
+        </button>
+
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-bold text-[#1E293B]">
+          Basket
+        </h1>
+
+        <div className="w-[60px]"></div> {/* Spacer for balance */}
       </div>
 
       {/* Banner */}
@@ -333,35 +339,55 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
           </ul>
         </div>
       )}
-      <div className="flex-1 bg-white overflow-y-auto mt-[10px] pb-48">
+      <div className="flex-1 bg-white overflow-y-auto mt-[4px] pb-56">
         {items.map(({ product, quantity }) => (
-          <div key={product.id} className="flex items-start flex-col border-t border-gray-200 py-[16px] mx-[10px]">
-            <div className="flex items-start h-[53px] w-[100%] grow">
-              <div className="w-[50px] h-[50px] overflow-hidden flex items-center justify-center">
-                <img src={product.image || defaultImagePath } onError={handleImageError} alt={product.name} className="w-full h-full object-contain" />
-              </div>
-              <div className="text-[16px] h-[53px] text-black truncate grow">{product.name}</div>
+          <div key={product.id} className="flex relative border-b border-gray-100 py-4 px-4 gap-4">
+            {/* Product Image */}
+            <div className="w-[85px] h-[85px] flex-shrink-0 bg-white border border-gray-100 rounded-lg overflow-hidden flex items-center justify-center p-1">
+              <img
+                src={product.image || defaultImagePath}
+                onError={handleImageError}
+                alt={product.name}
+                className="w-full h-full object-contain"
+              />
             </div>
 
-            <div className="flex items-center justify-between w-full">
-              <div className="qtySelectWrapper bg-black w-[120px] h-[32px] rounded-full flex items-center">
-                <button onClick={() => apiDecrement(product)} className="flex items-center justify-center hover:cursor-pointer w-[32px] h-[32px]">
-                  <FontAwesomeIcon icon={faMinus} className="text-green-600" style={{ width: "16px", height: "16px" }} />
-                </button>
-                <span className="min-w-[56px] h-[26px] text-center text-lg text-white font-semibold">{quantity}</span>
-                <button onClick={() => apiIncrement(product)} className="flex items-center justify-center hover:cursor-pointer p-2 w-[32px] h-[32px]">
-                  <FontAwesomeIcon icon={faPlus} className="text-green-600" style={{ width: "16px", height: "16px" }} />
-                </button>
-              </div>
-              <div className="rightwrapper flex items-center">
-                <div className="favSelectWrapper mr-[12px]">
-                  {/* Favourite toggle */}
-                  <button onClick={() => toggleFavorite(product)} className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${favourites[product.id] ? "bg-white border-green-600" : "border-[#c0d3c4] bg-white"}`} aria-label="Toggle favourite">
-                    <Star className={`w-[16px] h-[16px] ${favourites[product.id] ? "text-green-600 fill-green-600" : "text-[#c0d3c4] fill-[#c0d3c4]"}`} />
+            {/* Product Details */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <h3 className="text-[13px] font-bold text-[#1E293B] leading-snug uppercase mb-1 line-clamp-2">
+                {product.name}
+              </h3>
+
+              <div className="flex items-center gap-4 mt-2 mb-3">
+                {/* Quantity Selector */}
+                <div className="flex items-center bg-[#131A44] rounded-full h-[32px] px-1 gap-1">
+                  <button
+                    onClick={() => apiDecrement(product)}
+                    className="w-8 h-8 flex items-center justify-center text-[#4A90E5] hover:opacity-80 transition-opacity"
+                  >
+                    <Minus className="w-4 h-4" strokeWidth={3} />
+                  </button>
+                  <span className="min-w-[24px] text-center text-white text-[14px] font-bold">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => apiIncrement(product)}
+                    className="w-8 h-8 flex items-center justify-center text-[#4A90E5] hover:opacity-80 transition-opacity"
+                  >
+                    <Plus className="w-4 h-4" strokeWidth={3} />
                   </button>
                 </div>
-                <div className="deleteWrapper">
-                  {/* Delete removes the product from cart */}
+
+                <div className="flex items-center gap-2">
+                  {/* Favourite button */}
+                  <button
+                    onClick={() => toggleFavorite(product)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#BDC7DE] hover:text-[#4A90E5] transition-colors"
+                  >
+                    <Heart className={`w-5 h-5 ${favourites[product.id] ? "fill-[#35D6EC] text-[#35D6EC]" : ""}`} strokeWidth={2} />
+                  </button>
+
+                  {/* Delete button */}
                   <button
                     onClick={async () => {
                       try {
@@ -376,7 +402,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
                             const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
                             const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
                             const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
-                            
+
                             return {
                               product: {
                                 id: productId,
@@ -400,98 +426,94 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
                           totalDiscount: Number(c?.total_discount || 0),
                           total: Number(c?.total || 0),
                         });
-                      } catch {}
+                      } catch { }
                     }}
-                    className="w-[70px] h-[32px] rounded-sm border border-[#c0d3c4] mr-[12px] text-sm text-black bg-white hover:cursor-pointer border-btn-shadow"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#BDC7DE] hover:text-red-500 transition-colors"
                   >
-                    Delete
+                    <Trash2 className="w-5 h-5" strokeWidth={2} />
                   </button>
-                </div>
-                <div className="pricesWrapper flex flex-col text-right justify-end w-[80px]">
-                  {(() => {
-                    const unitPrice = parseFloat((product.price ?? '0').replace(/[^\d.\-]+/g, '')) || 0;
-                    const originalUnit =
-                      typeof product.original_price === "number" ? product.original_price : unitPrice;
-                    const total = unitPrice * quantity;
-                    const originalTotal = originalUnit * quantity;
-                    const hasDiscount = originalTotal > total + 0.0001;
-                    return (
-                      <>
-                        <span className="font-semibold text-black text-[16px]">
-                          {format(total)}
-                        </span>
-                        {hasDiscount && (
-                          <span className="text-xs text-gray-400 line-through">
-                            {format(originalTotal)}
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
-                  {typeof product.wallet_credit === "number" && product.wallet_credit > 0 && (
-                    <span className="inline-flex items-center gap-1 text-green-600 justify-end">
-                      <FontAwesomeIcon icon={faWallet} className="text-green-600" style={{ width: "12px", height: "13px" }} />
-                      <span className="font-semibold text-xs">£{product.wallet_credit.toFixed(2)}</span>
-                    </span>
-                  )}
-                  {product.discount && <span className="text-green-600 ml-2">{product.discount} off</span>}
                 </div>
               </div>
             </div>
 
-            {/* <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 flex items-center gap-2"></div>
+            {/* Price section */}
+            <div className="flex flex-col items-end justify-center min-w-[70px]">
+              {(() => {
+                const unitPrice = parseFloat((product.price ?? '0').replace(/[^\d.\-]+/g, '')) || 0;
+                const total = unitPrice * quantity;
+                return (
+                  <>
+                    <span className="text-[17px] font-bold text-[#1E293B]">
+                      {format(total)}
+                    </span>
+                    {typeof product.wallet_credit === "number" && product.wallet_credit > 0 && (
+                      <div className="flex items-center gap-1 text-[#4A90E5] mt-1">
+                        <FontAwesomeIcon icon={faWallet} className="text-[12px]" />
+                        <span className="text-[12px] font-bold">
+                          {symbol}{(product.wallet_credit * quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
-            <div className="flex items-center gap-2"></div> */}
           </div>
         ))}
-        {items.length === 0 && <div className="px-4 py-6 text-center text-sm text-gray-500">Your basket is empty</div>}
+        {items.length === 0 && <div className="px-4 py-12 text-center text-[15px] font-medium text-[#8A94A6]">Your basket is empty</div>}
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[1000px] bg-white border-t z-50">
-        {cartTotals.units > 0 && (
-          <div className="bg-white border-b px-4 py-3 box-shadow-top max-h-[109px]">
-            <div className="flex items-center justify-center text-sm gap-2 pt-1 h-[20px]">
-              <span className="text-black font-semibold">{cartTotals.units} Units</span>
-              <span className="spacer"> | </span>
-              <span className="text-black font-semibold">{cartTotals.skus} SKUs</span>
-              <span className="spacer"> | </span>
-              <span className="font-semibold text-black">{format(cartTotals.total)}</span>
-              <span className="spacer"> | </span>
-              <div className="flex items-center">
-                <span className="inline-flex items-center gap-1 text-green-600 text-sm font-semibold">
-                  <FontAwesomeIcon icon={faWallet} className="text-green-600" style={{ width: "14px", height: "14px" }} />
-                  <span>
-                    {symbol}
-                    {totalWalletCredit.toFixed(2)}
-                  </span>
-                </span>
-                {cartTotals.totalDiscount > 0 && <span className="text-green-600 text-xs ml-2">{format(cartTotals.totalDiscount)} off</span>}
+      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[402px] bg-white border-t z-50 shadow-[0px_-1px_8px_0px_#555E5814]">
+        <div className="bg-[#F3F4F9] border-t border-[#DCE1EE] px-4 py-3 flex flex-col items-center gap-2">
+          {/* Stats row */}
+            <div className="flex items-center justify-center gap-2 text-[14px] text-[#4E5667] font-bold">
+              <span>{cartTotals.units} Units</span>
+              <span className="text-[#DCE1EE] font-normal px-1">|</span>
+              <span>{cartTotals.skus} SKUs</span>
+              <span className="text-[#DCE1EE] font-normal px-1">|</span>
+              <span>{format(cartTotals.total)}</span>
+              <span className="text-[#DCE1EE] font-normal px-1">|</span>
+              <div className="flex items-center gap-1 text-[#4A90E5]">
+                <FontAwesomeIcon icon={faWallet} className="text-[14px]" />
+                <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
               </div>
             </div>
-            <div className="text-sm font-semibold text-center text-[#999] pt-1 pb-2 leading-[16px]">Includes FREE delivery</div>
-            <button onClick={handleCheckout} className="w-full bg-green-600 text-white py-2 rounded-sm font-semibold text-lg hover:cursor-pointer box-shadow-bottom">
+
+            {/* Delivery Info */}
+            <div className="text-[13px] text-[#8F98AD] font-bold">
+              Includes FREE delivery
+            </div>
+
+            {/* Full-width Checkout Button */}
+            <button
+              onClick={handleCheckout}
+              className="w-full bg-[#4A90E5] text-white py-3 rounded-[30px] font-bold text-[17px] hover:bg-[#3B7DCF] transition-colors shadow-sm shadow-[#4A90E53D] mt-1"
+            >
               Checkout
             </button>
           </div>
-        )}
-        <div className="flex flex-row items-center justify-between h-[72px] footer-nav-col px-[18px]">
-          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faGauge} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Dashboard</span>
+        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
+          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+            <span>Dashboard</span>
           </button>
-          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faShop} className="text-[#607565]" style={{ width: "30px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Shop</span>
+          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none relative h-full justify-center">
+            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+            <span>Shop</span>
+            <div className="absolute bottom-[2px] w-[20px] h-[2px] bg-[#4A90E5] rounded-full"></div>
           </button>
-          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faWallet} className="text-[#607565]" style={{ width: "24px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Wallet</span>
+          <button onClick={() => onNavigate("shop", true)} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+            <span>Favourites</span>
           </button>
-          <button onClick={() => onNavigate("account")} className="flex flex-col items-center text-[#607565] hover:cursor-pointer w-[192px]">
-            <FontAwesomeIcon icon={faUser} className="text-[#607565]" style={{ width: "21px", height: "24px" }} />
-            <span className="text-xs mt-[5px]">Account</span>
+          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+            <span>Wallet</span>
+          </button>
+          <button onClick={() => onNavigate("account")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
+            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+            <span>Account</span>
           </button>
         </div>
       </nav>
