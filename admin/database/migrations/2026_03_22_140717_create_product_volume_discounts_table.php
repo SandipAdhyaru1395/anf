@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('product_volume_discounts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('price_list_id')->nullable()->constrained('price_lists')->nullOnDelete();
+            $table->foreignId('volume_discount_group_id')->constrained('volume_discount_groups')->cascadeOnDelete();
             $table->timestamps();
         });
     }

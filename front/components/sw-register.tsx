@@ -5,7 +5,17 @@ import { buildPath } from "@/lib/utils";
 
 export default function SwRegister() {
   React.useEffect(() => {
-    // console.log(process.env.NEXT_PUBLIC_API_URL);
+    // Production PWA precache breaks `next dev` (stale / wrong `/_next/static/chunks/...` → 404).
+    // Always tear down SW in development so Turbopack/webpack chunks load from the dev server.
+    if (process.env.NODE_ENV === "development") {
+      if ("serviceWorker" in navigator) {
+        void navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => void r.unregister());
+        });
+      }
+      return;
+    }
+
     // Register SW only when running under the deployed base path (or when SW exists)
     if (!process.env.NEXT_PUBLIC_API_URL) return;
     if (!("serviceWorker" in navigator)) return;

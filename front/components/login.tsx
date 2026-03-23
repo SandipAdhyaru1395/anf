@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import { buildPath } from "@/lib/utils";
+import { buildPath, resolveBackendAssetUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { useSettings } from "@/components/settings-provider";
 import FloatingInput from "@/components/ui/floating-input";
@@ -13,7 +14,6 @@ import { useCustomer } from "@/components/customer-provider";
 
 export default function Login() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { settings, refresh: refreshSettings } = useSettings();
   const { toast } = useToast();
   const { refresh } = useCustomer();
@@ -28,6 +28,12 @@ export default function Login() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const authFrontImage =
+    resolveBackendAssetUrl(settings?.thumbnail) ??
+    resolveBackendAssetUrl(settings?.banner) ??
+    settings?.thumbnail ??
+    settings?.banner ??
+    null;
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null;
@@ -240,16 +246,17 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8F7FC] p-4">
-      <div className="w-full max-w-[402px] bg-white rounded-[4px] p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8F7FC] p-2  h-[874]">
+      <div className="w-full max-w-[402px] bg-white rounded-[4px] p-8 
+      shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col">
         {/* Logo Section */}
-        <div className="flex flex-col items-center mb-4 mt-2">
+        <div className="flex flex-col items-center mb-4 mt-9">
           <img
-            className="app-logo-auth block mx-auto mb-8"
+            className="block mx-auto mb-3 w-[214px] h-[151px] object-contain"
             src={settings?.company_logo_url || "/assets/img/logo.png"}
             alt={settings?.company_title || "Logo"}
           />
-          <h2 className="w-full text-left text-[24px] font-bold text-[#4E5667] mt-9">
+          <h2 className="w-full text-left text-[18px] font-bold text-[#4E5667] mt-6">
             Welcome
           </h2>
         </div>
@@ -258,14 +265,14 @@ export default function Login() {
         <form
           onSubmit={handleSubmit(onSubmit)}
           noValidate
-          className="space-y-4"
+          className="space-y-3"
         >
           {/* Email Field */}
-          <div className="flex flex-col">
+          <div className="flex flex-col mt-5">
             <FloatingInput
               type="email"
               label="Email Address"
-              inputClassName="h-[50px] border-[#DCE1EE] focus:ring-[#4A90E5] focus:border-[#4A90E5] rounded-[4px]"
+              inputClassName="h-[50px] !border-2 !border-solid !border-[#4A90E5] rounded-[10px] focus:!border-[#2F76D2] "
               placeholder="Please enter your email address..."
               error={errors.email?.message}
               {...register("email", {
@@ -282,11 +289,11 @@ export default function Login() {
           </div>
 
           {/* Password Field */}
-          <div className="flex flex-col">
+          <div className="flex flex-col mt-12">
             <FloatingInput
               type="password"
               label="Password"
-              inputClassName="h-[50px] border-[#DCE1EE] focus:ring-[#4A90E5] focus:border-[#4A90E5] rounded-[4px]"
+              inputClassName="h-[50px] !border-2 !border-solid !border-[#4A90E5] focus:ring-[#4A90E5] focus:!border-[#2F76D2] rounded-[10px]"
               placeholder="Please enter your password..."
               error={errors.password?.message}
               {...register("password", {
@@ -300,7 +307,7 @@ export default function Login() {
           </div>
 
           {/* Legal Text */}
-          <p className="text-[11px] text-[#8F98AD] font-medium leading-relaxed">
+          <p className="text-[10px] text-[#8F98AD] font-medium leading-relaxed text-center mt-[20px] mb-1">
             By selecting Login, you agree to our{" "}
             <a href="#" className="text-[#4A90E5] underline">
               Terms &amp; Conditions
@@ -320,11 +327,11 @@ export default function Login() {
           </div>
 
           {/* Buttons Group */}
-          <div className="flex flex-col gap-3">
+          <div className="w-full max-w-[370px] h-[128px] mx-auto flex flex-col items-center justify-start gap-3 mt-[10px]">
             <button
               type="submit"
               disabled={loading || isSubmitting}
-              className="w-full h-[43px] bg-[#4A90E5] text-white rounded-full font-bold text-[17px] shadow-lg active:scale-[0.98] disabled:opacity-70 transition-all"
+              className="w-full max-w-[338px] h-[48px] px-[26px] py-[15px] rounded-[25px] text-white font-bold text-[17px] leading-none shadow-lg active:scale-[0.98] disabled:opacity-70 transition-all flex items-center justify-center gap-[11px] bg-[linear-gradient(0deg,_#2868C0_-107.69%,_#4C92E9_80.77%)]"
             >
               {loading ? "Signing in..." : "Log In"}
             </button>
@@ -332,17 +339,17 @@ export default function Login() {
             <button
               type="button"
               onClick={() => router.replace(buildPath("/landing"))}
-              className="w-full h-[43px] bg-white border-2 border-[#4A90E5] text-[#4A90E5] rounded-full font-bold text-[17px] active:scale-[0.98] transition-all"
+              className="w-full max-w-[338px] h-[48px] bg-white border-2 border-[#4A90E5] text-[#4A90E5] rounded-[25px] font-bold text-[17px] leading-none active:scale-[0.98] transition-all"
             >
               Back
             </button>
           </div>
 
           {/* Footer Links */}
-          <div className="flex flex-col items-center gap-6 pt-6 pb-2">
+          <div className="flex flex-col items-center gap-5 pt-5 pb-2">
             <Link
               href={buildPath("/forgot-password")}
-              className="text-[#4E5667] text-[13px] font-bold hover:text-[#4A90E5] transition-colors underline underline-offset-4"
+              className="text-[#3D495E] text-[13px] font-bold hover:text-[#4A90E5] transition-colors underline underline-offset-4"
             >
               Forgotten your password?
             </Link>

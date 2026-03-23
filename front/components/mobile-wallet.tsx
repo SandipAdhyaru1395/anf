@@ -2,9 +2,9 @@
 
 import { useCurrency } from "@/components/currency-provider";
 import { ChevronLeft, Info, Calendar } from "lucide-react";
-import '../app/globals.css';
 import { useCustomer } from "@/components/customer-provider";
-import { Banner } from "@/components/banner";
+import { useSettings } from "@/components/settings-provider";
+import { resolveBackendAssetUrl } from "@/lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChartSimple, faShop, faUser, faWallet, faHeart } from "@fortawesome/free-solid-svg-icons";
 
@@ -64,6 +64,9 @@ const TransactionItem = ({ type, amount, order, total, date, symbol }: { type: '
 export function MobileWallet({ onNavigate }: MobileWalletProps) {
   const { symbol } = useCurrency();
   const { customer } = useCustomer();
+  const { settings } = useSettings();
+  const bannerSrc =
+    resolveBackendAssetUrl(settings?.banner) ?? settings?.banner ?? null;
   const wallet = Number(customer?.wallet_balance || 0);
   const [showIntro, setShowIntro] = useState(true);
 
@@ -113,53 +116,68 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-[#F8F7FC]">
-      {/* Header */}
-      <div className="h-[60px] flex items-center px-4 bg-[#F8F7FC] sticky top-0 z-50">
-        <button onClick={() => onNavigate("dashboard")} className="flex items-center text-[#8F98AD] hover:text-[#4E5667] transition-colors absolute left-4">
-          <ChevronLeft className="w-5 h-5 mr-1" />
+    <div className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#F8F7FC]">
+
+      <div className="z-50 flex h-[60px] w-full shrink-0 items-center bg-[#F8F7FC] px-4">
+        <button
+          type="button"
+          onClick={() => onNavigate("dashboard")}
+          className="absolute left-4 flex items-center text-[#8F98AD] transition-colors hover:text-[#4E5667]"
+        >
+          <ChevronLeft className="mr-1 h-5 w-5" />
           <span className="text-[15px]">Back</span>
         </button>
-        <h1 className="text-[18px] font-bold text-[#4E5667] mx-auto">Wallet</h1>
+        <h1 className="mx-auto text-[18px] font-bold text-[#4E5667]">Wallet</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-[90px]">
-        {/* Banner */}
-        <div className="px-4">
-          <Banner />
-        </div>
 
-        {/* Blue Card */}
-        <div className="mx-4 mt-4 bg-[#4A90E5] rounded-[24px] px-6 py-6 text-white text-center shadow-[0_4px_10_px_-4px_#4A90E5]">
-          <h2 className="text-[26px] font-bold tracking-tight">Wallet Balance</h2>
-          <div className="text-[17px] text-white/90 font-medium mb-2">Available to use</div>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-[44px] font-bold leading-none">{symbol}{wallet.toFixed(2)}</span>
-            <Info className="w-6 h-6 text-white" />
+      {bannerSrc ? (
+        <div className="shrink-0 bg-[#F8F7FC] px-4 pb-2 pt-2">
+          <div className="mx-auto h-[94px] w-full max-w-[380px] overflow-hidden rounded-[10px]">
+
+            <img
+              src={bannerSrc}
+              alt="Banner"
+              className="h-full w-full object-cover object-center"
+            />
           </div>
-          <div className="text-[12px] text-white/90 font-medium">
+        </div>
+      ) : null}
+
+      <main className="scrollbar-hide min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto pb-[90px]">
+        <div
+          className={`mx-4 bg-[#4A90E5] rounded-[24px] px-6 py-6 text-center text-white shadow-[0_4px_10_px_-4px_#4A90E5] ${bannerSrc ? "mt-3" : "mt-4"}`}
+        >
+          <h2 className="text-[26px] font-medium tracking-tight">Wallet Balance</h2>
+          <div className="mb-2 text-[17px] font-medium text-white/90">Available to use</div>
+          <div className="mb-2 flex items-center justify-center gap-2">
+            <span className="text-[44px] font-bold leading-none">
+              {symbol}
+              {wallet.toFixed(2)}
+            </span>
+            <Info className="h-6 w-6 text-white" />
+          </div>
+          <div className="text-[12px] font-medium text-white/90">
             Total balance inc. pending: {symbol}0.00
           </div>
         </div>
 
-        {/* Transactions List */}
-        <div className="px-3 mt-6">
-          <h3 className="text-[15px] font-bold text-[#4E5667] mb-3 ml-1">March</h3>
-          <div className="space-y-2 mb-5">
+        <div className="mt-6 px-3">
+          <h3 className="mb-3 ml-1 text-[15px] font-bold text-[#4E5667]">March</h3>
+          <div className="mb-5 space-y-2">
             <TransactionItem type="used" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
             <TransactionItem type="earned" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
             <TransactionItem type="earned" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
           </div>
 
-          <h3 className="text-[15px] font-bold text-[#4E5667] mb-3 ml-1">February</h3>
+          <h3 className="mb-3 ml-1 text-[15px] font-bold text-[#4E5667]">February</h3>
           <div className="space-y-2">
             <TransactionItem type="used" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
             <TransactionItem type="earned" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
           </div>
         </div>
-      </div>
+      </main>
 
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814]">
         <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
           <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-medium leading-none">

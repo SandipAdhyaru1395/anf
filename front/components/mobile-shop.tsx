@@ -8,6 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGauge, faShop, faWallet, faUser, faBars, faStar, faSearch, faChartSimple, faHeart } from "@fortawesome/free-solid-svg-icons";
 import api from "@/lib/axios";
+import { Thumbnail } from "@/components/thumbnail";
+import { useCurrency } from "@/components/currency-provider";
+import { useCustomer } from "@/components/customer-provider";
+import { useSettings } from "@/components/settings-provider";
+import { startLoading, stopLoading } from "@/lib/loading";
+import { resolveBackendAssetUrl } from "@/lib/utils";
 
 interface MobileShopProps {
   onNavigate: (page: any, favorites?: boolean) => void;
@@ -32,6 +38,23 @@ interface ProductItem {
   allow_out_of_stock?: boolean;
 }
 
+/** Backend sometimes omits qty fields — don't treat as 0 stock or + button stays dead. */
+function getProductStockInfo(product: ProductItem): { known: boolean; stock: number } {
+  const raw = (product as any)?.quantity ?? (product as any)?.available_qty;
+  if (raw === undefined || raw === null || raw === "") {
+    return { known: false, stock: 0 };
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    return { known: false, stock: 0 };
+  }
+  return { known: true, stock: n };
+}
+
+const PRIMARY_BUTTON_GRADIENT: React.CSSProperties = {
+  background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)",
+};
+
 // Generic tree node that can be either a category (has subcategories)
 // or a brand (has products). Brands appear as subcategories of leaf categories.
 interface TreeNode {
@@ -49,11 +72,12 @@ interface TreeNode {
 // fetched categories state
 const initialCategories: TreeNode[] = [];
 
-import { useCurrency } from "@/components/currency-provider";
-import { useCustomer } from "@/components/customer-provider";
-import { Banner } from "@/components/banner";
-import { Thumbnail } from "@/components/thumbnail";
-import { startLoading, stopLoading } from "@/lib/loading";
+/** Shop header logo — Figma max box */
+const SHOP_LOGO_BOX = {
+  width: 168.8212432861328,
+  height: 22.00458335876465,
+  opacity: 1 as const,
+} as const;
 
 export function MobileShop({
   onNavigate = () => { },
@@ -63,6 +87,13 @@ export function MobileShop({
   totals = { units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 },
   showFavorites = false
 }: Partial<MobileShopProps>) {
+  const { settings } = useSettings();
+  const resolvedLogo =
+    resolveBackendAssetUrl(settings?.company_logo_url) ?? settings?.company_logo_url ?? null;
+  const resolvedThumb =
+    resolveBackendAssetUrl(settings?.thumbnail) ?? settings?.thumbnail ?? null;
+  /** Only use backend sources — no static fallback */
+  const companyLogoSrc = resolvedLogo || resolvedThumb || null;
   const { format, symbol } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<TreeNode[]>(initialCategories);
@@ -296,10 +327,9 @@ export function MobileShop({
     try {
       const step = Number(product?.step_quantity) > 0 ? Number(product.step_quantity) : 1;
       const allowOutOfStock = Boolean((product as any)?.allow_out_of_stock);
-      // Front check against stock if provided in product payload, unless out-of-stock ordering is allowed
-      const stock = Number((product as any)?.quantity ?? (product as any)?.available_qty ?? 0);
+      const { known: stockKnown, stock } = getProductStockInfo(product);
       const current = Number(cartQuantities[product.id] || 0);
-      if (!allowOutOfStock && stock > 0 && current + step > stock) {
+      if (!allowOutOfStock && stockKnown && stock > 0 && current + step > stock) {
         toast({ title: 'Quantity not available', description: `Only ${stock} in stock`, variant: 'destructive' });
         return;
       }
@@ -309,6 +339,7 @@ export function MobileShop({
         toast({ title: 'Quantity not available', description: msg, variant: 'destructive' });
         return;
       }
+      increment(product);
       const items: Array<{ product_id: number; quantity: number; product?: { wallet_credit?: number } }> = res?.data?.cart?.items || [];
       const map: Record<number, number> = {};
       let wallet = 0;
@@ -346,6 +377,12 @@ export function MobileShop({
       if (decrementQty === 0) return;
 
       const res = await api.post('/cart/decrement', { product_id: product.id, quantity: decrementQty });
+      if (res?.data && res.data.success === false) {
+        const msg = res.data.message || 'Could not update cart';
+        toast({ title: 'Update failed', description: msg, variant: 'destructive' });
+        return;
+      }
+      decrement(product);
       const items: Array<{ product_id: number; quantity: number; product?: { wallet_credit?: number } }> = res?.data?.cart?.items || [];
       const map: Record<number, number> = {};
       let wallet = 0;
@@ -400,90 +437,132 @@ export function MobileShop({
     return () => clearTimeout(timer);
   }, []);
 
+  /** Logo + thumbnail + search — same chrome for loading and loaded; soft shadow under whole top block */
+  const shopTopChrome = (
+    <div className="sticky top-0 z-[60] w-full shrink-0 bg-white shadow-[0_4px_16px_-4px_rgba(15,23,42,0.12)]">
+      <header className="w-full border-b border-[#F1F2F7] bg-white">
+        <div
+          className="flex w-full min-h-[38px] items-center"
+          style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 14, gap: 8 , marginTop :"50px" }}
+        >
+          <Thumbnail
+            height={25.00458335876465}
+            containerClassName="max-w-[168.8212432861328px]"
+            imgClassName="object-left "
+          />
+        </div>
+      </header>
+      <div className="px-[14px] pb-[12px] pt-[20px] bg-white">
+        <div className="flex items-center gap-[10px]">
+          <div className="relative flex h-[42px] flex-1 items-center rounded-[21px] bg-[#F3F4F9] px-[16px]">
+            <Search className="mr-2 h-4 w-4 text-[#8A94A6]" strokeWidth={2.5} />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              readOnly={isLoading}
+              aria-busy={isLoading}
+              className="h-full w-full border-none bg-transparent pl-0 pr-10 text-[14px] text-[#3D495E] shadow-none placeholder:text-[#8A94A6] focus-visible:ring-0 disabled:cursor-wait disabled:opacity-90"
+              style={{ border: "none", boxShadow: "none" }}
+              placeholder="Search products, brands, SKUs..."
+            />
+            {!isLoading && searchQuery && (
+              <button type="button" onClick={() => setSearchQuery("")} className="absolute right-[46px] top-1/2 -translate-y-1/2">
+                <X className="h-4 w-4 cursor-pointer text-[#8A94A6]" />
+              </button>
+            )}
+            <SlidersHorizontal className={`absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#8A94A6] ${isLoading ? "pointer-events-none" : "cursor-pointer"}`} />
+          </div>
+          <button type="button" className="flex h-[42px] w-[42px] items-center justify-center rounded-[14px] bg-[#F3F4F9] text-[#8A94A6]" aria-label="Scan">
+            <Scan className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white w-full max-w-[402px] mx-auto transition-opacity duration-500">
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <img
-            src="/assets/img/logo.png"
-            alt="AQUAVAPE"
-            className="w-48 h-auto object-contain animate-pulse"
-          />
-          <div className="w-12 h-12 border-4 border-[#4A90E5] border-t-transparent rounded-full animate-spin mt-8 mx-auto"></div>
+      <div className="mx-auto flex min-h-screen w-full max-w-[402px] flex-col bg-white">
+        {shopTopChrome}
+        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-[100px]">
+          {companyLogoSrc ? (
+            <img src={companyLogoSrc} alt="" className="h-auto w-[200px] max-w-[85%] object-contain animate-pulse" />
+          ) : (
+            <div className="h-24 w-48 max-w-[85%] rounded-lg bg-[#F3F4F9] animate-pulse" />
+          )}
         </div>
+        <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[402px] -translate-x-1/2 bg-[#F1F2F7] shadow-[0_-4px_16px_-4px_rgba(15,23,42,0.12)]">
+          <div className="grid h-[74px] grid-cols-5 items-center border-t border-[#E4E7F0] px-2 pb-[10px] pt-2">
+            <button type="button" onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+              <span>Dashboard</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("shop", false)} className={`flex flex-col items-center gap-1 text-[11px] font-bold leading-none ${!showFavorites ? "text-[#4A90E5]" : "text-[#BDC7DE]"}`}>
+              <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+              <span>Shop</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("shop", true)} className={`flex flex-col items-center gap-1 text-[11px] font-bold leading-none ${showFavorites ? "text-[#4A90E5]" : "text-[#BDC7DE]"}`}>
+              <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+              <span>Favourites</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+              <span>Wallet</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("account")} className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+              <span>Account</span>
+            </button>
+          </div>
+        </nav>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-[#fffff]">
-      {/* Header */}
-      <div className="bg-white flex items-center border-b">
-        <Thumbnail />
-      </div>
-
-      {/* Sticky top area */}
-      <div className="sticky top-0 z-[60] bg-white">
-
-        {/* Search Bar */}
-        <div className="px-[12px] pb-[12px] pt-[2px] bg-white border-b border-[#F1F2F7]">
-          <div className="flex items-center gap-[10px]">
-            <div className="flex-1 relative flex items-center h-[42px] rounded-[21px] bg-[#F3F4F9] px-[16px]">
-              <Search className="text-[#8A94A6] w-4 h-4 mr-2" strokeWidth={2.5} />
-              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-0 pr-10 h-full bg-transparent shadow-none border-none text-[14px] text-[#3D495E] placeholder:text-[#8A94A6] focus-visible:ring-0 w-full" style={{ border: "none", boxShadow: "none" }} placeholder="Search products, brands, SKUs..." />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="absolute right-[46px] top-1/2 -translate-y-1/2">
-                  <X className="cursor-pointer w-4 h-4 text-[#8A94A6]" />
-                </button>
-              )}
-              <SlidersHorizontal className="w-[18px] h-[18px] text-[#8A94A6] absolute right-[16px] top-1/2 -translate-y-1/2 cursor-pointer" />
-            </div>
-            <button className="w-[42px] h-[42px] rounded-[14px] bg-[#F3F4F9] text-[#8A94A6] flex items-center justify-center">
-              <Scan className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Banner */}
-      {/* <div className="mt-0">
-        <Banner />
-      </div> */}
+    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-white">
+      {shopTopChrome}
 
       {/* Categories (recursive) */}
-      <div className="space-y-2 overflow-y-auto pb-56 px-4">
+      <div className="space-y-2 overflow-y-auto pb-56 px-[12px] pt-[12px] bg-white">
         {displayedCategories.map((node) => (
           <CategoryNode key={node.name} node={node} path={node.name} depth={0} expandedPaths={expandedPaths} togglePath={togglePath} cart={cart} onIncrement={handleIncrement} onDecrement={handleDecrement} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} cartQuantities={cartQuantities} topAncestorIsSpecial={node.is_special === 1} />
         ))}
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 bg-white shadow-[0_-4px_16px_-4px_rgba(15,23,42,0.12)]">
         {/* Basket Summary */}
-        <div className="bg-[#F3F4F9] border-t border-[#DCE1EE] px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            {/* Left Side: Stats and Delivery Info */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5 text-[13px] text-[#4E5667] font-bold">
-                <span>{cartTotals.units} Units</span>
-                <span className="text-[#DCE1EE] font-normal px-[1px]">|</span>
-                <span>{cartTotals.skus} SKUs</span>
-                <span className="text-[#DCE1EE] font-normal px-[1px]">|</span>
-                <span>{format(cartTotals.total)}</span>
-                <span className="text-[#DCE1EE] font-normal px-[1px]">|</span>
-                <span className="inline-flex items-center gap-[2px] text-[#4A90E5]">
-                  <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" />
-                  <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
-                </span>
+         <div className="fixed bottom-[74px] left-1/2 w-full max-w-[402px] h-[60px] -translate-x-1/2 bg-[#F3F4F9] border-t border-[#DCE1EE] pt-[12px] pr-[8px] pb-[12px] pl-[8px] z-40">
+              <div className="flex h-full items-center justify-between">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5 text-[13px] text-[#3E4A62] font-bold whitespace-nowrap tracking-tight">
+                    <span>{totals.units} Units</span>
+                    <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
+                    <span>{totals.skus} SKUs</span>
+                    <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
+                    <span>{symbol}{totals.total.toFixed(2)}</span>
+                    <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
+                    <span className="inline-flex items-center gap-[3px] text-[#4A90E5] font-bold">
+                      <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" />
+                      <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
+                    </span>
+                  </div>
+                  <div className="text-[12px] text-[#727C90] mt-[2px] font-medium text-center">
+                    Includes FREE delivery
+                  </div>
+                </div>
+      
+                <button
+                  type="button"
+                  onClick={() => onNavigate("basket")}
+                  className="w-[116px] h-[35px] max-w-[300px] rounded-[5px] p-[8px] text-[15px] font-normal leading-none text-white shadow-sm transition-opacity hover:opacity-95 flex items-center justify-center"
+                  style={PRIMARY_BUTTON_GRADIENT}
+                >
+                  View Basket
+                </button>
               </div>
-              <div className="text-[11px] text-[#8F98AD] mt-0.5 font-bold tracking-tight">Includes FREE delivery</div>
             </div>
-            {/* Right Side: Action Button */}
-            <button onClick={() => onNavigate("basket")} className="bg-[#4A90E5] text-white px-3.5 py-2.5 rounded-[6px] font-bold text-[14px] hover:bg-[#3B7DCF] transition-colors whitespace-nowrap leading-none">
-              View Basket
-            </button>
-          </div>
-        </div>
 
         <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
           <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
@@ -626,7 +705,7 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
                     <div className="relative h-[105px] bg-white flex items-center justify-center pt-2 pb-1 px-1">
                       <img src={product.image || defaultImagePath} alt={product.name} className="w-full h-[95px] object-contain mix-blend-multiply" onError={handleImageError} />
                       {/* Heart Icon Top Right */}
-                      <button onClick={() => onToggleFavorite(product)} className="absolute top-[4px] right-[4px] w-[22px] h-[22px] rounded-full border border-[#C7CFDE] flex items-center justify-center bg-[#EEF2F8] shadow-sm z-10 transition-colors cursor-pointer">
+                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onToggleFavorite(product); }} className="absolute top-[4px] right-[4px] w-[22px] h-[22px] rounded-full border border-[#C7CFDE] flex items-center justify-center bg-[#EEF2F8] shadow-sm z-10 transition-colors cursor-pointer">
                         <Heart className={`w-[13px] h-[13px] ${isFavorite(product.id) ? "text-[#35D6EC] fill-[#35D6EC]" : "text-[#5B667E]"}`} strokeWidth={3} />
                       </button>
 
@@ -636,18 +715,18 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
                           if (cartQuantities[product.id]) {
                             return (
                               <div className="flex bg-[#1E2A44] rounded-full shadow-md items-center h-[26px] px-[2px] gap-[1px]">
-                                <button onClick={() => onDecrement(product)} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onDecrement(product); }} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
                                   <Minus className="w-[14px] h-[14px]" strokeWidth={3} />
                                 </button>
                                 <span className="text-white text-[10px] font-bold min-w-[14px] text-center">{cartQuantities[product.id]}</span>
-                                <button onClick={() => onIncrement(product)} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onIncrement(product); }} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
                                   <Plus className="w-[14px] h-[14px]" strokeWidth={3} />
                                 </button>
                               </div>
                             )
                           }
                           return (
-                            <button onClick={() => !isOut && onIncrement(product)} className={`w-[26px] h-[26px] bg-[#1E2A44] border-[1.5px] border-[#35D6EC] shadow-md rounded-full flex items-center justify-center cursor-pointer ${isOut ? 'opacity-80' : ''}`}>
+                            <button type="button" disabled={isOut} onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!isOut) void onIncrement(product); }} className={`w-[26px] h-[26px] bg-[#1E2A44] border-[1.5px] border-[#35D6EC] shadow-md rounded-full flex items-center justify-center cursor-pointer ${isOut ? "opacity-50 pointer-events-none" : ""}`}>
                               <Plus className="w-4 h-4 text-[#35D6EC]" strokeWidth={3} />
                             </button>
                           )

@@ -40,8 +40,9 @@ export function MobileRepDetails({ onNavigate, onBack }: MobileRepDetailsProps) 
         </div>
       </div>
 
-      {/* Banner */}
-      <Banner />
+      <div className="flex w-full justify-center px-3 py-3">
+        <Banner />
+      </div>
 
       {/* Rep Details Section */}
       <div className="bg-white p-[10px] pt-[20px] mb-[82px]">

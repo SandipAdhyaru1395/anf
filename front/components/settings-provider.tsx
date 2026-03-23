@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
 import api from "@/lib/axios"
+import { resolveBackendAssetUrl } from "@/lib/utils"
 
 type Theme = {
   use_default?: boolean | null
@@ -39,6 +40,16 @@ type SettingsContextValue = {
   versions: Versions | null
 }
 
+/** Fix Laravel /storage URLs vs Next dev origin (NEXT_PUBLIC_API_URL). */
+function normalizeSettingsMediaUrls(s: Settings): Settings {
+  return {
+    ...s,
+    company_logo_url: resolveBackendAssetUrl(s.company_logo_url) ?? s.company_logo_url ?? null,
+    banner: resolveBackendAssetUrl(s.banner) ?? s.banner ?? null,
+    thumbnail: resolveBackendAssetUrl(s.thumbnail) ?? s.thumbnail ?? null,
+  }
+}
+
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined)
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
@@ -55,7 +66,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const res = await api.get('/settings')
       const s = res?.data?.settings
       const v = res?.data?.versions
-      const normalized: Settings = {
+      const normalized: Settings = normalizeSettingsMediaUrls({
         company_title: s?.company_title ?? null,
         company_logo_url: s?.company_logo_url ?? null,
         currency: s?.currency ?? null,
@@ -72,7 +83,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           secondary_font_color: s.theme.secondary_font_color ?? null,
           button_login: s.theme.button_login ?? null,
         } : null,
-      }
+      })
       setSettings(normalized)
       setVersions({
         Product: typeof v?.Product === 'number' ? v.Product : undefined,
@@ -276,10 +287,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           if (!cachedSettings.hasOwnProperty('payment_gateway_available')) {
             cachedSettings.payment_gateway_available = null
           }
-          // Update the cache with the new fields
-          try { sessionStorage.setItem('settings_cache', JSON.stringify(cachedSettings)) } catch {}
+          const fixed = normalizeSettingsMediaUrls(cachedSettings as Settings)
+          try { sessionStorage.setItem('settings_cache', JSON.stringify(fixed)) } catch {}
+          setSettings(fixed)
+        } else {
+          setSettings(cachedSettings)
         }
-        setSettings(cachedSettings)
         setLoading(false)
         return
       }

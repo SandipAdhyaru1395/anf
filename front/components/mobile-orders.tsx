@@ -75,8 +75,9 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
         <div className="w-[40px]"></div> {/* Spacer for centering */}
       </div>
 
-      {/* Banner */}
-      <Banner />
+      <div className="flex w-full justify-center px-3 py-3">
+        <Banner />
+      </div>
 
       <main className="p-[10px] mb-[82px]">
         {loading ? (
@@ -93,14 +94,17 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
               <div className="text-center text-gray-500 py-10 bg-white">No orders found</div>
             ) : (
               orders.map((o, idx) => (
-                <div key={o.order_number + idx} className="bg-white border-b border-[#F1F2F7] p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div key={o.order_number + idx} className="bg-white border-b border-[#F1F2F7] 
+                p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="w-[42px] h-[42px] bg-[#EAF0FA] rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-[42px] h-[42px] bg-[#EAF0FA] rounded-full 
+                    flex items-center justify-center flex-shrink-0">
                       <FontAwesomeIcon icon={faBox} className="text-[#4A90E5] text-[20px]" />
                     </div>
                     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-[#EAF0FA] text-[#4A90E5] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-[#DCE1EE]">
+                        <span className="bg-[#EAF0FA] text-[#4A90E5] px-2 py-0.5
+                         rounded-full text-[10px] font-bold uppercase tracking-wide border border-[#DCE1EE]">
                           {o.fulfillment_status}
                         </span>
                         <span className="bg-[#E4FAE7] text-[#34C759] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-[#D2EBD5]">

@@ -90,6 +90,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
   const [selectedBankId, setSelectedBankId] = useState<string>("");
   const [banksLoading, setBanksLoading] = useState(false);
   const [isDispatchExpanded, setIsDispatchExpanded] = useState(false);
+  const [isDeliveryExpanded, setIsDeliveryExpanded] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
@@ -206,9 +207,6 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
             quantity: Number(it.quantity) || 0,
           }));
         setItems(mapped);
-        if (mapped.length === 0) {
-          onNavigate('shop');
-        }
         const c = res?.data?.cart;
         setCartTotals({
           units: Number(c?.units || 0),
@@ -392,15 +390,15 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
     }
   };
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-[#F8F9FB]">
+    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-[#F3F4F8]">
       {/* Header */}
-      <div className="bg-white flex items-center justify-between px-4 h-[60px] border-b border-gray-100 relative">
+      <div className="bg-[#EEF0F5] flex items-center justify-between px-4 h-[58px] border-b border-[#E2E6EF] relative">
         <button 
           onClick={onBack} 
           className="flex items-center gap-1 text-[#8A94A6] hover:text-black transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
-          <span className="text-[15px] font-medium">Back</span>
+          <span className="text-[14px] font-medium">Back</span>
         </button>
         
         <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-bold text-[#1E293B]">
@@ -410,22 +408,23 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         <div className="w-[60px]"></div> {/* Spacer for balance */}
       </div>
 
-      {/* Banner */}
-      <Banner />
+      <div className="flex w-full justify-center px-3 py-2">
+        <Banner />
+      </div>
 
-      <main className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-48">
+      <main className="flex-1 overflow-y-auto px-[10px] py-[2px] space-y-2 pb-40">
         {/* Dispatch To Section */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-[4px] border border-[#DCE1EE] overflow-hidden">
           <button 
             onClick={() => setIsDispatchExpanded(!isDispatchExpanded)}
-            className="w-full flex items-center p-4 gap-4"
+            className="w-full flex items-center px-3 py-2.5 gap-3"
           >
-            <div className="w-10 h-10 rounded-full bg-[#EAF2FF] flex items-center justify-center flex-shrink-0">
-              <HomeIcon className="w-5 h-5 text-[#4A90E5]" />
+            <div className="w-[22px] h-[22px] rounded-full border border-[#DCE1EE] bg-[#F7FAFF] flex items-center justify-center flex-shrink-0">
+              <HomeIcon className="w-3.5 h-3.5 text-[#6EA2E8]" />
             </div>
             <div className="flex-1 text-left">
-              <span className="block text-[12px] font-bold text-[#8F98AD] uppercase tracking-wider">Dispatch To:</span>
-              <div className="text-[14px] text-[#131A44] font-medium line-clamp-2">
+              <span className="block text-[13px] font-bold text-[#4E5667] leading-none">Dispatch To:</span>
+              <div className="text-[12px] text-[#4E5667] font-semibold line-clamp-2 mt-1 leading-[1.2]">
                 {selectedBranch ? (
                   <>
                     <span className="font-bold">{selectedBranch.name}</span>, {selectedBranch.address_line1} {selectedBranch.address_line2}
@@ -433,7 +432,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
                 ) : "Select a branch"}
               </div>
             </div>
-            <ChevronDown className={`w-5 h-5 text-[#4A90E5] transition-transform ${isDispatchExpanded ? 'rotate-180' : ''}`} />
+            <div className="h-8 w-px bg-[#E4E7F0]" />
+            <ChevronDown className={`w-5 h-5 text-[#5A9AEC] transition-transform ${isDispatchExpanded ? 'rotate-180' : ''}`} />
           </button>
           
           {isDispatchExpanded && (
@@ -457,82 +457,90 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         </div>
 
         {/* Delivery Method Section */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="w-full flex items-center p-4 gap-4 border-b border-gray-50 hover:cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-[#EAF2FF] flex items-center justify-center flex-shrink-0">
-              <PackageIcon className="w-5 h-5 text-[#4A90E5]" />
+        <div className="bg-white rounded-[4px] border border-[#DCE1EE] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setIsDeliveryExpanded((v) => !v)}
+            className="w-full flex items-center px-3 py-2.5 gap-3 hover:cursor-pointer"
+          >
+            <div className="w-[22px] h-[22px] rounded-full border border-[#DCE1EE] bg-[#F7FAFF] flex items-center justify-center flex-shrink-0">
+              <PackageIcon className="w-3.5 h-3.5 text-[#6EA2E8]" />
             </div>
             <div className="flex-1 text-left">
-              <span className="block text-[12px] font-bold text-[#8F98AD] uppercase tracking-wider">Delivery Method:</span>
-              <div className="text-[14px] text-[#131A44] font-medium">
+              <span className="block text-[13px] font-bold text-[#4E5667] leading-none">Delivery Method:</span>
+              <div className="text-[13px] text-[#4E5667] font-semibold mt-1">
                 {selectedDeliveryMethod ? selectedDeliveryMethod.name : "Select method"}
               </div>
               {selectedDeliveryMethod?.time && (
-                <div className="text-[12px] text-[#4A90E5] font-medium">
+                <div className="text-[12px] text-[#5A9AEC] font-semibold leading-none mt-1">
                   Estimated: {selectedDeliveryMethod.time} ({format(selectedDeliveryMethod.rate)})
                 </div>
               )}
             </div>
-            <ChevronDown className="w-5 h-5 text-[#4A90E5]" />
-          </div>
-          
-          <div className="p-4 space-y-3">
-            {deliveryMethods.map((method) => (
-              <label key={method.id} className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="radio"
-                  name="deliveryMethod"
-                  checked={selectedDeliveryMethod?.id === method.id}
-                  onChange={() => setSelectedDeliveryMethod(method)}
-                  className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
-                />
-                <div className="flex-1 text-[13px]">
-                  <span className="font-bold text-[#131A44] block">{method.name}</span>
-                  <span className="text-[#4A90E5] font-medium">{format(method.rate)}</span>
-                </div>
-              </label>
-            ))}
-          </div>
+            <div className="h-8 w-px bg-[#E4E7F0]" />
+            <ChevronDown className={`w-5 h-5 text-[#5A9AEC] transition-transform ${isDeliveryExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {isDeliveryExpanded && (
+            <div className="px-3 pb-3 pt-1 space-y-2 border-t border-[#EEF1F7]">
+              {deliveryMethods.map((method) => (
+                <label key={method.id} className="flex items-center gap-2.5 cursor-pointer group rounded-[4px] border border-[#E7EBF4] p-2.5">
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    checked={selectedDeliveryMethod?.id === method.id}
+                    onChange={() => setSelectedDeliveryMethod(method)}
+                    className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
+                  />
+                  <div className="flex-1 text-[12px] leading-tight">
+                    <span className="font-bold text-[#4E5667] block">{method.name}</span>
+                    <span className="text-[#5A9AEC] font-semibold">{method.time} ({format(method.rate)})</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Additional Instructions */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <div className="bg-white rounded-[4px] border border-[#DCE1EE] px-3 py-2.5">
           <input
             type="text"
             placeholder="Additional delivery instructions"
-            className="w-full text-[14px] text-[#131A44] placeholder:text-[#BDC7DE] border-none focus:ring-0 p-0"
+            className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none focus:ring-0 p-0"
             value={deliveryInstructions}
             onChange={(e) => setDeliveryInstructions(e.target.value)}
           />
         </div>
 
         {/* Combined Summary Card */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50 text-[13px]">
+        <div className="bg-[#FBFCFF] rounded-[6px] border border-[#D5DBE7] overflow-hidden text-[13px]">
           {/* Order Details */}
-          <div className="p-4">
-            <h4 className="font-bold text-[#131A44] mb-2 uppercase text-[12px] tracking-wider opacity-60">Order Details</h4>
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span className="text-[#8F98AD] font-bold">SKUs</span>
-                <span className="text-[#131A44] font-bold">{cartTotals.skus}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#8F98AD] font-bold">Items</span>
-                <span className="text-[#131A44] font-bold">{cartTotals.units}</span>
+          <div className="px-5 pt-4 pb-3">
+            <div className="flex items-start justify-between">
+              <h4 className="font-bold text-[#3F4B63] text-[16px] leading-[1]">Order Details</h4>
+              <div className="space-y-1 text-right">
+                <div className="flex items-center justify-end gap-5">
+                  <span className="text-[#3F4B63] font-bold text-[16px] leading-none">SKUs</span>
+                  <span className="text-[#5F6C83] text-[14px] leading-none">{cartTotals.skus}</span>
+                </div>
+                <div className="flex items-center justify-end gap-5">
+                  <span className="text-[#3F4B63] font-bold text-[16px] leading-none">Items</span>
+                  <span className="text-[#5F6C83] text-[14px] leading-none">{cartTotals.units}</span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Delivery Details */}
-          <div className="p-4">
-            <div className="flex justify-between mb-2">
-              <h4 className="font-bold text-[#131A44] uppercase text-[12px] tracking-wider opacity-60">Delivery</h4>
-              <span className="font-bold text-[#131A44]">{selectedDeliveryMethod?.name} - {format(deliveryRate)}</span>
+          <div className="px-5 py-3 border-t border-[#E5EAF3]">
+            <div className="flex justify-between items-start mb-1">
+              <h4 className="font-bold text-[#3F4B63] text-[16px]">Delivery</h4>
+              <span className="font-bold text-[#3F4B63] text-[16px] leading-none">{selectedDeliveryMethod?.name} - {format(deliveryRate)}</span>
             </div>
-            <div className="text-[#8F98AD] leading-relaxed">
+            <div className="text-[#3F4B63] leading-[1.25] text-[14px] text-right">
               {selectedBranch ? (
                 <>
-                  <div className="font-bold text-[#131A44]">{selectedBranch.name}</div>
+                  <div className="font-bold text-[#4E5667]">{selectedBranch.name}</div>
                   <div>{selectedBranch.address_line1}</div>
                   {selectedBranch.address_line2 && <div>{selectedBranch.address_line2}</div>}
                   <div>{selectedBranch.city}</div>
@@ -543,28 +551,28 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           </div>
 
           {/* Summary Details */}
-          <div className="p-4">
-            <h4 className="font-bold text-[#131A44] mb-3 uppercase text-[12px] tracking-wider opacity-60">Summary</h4>
-            <div className="space-y-2">
+          <div className="px-5 pt-3 pb-4 border-t border-[#D9DFEB]">
+            <h4 className="font-bold text-[#3F4B63] mb-3 text-[16px]">Summary</h4>
+            <div className="space-y-[7px]">
               <div className="flex justify-between">
-                <span className="text-[#8F98AD] font-bold">Subtotal</span>
-                <span className="text-[#131A44] font-bold">{format(subtotal)}</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">Subtotal</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#8F98AD] font-bold">Wallet Discount</span>
-                <span className="text-[#131A44] font-bold">-{format(discount)}</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">Wallet Discount</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(discount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#8F98AD] font-bold">Delivery</span>
-                <span className="text-[#131A44] font-bold">{format(deliveryRate)}</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">Delivery</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(deliveryRate)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#8F98AD] font-bold">VAT ({subtotal > 0 ? ((vat/subtotal)*100).toFixed(2) : '20.00'}%)</span>
-                <span className="text-[#131A44] font-bold">{format(vat)}</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">VAT ({subtotal > 0 ? ((vat/subtotal)*100).toFixed(2) : '20.00'}%)</span>
+                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(vat)}</span>
               </div>
-              <div className="flex justify-between text-[16px] pt-3 border-t border-gray-100 mt-2">
-                <span className="text-[#4A90E5] font-bold">Payment Total</span>
-                <span className="text-[#4A90E5] font-bold">{format(paymentTotal)}</span>
+              <div className="flex justify-between text-[16px] pt-3 mt-2">
+                <span className="text-[#3A86E4] font-bold text-[18px]">Payment Total</span>
+                <span className="text-[#3A86E4] font-bold text-[18px]">{format(paymentTotal)}</span>
               </div>
             </div>
           </div>
@@ -636,7 +644,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           <button
             onClick={handleContinueToPayment}
             disabled={isProcessing || !selectedBranch}
-            className="w-full bg-[#4A90E5] disabled:bg-[#BDC7DE] text-white py-4 rounded-xl font-bold text-[18px] hover:bg-[#3B7DCF] transition-colors shadow-lg shadow-[#4A90E53D] active:scale-[0.98] transform transition-transform"
+            className="w-full bg-[#4A90E5] disabled:bg-[#BDC7DE] text-white py-4 rounded-xl 
+            font-bold text-[18px] hover:bg-[#3B7DCF] transition-colors shadow-lg shadow-[#4A90E53D] active:scale-[0.98] transform transition-transform"
           >
             {isProcessing ? "Processing..." : "Continue to Payment"}
           </button>
@@ -645,7 +654,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
-        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
+        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center 
+        bg-[#F1F2F7] border-t border-[#E4E7F0]">
           <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
             <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
             <span>Dashboard</span>
