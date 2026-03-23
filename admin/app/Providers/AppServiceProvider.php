@@ -32,12 +32,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
 
-        $setting_logo = Setting::where('key', 'company_logo')->first()->value;
-
-        $setting_title = Setting::where('key', 'company_title')->first()->value;
-
-        $setting_currency_symbol = Setting::where('key', 'currency_symbol')->first()->value;
-
+        $setting_logo = Setting::where('key', 'company_logo')->first()?->value ?? '';
+        $setting_title = Setting::where('key', 'company_title')->first()?->value ?? config('app.name');
+        $setting_currency_symbol = Setting::where('key', 'currency_symbol')->first()?->value ?? '$';
 
         view()->share('setting', [
             'company_logo' => $setting_logo,

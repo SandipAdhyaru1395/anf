@@ -1,6 +1,7 @@
+
 "use client";
 
-import { Banner } from "@/components/banner";
+import { useSettings } from "@/components/settings-provider";
 import { useRouter } from "next/navigation";
 import { buildPath } from "@/lib/utils";
 import api from "@/lib/axios";
@@ -39,6 +40,7 @@ interface MobileAccountProps {
 
 export function MobileAccount({ onNavigate, cart, increment, decrement, totals, clearCart }: MobileAccountProps) {
   const router = useRouter();
+  const { settings } = useSettings();
 
   const handleLogout = async () => {
     try {
@@ -89,7 +91,11 @@ export function MobileAccount({ onNavigate, cart, increment, decrement, totals, 
       <main className="w-full flex-1 overflow-y-auto pb-[130px] bg-white">
         {/* Banner */}
         <div className="px-3 py-3 relative z-0">
-          <Banner />
+          <div className="w-full h-[94px]" style={{ borderRadius: "10px", overflow: "hidden" }}>
+            {settings?.banner && (
+              <img src={settings.banner} alt="Banner" className="w-full h-full object-cover" />
+            )}
+          </div>
         </div>
 
         {/* Profile Info */}

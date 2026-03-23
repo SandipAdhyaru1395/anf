@@ -2,16 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { buildPath } from "@/lib/utils";
 import api from "@/lib/axios";
 import { useForm } from "react-hook-form";
-import { useSettings } from "@/components/settings-provider";
 import { useToast } from "@/hooks/use-toast";
+import { Thumbnail } from "./thumbnail";
 
 export default function Register() {
   const router = useRouter();
-  const { settings } = useSettings();
   const { toast } = useToast();
 
   const {
@@ -37,9 +35,9 @@ export default function Register() {
 
   const [loading, setLoading] = useState(false);
   const inputStyle =
-    "w-full h-[50px] border-[#a5c9f5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all";
+    "w-full h-[50px] !border-2 !border-[#4A90E5] rounded-[10px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:!border-[#2F76D2] focus:outline-none placeholder:text-gray-500 text-gray-700 bg-white transition-all";
 
-  const labelStyle = "block text-[#5b6b7a] font-bold text-[14px] mb-2 mt-6 text-left w-full";
+  const sectionTitleStyle = "block text-[#5b6b7a] font-bold text-[14px] text-left";
 
   async function onSubmit(values: any) {
     setLoading(true);
@@ -88,11 +86,10 @@ export default function Register() {
       <div className="register-container shadow-[0_4px_25px_rgba(0,0,0,0.05)]">
 
         {/* Fixed Header */}
-        <div className="register-header flex justify-center px-4">
-          <img
-            className="register-logo"
-            src={settings?.company_logo_url || "/assets/img/logo.png"}
-            alt="Aqua Vape"
+        <div className="register-header flex justify-center items-center px-4">
+          <Thumbnail
+            height={22.00458335876465}
+            containerClassName="max-w-[168.8212432861328px] mx-auto"
           />
         </div>
 
@@ -101,7 +98,7 @@ export default function Register() {
           <div className="register-scroll-area min-h-0">
             {/* Company Name */}
             <div className="flex flex-col gap-2">
-              <label className="block text-[#5b6b7a] font-bold text-[14px] text-left">Company Name</label>
+              <label className={sectionTitleStyle}>Company Name</label>
               <input
                 {...register("company", { required: "Company name is required" })}
                 placeholder="Please enter your company name"
@@ -112,7 +109,7 @@ export default function Register() {
 
             {/* Company Address Section */}
             <div className="flex flex-col gap-2">
-              <label className="block text-[#5b6b7a] font-bold text-[14px] text-left">Company Address</label>
+              <label className={sectionTitleStyle}>Company Address</label>
               <div className="flex flex-col gap-2">
                 <input
                   {...register("invoice1", { required: "Address line 1 is required" })}
@@ -136,7 +133,7 @@ export default function Register() {
 
             {/* Contact Number Section */}
             <div className="flex flex-col gap-2">
-              <label className="block text-[#5b6b7a] font-bold text-[14px] text-left">Contact Number</label>
+              <label className={sectionTitleStyle}>Contact Number</label>
               <input
                 {...register("mobile", { required: "Contact number is required" })}
                 placeholder="Please enter your contact number"
@@ -147,13 +144,13 @@ export default function Register() {
 
             {/* Login Details */}
             <div className="flex flex-col gap-2">
-              <label className="block text-[#5b6b7a] font-bold text-[14px] text-left">Login Details</label>
-              <div className="flex flex-col gap-2">
+              <label className={sectionTitleStyle}>Login Details</label>
+              <div className="flex flex-col gap-2 ">
                 <input
                   type="email"
                   {...register("email", { required: "Email is required" })}
                   placeholder="Please enter your email"
-                  className={inputStyle}
+                  className={inputStyle} 
                 />
                 <input
                   type="password"

@@ -18,7 +18,7 @@ import {
   faUser,
   faWallet,
 } from "@fortawesome/free-solid-svg-icons";
-import { Banner } from "./banner";
+import { Banner } from "@/components/banner";
 import FloatingInput from "./ui/floating-input";
 
 interface Branch {
@@ -157,8 +157,9 @@ export function MobileEditBranch({ branchDetails, onNavigate, onBack, onBranchUp
         </div>
       </div>
 
-      {/* Banner */}
-      <Banner />
+      <div className="flex w-full justify-center px-3 py-3">
+        <Banner />
+      </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="p-[10px] mb-[82px]">

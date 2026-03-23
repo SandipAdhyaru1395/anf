@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('product_volume_discount_break_prices', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('price_list_id')->nullable()->constrained('price_lists')->nullOnDelete();
+            $table->foreignId('volume_discount_break_id')->constrained('volume_discount_breaks')->cascadeOnDelete();
+            $table->decimal('override_price', 15, 2);
             $table->timestamps();
         });
     }

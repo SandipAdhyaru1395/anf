@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { MobileDashboard } from "@/components/mobile-dashboard"
 import { MobileShop } from "@/components/mobile-shop"
 import { MobileBasket } from "@/components/mobile-basket"
@@ -33,9 +33,23 @@ export default function Home() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<string | null>(null)
   const [cart, setCart] = useState<Record<number, { product: any; quantity: number }>>({})
+  const basketEnteredAtRef = useRef<number>(0)
 
   // Navigation and State Helpers
   const handleNavigate = (page: PageKey, favorites = false) => {
+    const now = Date.now()
+    // Guard against unintended immediate redirects from basket -> shop.
+    if (
+      currentPage === "basket" &&
+      page === "shop" &&
+      Object.keys(cart).length > 0 &&
+      now - basketEnteredAtRef.current < 5000
+    ) {
+      return
+    }
+    if (page === "basket") {
+      basketEnteredAtRef.current = now
+    }
     setCurrentPage(page)
     setShowFavorites(favorites)
   }
