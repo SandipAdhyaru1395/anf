@@ -1,20 +1,32 @@
 "use client";
 
+import { cn, resolveBackendAssetUrl } from "@/lib/utils";
 import { useSettings } from "./settings-provider";
 
-export function Banner() {
+type BannerProps = {
+  className?: string;
+};
+
+export function Banner({ className }: BannerProps) {
   const { settings } = useSettings();
 
-  if (!settings?.banner) {
+  const src = resolveBackendAssetUrl(settings?.banner) ?? settings?.banner;
+  if (!src) {
     return null;
   }
 
   return (
-    <div className="w-[380px] h-[94px]"  style={{ borderRadius: "10px", overflow: "hidden" }}>
+    <div
+      className={cn(
+        "mx-auto h-[94px] w-full max-w-[380px] shrink-0",
+        className,
+      )}
+      style={{ borderRadius: "4px", overflow: "hidden" }}
+    >
       <img
-        src={settings.banner}
+        src={src}
         alt="Banner"
-        className="w-full h-full"
+        className="h-full w-full object-cover object-center"
       />
     </div>
   );

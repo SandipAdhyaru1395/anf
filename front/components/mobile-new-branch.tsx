@@ -15,7 +15,7 @@ import {
     faUser,
     faWallet,
 } from "@fortawesome/free-solid-svg-icons";
-import { Banner } from "./banner";
+import { Banner } from "@/components/banner";
 import FloatingInput from "./ui/floating-input";
 import api from "@/lib/axios";
 import { useToast } from "@/hooks/use-toast";
@@ -139,8 +139,9 @@ export function MobileNewBranch({ onNavigate, onBack, onBranchSaved }: MobileNew
                     &nbsp;<span className="text-[16px] font-semibold">New Branch</span>
                 </div>
             </div>
-            {/* Banner */}
-            <Banner />
+            <div className="flex w-full justify-center px-3 py-3">
+              <Banner />
+            </div>
             {/* Content */}
             <form onSubmit={handleSubmit(onSubmit)} className="p-[10px] mb-[82px]">
                 <FloatingInput

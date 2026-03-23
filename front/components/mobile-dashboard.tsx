@@ -1,6 +1,8 @@
+
 "use client";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/components/currency-provider";
+import { Banner } from "@/components/banner";
 import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
@@ -21,9 +23,15 @@ import {
   faGift,
 } from "@fortawesome/free-solid-svg-icons";
 import { useCustomer } from "@/components/customer-provider";
-import { Banner } from "@/components/banner";
 import { startLoading, stopLoading } from "@/lib/loading";
 import { useSettings } from "@/components/settings-provider";
+import { resolveBackendAssetUrl } from "@/lib/utils";
+import { Thumbnail } from "@/components/thumbnail";
+
+/** Primary actions — matches order-details / brand gradient */
+const PRIMARY_BUTTON_GRADIENT: React.CSSProperties = {
+  background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)",
+};
 
 interface MobileDashboardProps {
   onNavigate: (page: any, favorites?: boolean) => void;
@@ -43,7 +51,10 @@ export function MobileDashboard({
   const { settings } = useSettings();
 
   const wallet = Number(customer?.wallet_balance || 0);
-  const logoSrc = settings?.company_logo_url;
+  const logoSrc =
+    resolveBackendAssetUrl(settings?.company_logo_url) ??
+    settings?.company_logo_url ??
+    null;
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
@@ -134,31 +145,23 @@ export function MobileDashboard({
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col mx-auto w-full max-w-[402px] bg-[#F8F7FC] relative shadow-sm">
-      {/* HEADER */}
-      <header className="w-full h-[60px] bg-white flex items-center justify-center border-b border-[#F1F2F7] sticky top-0 z-50">
-        {logoSrc ? (
-          <Image
-            src={logoSrc}
-            alt="logo"
-            width={160}
-            height={36}
-            className="object-contain"
-            priority
-          />
-        ) : (
-          <h1 className="text-[20px] font-bold text-[#4E5667] tracking-widest">AQUAVAPE</h1>
-        )}
+    <div className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-white shadow-sm">
+      {/* HEADER — does not scroll */}
+      <header className="z-50 flex h-[70px] w-full shrink-0 items-center justify-center bg-white border-b border-[#E2E2E2] px-4">
+        <Thumbnail
+          height={22.00458335876465}
+          containerClassName="max-w-[168.8212432861328px]"
+        />
       </header>
 
-      {/* SCROLLABLE CONTENT */}
-      <main className="w-full flex-1 overflow-y-auto pb-[150px]">
-        {/* Banner */}
-        <div className="px-3 py-3 relative z-0">
-          <Banner />
-        </div>
+      {/* BANNER — fixed under header; matches design spacing */}
+      <div className="shrink-0 bg-white px-3 pb-2 pt-3">
+        <Banner className="h-[94px] w-full max-w-[380px]" />
+      </div>
 
-        <div className="px-3 flex flex-col gap-2.5">
+      {/* SCROLLABLE: everything below banner */}
+      <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto pb-[150px] bg-[#F5F6FA] pt-1">
+        <div className="px-3 flex flex-col gap-2.5 pt-1">
           {/* REFERRAL */}
         <div className="w-full bg-[#4A90E5] text-white rounded-[6px] px-3.5 py-3 pr-[80px] relative overflow-hidden shadow-[0_2px_4px_0_#4A90E530]">
           <h2 className="font-bold text-[14px]">Referral Rewards</h2>
@@ -196,15 +199,19 @@ export function MobileDashboard({
           {/* BUTTONS */}
           <div className="w-full flex gap-2">
             <button
+              type="button"
               onClick={() => onNavigate("shop")}
-              className="flex-1 h-[36px] flex items-center justify-center gap-2 rounded-[6px] text-white text-[13px] bg-[#4A90E5] font-bold shadow-sm cursor-pointer"
+              className="flex h-[36px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[6px] text-[13px] font-[700] leading-none text-white shadow-sm transition-opacity hover:opacity-95"
+              style={PRIMARY_BUTTON_GRADIENT}
             >
               <FontAwesomeIcon icon={faShop} className="text-[14px]" />
               Shop
             </button>
             <button
+              type="button"
               onClick={() => onNavigate("shop", true)}
-              className="flex-1 h-[36px] flex items-center justify-center gap-2 rounded-[6px] text-white text-[13px] bg-[#4A90E5] font-bold shadow-sm cursor-pointer"
+              className="flex h-[36px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[6px] text-[13px] font-[700] leading-none text-white shadow-sm transition-opacity hover:opacity-95"
+              style={PRIMARY_BUTTON_GRADIENT}
             >
               <FontAwesomeIcon icon={faHeart} className="text-[14px] " />
               Favourites
@@ -311,24 +318,31 @@ export function MobileDashboard({
       </main>
 
       {/* BASKET BAR */}
-      <div className="fixed bottom-[74px] left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-[#F3F4F9] border-t border-[#DCE1EE] px-4 py-3 z-40">
-        <div className="flex items-center justify-between gap-3">
+      <div className="fixed bottom-[74px] left-1/2 w-full max-w-[402px] h-[60px] -translate-x-1/2 bg-[#F3F4F9] border-t border-[#DCE1EE] pt-[12px] pr-[8px] pb-[12px] pl-[8px] z-40">
+        <div className="flex h-full items-center justify-between">
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 text-[13.5px] text-[#424B5E] font-bold whitespace-nowrap tracking-tight">
+            <div className="flex items-center gap-1.5 text-[13px] text-[#3E4A62] font-bold whitespace-nowrap tracking-tight">
               <span>{totals.units} Units</span>
-              <span className="text-[#DCE1EE] font-normal px-[2px]">|</span>
+              <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
               <span>{totals.skus} SKUs</span>
-              <span className="text-[#DCE1EE] font-normal px-[2px]">|</span>
+              <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
               <span>{symbol}{totals.total.toFixed(2)}</span>
+              <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
+              <span className="inline-flex items-center gap-[3px] text-[#4A90E5] font-bold">
+                <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" />
+                <span>+{symbol}{wallet.toFixed(2)}</span>
+              </span>
             </div>
-            <div className="text-[12px] text-[#8F98AD] mt-[2px] font-medium">
+            <div className="text-[12px] text-[#727C90] mt-[2px] font-medium text-center">
               Includes FREE delivery
             </div>
           </div>
 
           <button
+            type="button"
             onClick={() => onNavigate("basket")}
-            className="bg-[#4A90E5] text-white px-3 py-2 rounded-[6px] font-bold text-[14.5px] shadow-sm"
+            className="w-[116px] h-[35px] max-w-[300px] rounded-[5px] p-[8px] text-[15px] font-normal leading-none text-white shadow-sm transition-opacity hover:opacity-95 flex items-center justify-center"
+            style={PRIMARY_BUTTON_GRADIENT}
           >
             View Basket
           </button>

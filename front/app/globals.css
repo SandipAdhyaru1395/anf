@@ -116,6 +116,15 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Hide scrollbars app-wide; scroll/touch still works */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   body {
@@ -124,6 +133,18 @@
 }
 
 @layer utilities {
+  /** Use on a single scroll container if you opt out of global * scrollbar hide */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   .app-container {
     width: 100%;
     max-width: 402px;
@@ -341,6 +362,20 @@
 
   .login-primary-button {
     background: linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%);
+  }
+
+  /* Apply same gradient to all blue-styled buttons across front app */
+  button[class*="bg-[#4A90E5]"],
+  button[class*="bg-[#4a90e5]"],
+  button[class*="bg-[#4C92E9]"],
+  button[class*="bg-[#4c92e9]"],
+  button[class*="bg-[#4c91e2]"],
+  a[role="button"][class*="bg-[#4A90E5]"],
+  a[role="button"][class*="bg-[#4a90e5]"],
+  .landing-primary-button,
+  .login-primary-button {
+    background-image: linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%) !important;
+    background-color: transparent !important;
   }
 
   .login-primary-button-text {

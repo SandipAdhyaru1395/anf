@@ -1,20 +1,38 @@
 "use client";
 
 import { useSettings } from "./settings-provider";
+import { resolveBackendAssetUrl } from "@/lib/utils";
 
-export function Thumbnail() {
+type ThumbnailProps = {
+  height?: number;
+  containerClassName?: string;
+  imgClassName?: string;
+};
+
+export function Thumbnail({
+  height = 107.84,
+  containerClassName = "",
+  imgClassName = "",
+}: ThumbnailProps = {}) {
   const { settings } = useSettings();
 
-  if (!settings?.thumbnail) {
+  const src =
+    resolveBackendAssetUrl(settings?.thumbnail) ??
+    (settings?.thumbnail ? String(settings.thumbnail).trim() : null);
+
+  if (!src) {
     return null;
   }
 
   return (
-    <div className="w-full" style={{ height: 266.66 }}>
+    <div className={`w-full bg-white overflow-hidden ${containerClassName}`.trim()} style={{ height }}>
       <img
-        src={settings.thumbnail}
+        src={src}
         alt="thumbnail"
-        className="w-full h-full"
+        className={`w-full h-full object-contain ${imgClassName}`.trim()}
+        onError={(e) => {
+          e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found";
+        }}
       />
     </div>
   );

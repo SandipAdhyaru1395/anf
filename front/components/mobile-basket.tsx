@@ -150,9 +150,6 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
             };
           });
         setItems(mapped);
-        if (mapped.length === 0) {
-          onNavigate('shop');
-        }
         const c = res?.data?.cart;
         setCartTotals({
           units: Number(c?.units || 0),

@@ -48,6 +48,10 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const inputFieldClass =
+    "w-full h-[50px] !border-2 !border-[#7FB0EE] rounded-[6px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:!border-[#4A90E5] focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all"
+  const readOnlyInputClass =
+    "w-full h-[50px] !border-2 !border-[#7FB0EE] rounded-[6px] px-4 text-[14px] focus:outline-none placeholder:text-gray-400 text-gray-500 bg-gray-50/50 transition-all cursor-not-allowed"
 
   const form = useForm<CompanyDetailsForm>({
     resolver: zodResolver(companyDetailsSchema),
@@ -118,26 +122,34 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F7FC] flex flex-col items-center p-4">
+    <div className="min-h-screen bg-[#F3F4F8] flex flex-col items-center">
+      {/* Top Header */}
+      <div className="w-full max-w-[402px] h-[58px] bg-[#EEF0F5] border-b border-[#E2E6EF] flex items-center justify-center relative">
+        <button
+          type="button"
+          onClick={onBack}
+          className="absolute left-3 inline-flex items-center gap-1 text-[#8A94A6] text-[13px] font-medium"
+        >
+          <FontAwesomeIcon icon={faChevronLeft} className="text-[12px]" />
+          <span>Back</span>
+        </button>
+        <h1 className="text-[20px] font-semibold text-[#4E5667] leading-none">My Details</h1>
+      </div>
+
       {/* Container */}
-      <div className="w-full max-w-[402px] bg-white p-8 rounded-[4px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col">
-        {/* Logo Section */}
-        <div className="flex justify-center mb-8">
-          <img
-            src="/assets/img/logo.png"
-            alt="AQUAVAPE"
-            className="w-48 h-auto object-contain"
-          />
+      <div className="w-full max-w-[402px] bg-white px-3 pt-2 pb-2 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex flex-col">
+        <div className="flex w-full justify-center px-0 py-0 mx-auto">
+          <Banner className="h-[80px] w-full max-w-[380px] rounded-[2px]" />
         </div>
 
         {/* Form Section */}
         <form
           onSubmit={form.handleSubmit(saveCompanyDetails)}
           noValidate
-          className="flex flex-col"
+          className="flex flex-col pb-24 pt-3"
         >
           {/* Company Name */}
-          <div className="flex flex-col mb-6">
+          <div className="flex flex-col mb-4">
             <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
               Company Name
             </label>
@@ -145,7 +157,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               type="text"
               placeholder="Please enter your company name"
               {...form.register("company_name")}
-              className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+              className={inputFieldClass}
             />
             {form.formState.errors.company_name?.message && (
               <p className="text-red-500 text-[10px] mt-1 ml-1">
@@ -155,7 +167,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
           </div>
 
           {/* Company Address Section */}
-          <div className="flex flex-col mb-6">
+          <div className="flex flex-col mb-4">
             <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
               Company Address
             </label>
@@ -164,37 +176,37 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
                 type="text"
                 placeholder="Invoice address line 1"
                 {...form.register("address_line1")}
-                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+                className={inputFieldClass}
               />
               <input
                 type="text"
                 placeholder="Invoice address line 2"
                 {...form.register("address_line2")}
-                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+                className={inputFieldClass}
               />
               <input
                 type="text"
                 placeholder="Invoice address city"
                 {...form.register("city")}
-                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+                className={inputFieldClass}
               />
               <input
                 type="text"
                 placeholder="Invoice address county"
                 {...form.register("country")}
-                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+                className={inputFieldClass}
               />
               <input
                 type="text"
                 placeholder="Invoice address postcode"
                 {...form.register("postcode")}
-                className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+                className={inputFieldClass}
               />
             </div>
           </div>
 
           {/* Contact Number Section */}
-          <div className="flex flex-col mb-6">
+          <div className="flex flex-col mb-4">
             <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
               Contact Number
             </label>
@@ -202,12 +214,12 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               type="text"
               placeholder="Please enter your contact number"
               {...form.register("contact_number")}
-              className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder:text-gray-400 text-gray-700 bg-white transition-all shadow-sm"
+              className={inputFieldClass}
             />
           </div>
 
           {/* Login Details Section */}
-          <div className="flex flex-col mb-10">
+          <div className="flex flex-col mb-4">
             <label className="text-[#5B6B7A] font-bold text-[14px] mb-2">
               Login Details
             </label>
@@ -216,30 +228,68 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               placeholder="Please enter your email"
               value={customer?.email || ""}
               readOnly
-              className="w-full h-[50px] border-[#A5C9F5] border-[1.5px] rounded-[5px] px-4 text-[14px] focus:outline-none placeholder:text-gray-400 text-gray-500 bg-gray-50/50 transition-all shadow-sm cursor-not-allowed"
+              className={readOnlyInputClass}
             />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col pt-2">
             <button
               type="submit"
               disabled={saving}
-              className="w-full h-[54px] bg-[#4A90E5] text-white rounded-[27px] font-bold text-[17px] shadow-lg active:scale-[0.98] disabled:opacity-70 transition-all"
+              className="w-full h-[40px] text-white rounded-[20px] font-bold text-[20px] leading-[18px] tracking-[0px] text-center shadow-lg active:scale-[0.98] disabled:opacity-70 transition-all bg-[linear-gradient(0deg,_#2868C0_-107.69%,_#4C92E9_80.77%)]"
             >
-              {saving ? "Signing in..." : "Agree & Sign Up"}
-            </button>
-
-            <button
-              type="button"
-              onClick={onBack}
-              className="w-full h-[54px] bg-white border-2 border-[#4A90E5] text-[#4A90E5] rounded-[27px] font-bold text-[17px] active:scale-[0.98] transition-all"
-            >
-              Back
+              {saving ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[402px] -translate-x-1/2 bg-[#F1F2F7] shadow-[0_-4px_16px_-4px_rgba(15,23,42,0.12)]">
+        <div className="grid h-[74px] grid-cols-5 items-center border-t border-[#E4E7F0] px-2 pb-[10px] pt-2">
+          <button
+            type="button"
+            onClick={() => onNavigate("dashboard")}
+            className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]"
+          >
+            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
+            <span>Dashboard</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("shop", false)}
+            className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]"
+          >
+            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
+            <span>Shop</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("shop", true)}
+            className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]"
+          >
+            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
+            <span>Favourites</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("wallet")}
+            className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]"
+          >
+            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
+            <span>Wallet</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("account")}
+            className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#4A90E5]"
+          >
+            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
+            <span>Account</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

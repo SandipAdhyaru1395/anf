@@ -36,3 +36,47 @@ export function buildPath(relativePath: string): string {
   const joined = `${base}/${rel}`
   return joined.replace(/\/+/g, '/')
 }
+
+/**
+ * Laravel `asset('storage/...')` often returns `http://localhost/storage/...` while the app
+ * actually lives under a subpath (e.g. XAMPP `/anf/admin/public`). The browser then 404s images.
+ * Also prepends the API origin for relative paths like `/storage/...`.
+ */
+export function resolveBackendAssetUrl(url: string | null | undefined): string | null {
+  if (url == null) return null
+  const s = String(url).trim()
+  if (!s) return null
+
+  const rawBase =
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) ||
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) ||
+    "http://localhost:8000"
+  const apiOrigin = String(rawBase).replace(/\/api\/?$/i, "").replace(/\/$/, "")
+
+  const withOrigin = (path: string) => {
+    const p = path.startsWith("/") ? path : `/${path}`
+    return `${apiOrigin}${p}`
+  }
+
+  if (s.startsWith("//")) {
+    const proto = typeof window !== "undefined" ? window.location?.protocol || "https:" : "https:"
+    return `${proto}${s}`
+  }
+
+  if (/^https?:\/\//i.test(s)) {
+    try {
+      const u = new URL(s)
+      const host = u.hostname.toLowerCase()
+      const isLocal = host === "localhost" || host === "127.0.0.1" || host === "[::1]"
+      // Wrong base path: file is served from the Laravel `public` that hosts the API
+      if (isLocal && u.pathname.startsWith("/storage/")) {
+        return withOrigin(u.pathname + u.search + u.hash)
+      }
+    } catch {
+      /* keep original */
+    }
+    return s
+  }
+
+  return withOrigin(s)
+}

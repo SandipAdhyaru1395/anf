@@ -115,7 +115,9 @@ export function MobileBranches({ onNavigate, onBack }: MobileBranchesProps) {
         <div className="w-[40px]"></div> {/* Spacer for centering */}
       </div>
 
-      <Banner />
+      <div className="flex w-full justify-center px-3 py-3">
+        <Banner />
+      </div>
 
       <div className="px-4 py-4 flex-1">
         <Button
