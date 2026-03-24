@@ -12,6 +12,7 @@ use App\Models\ProductVolumeDiscountBreakPrice;
 use App\Models\VolumeDiscountBreak;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CartController extends Controller
 {
@@ -277,6 +278,16 @@ class CartController extends Controller
             return $baseUnit;
         }
 
+        // If discount tables are not present in DB, skip volume discount logic.
+        if (
+            !Schema::hasTable('product_volume_discounts') ||
+            !Schema::hasTable('volume_discount_groups') ||
+            !Schema::hasTable('volume_discount_breaks') ||
+            !Schema::hasTable('product_volume_discount_break_prices')
+        ) {
+            return $baseUnit;
+        }
+
         $priceListId = $customer->price_list_id ?? null;
 
         // Exact price list group, fallback to default group for product
@@ -333,7 +344,6 @@ class CartController extends Controller
 
 
         $discounted = $baseUnit * (1 - ($pct / 100));
-        \Illuminate\Support\Facades\Log::info('test', [$discounted]);
         return $discounted >= 0 ? $discounted : $baseUnit;
     }
 }

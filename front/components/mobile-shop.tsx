@@ -323,9 +323,23 @@ export function MobileShop({
 
   // cart and totals are provided by parent
 
+  const extractApiErrorMessage = (error: unknown, fallback: string) => {
+    const err = error as {
+      message?: string;
+      response?: { data?: { message?: string; error?: string } };
+    };
+    return err?.response?.data?.message || err?.response?.data?.error || err?.message || fallback;
+  };
+
   const handleIncrement = async (product: ProductItem) => {
     try {
-      const step = Number(product?.step_quantity) > 0 ? Number(product.step_quantity) : 1;
+      const parsedStep = Number(product?.step_quantity);
+      const step = Number.isFinite(parsedStep) && parsedStep > 0 ? Math.max(1, Math.floor(parsedStep)) : 1;
+      const productId = Number(product?.id);
+      if (!Number.isFinite(productId) || productId <= 0) {
+        toast({ title: 'Failed to add to cart', description: 'Invalid product id', variant: 'destructive' });
+        return;
+      }
       const allowOutOfStock = Boolean((product as any)?.allow_out_of_stock);
       const { known: stockKnown, stock } = getProductStockInfo(product);
       const current = Number(cartQuantities[product.id] || 0);
@@ -333,7 +347,7 @@ export function MobileShop({
         toast({ title: 'Quantity not available', description: `Only ${stock} in stock`, variant: 'destructive' });
         return;
       }
-      const res = await api.post('/cart/add', { product_id: product.id, quantity: step });
+      const res = await api.post('/cart/add', { product_id: productId, quantity: step });
       if (res?.data && res.data.success === false) {
         const msg = res.data.message || 'Requested quantity is not available';
         toast({ title: 'Quantity not available', description: msg, variant: 'destructive' });
@@ -361,14 +375,21 @@ export function MobileShop({
         total: Number(c?.total || 0),
       });
       setWalletCreditTotal(Number(c?.wallet_credit_total || wallet));
-    } catch (e: any) {
-      toast({ title: 'Failed to add to cart', description: e?.message || 'Please try again', variant: 'destructive' });
+    } catch (e: unknown) {
+      toast({
+        title: 'Failed to add to cart',
+        description: extractApiErrorMessage(e, 'Please try again'),
+        variant: 'destructive',
+      });
     }
   };
 
   const handleDecrement = async (product: ProductItem) => {
     try {
-      const step = Number(product?.step_quantity) > 0 ? Number(product.step_quantity) : 1;
+      const parsedStep = Number(product?.step_quantity);
+      const step = Number.isFinite(parsedStep) && parsedStep > 0 ? Math.max(1, Math.floor(parsedStep)) : 1;
+      const productId = Number(product?.id);
+      if (!Number.isFinite(productId) || productId <= 0) return;
       const current = Number(cartQuantities[product.id] || 0);
       // Calculate new quantity after decrement
       const nextQty = Math.max(0, current - step);
@@ -376,7 +397,7 @@ export function MobileShop({
 
       if (decrementQty === 0) return;
 
-      const res = await api.post('/cart/decrement', { product_id: product.id, quantity: decrementQty });
+      const res = await api.post('/cart/decrement', { product_id: productId, quantity: decrementQty });
       if (res?.data && res.data.success === false) {
         const msg = res.data.message || 'Could not update cart';
         toast({ title: 'Update failed', description: msg, variant: 'destructive' });

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/components/currency-provider";
 import { Banner } from "@/components/banner";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 import Image from "next/image";
@@ -50,7 +50,14 @@ export function MobileDashboard({
   const { customer } = useCustomer();
   const { settings } = useSettings();
 
-  const wallet = Number(customer?.wallet_balance || 0);
+  const walletBalance = Number(customer?.wallet_balance || 0);
+  const cartWalletCredit = useMemo(() => {
+    return Object.values(cart).reduce((sum, item) => {
+      const credit = Number(item?.product?.wallet_credit ?? 0);
+      const qty = Number(item?.quantity ?? 0);
+      return sum + (Number.isFinite(credit) ? credit : 0) * (Number.isFinite(qty) ? qty : 0);
+    }, 0);
+  }, [cart]);
   const logoSrc =
     resolveBackendAssetUrl(settings?.company_logo_url) ??
     settings?.company_logo_url ??
@@ -190,7 +197,7 @@ export function MobileDashboard({
             <div className="flex items-center gap-2">
               <FontAwesomeIcon icon={faWallet} className="text-[#4A90E5] text-[15px]" />
               <span className="text-[12.5px] font-bold text-[#4E5667]">
-                {symbol}{wallet.toFixed(2)} credit in your wallet
+                {symbol}{walletBalance.toFixed(2)} credit in your wallet
               </span>
             </div>
             <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[12px] opacity-80" />
@@ -330,7 +337,7 @@ export function MobileDashboard({
               <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
               <span className="inline-flex items-center gap-[3px] text-[#4A90E5] font-bold">
                 <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" />
-                <span>+{symbol}{wallet.toFixed(2)}</span>
+                <span>+{symbol}{cartWalletCredit.toFixed(2)}</span>
               </span>
             </div>
             <div className="text-[12px] text-[#727C90] mt-[2px] font-medium text-center">

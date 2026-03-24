@@ -158,6 +158,7 @@ export default function Home() {
       <MobileBasket
         onNavigate={handleNavigate}
         cart={cart}
+        onCartSync={setCart}
         increment={increment}
         decrement={decrement}
         totals={totals}

@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -136,6 +137,16 @@ class OrderController extends Controller
   protected function applyVolumeDiscount(Product $product, Customer $customer, int $quantity, float $baseUnit): float
   {
     if ($quantity <= 0) {
+      return $baseUnit;
+    }
+
+    // If discount tables are missing, gracefully use base pricing.
+    if (
+      !Schema::hasTable('product_volume_discounts') ||
+      !Schema::hasTable('volume_discount_groups') ||
+      !Schema::hasTable('volume_discount_breaks') ||
+      !Schema::hasTable('product_volume_discount_break_prices')
+    ) {
       return $baseUnit;
     }
 

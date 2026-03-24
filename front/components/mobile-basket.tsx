@@ -29,6 +29,7 @@ interface ProductItem {
 interface MobileBasketProps {
   onNavigate: (page: any, favorites?: boolean) => void;
   cart: Record<number, { product: ProductItem; quantity: number }>;
+  onCartSync: (nextCart: Record<number, { product: ProductItem; quantity: number }>) => void;
   increment: (product: ProductItem) => void;
   decrement: (product: ProductItem) => void;
   totals: { units: number; skus: number; subtotal: number; totalDiscount: number; total: number };
@@ -36,7 +37,7 @@ interface MobileBasketProps {
   onBack: () => void;
 }
 
-export function MobileBasket({ onNavigate, cart, increment, decrement, totals, clearCart, onBack }: MobileBasketProps) {
+export function MobileBasket({ onNavigate, cart, onCartSync, increment, decrement, totals, clearCart, onBack }: MobileBasketProps) {
   const [favourites, setFavourites] = useState<Record<number, boolean>>({});
   const { toast } = useToast();
   const { symbol, format } = useCurrency();
@@ -72,6 +73,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
   // Backend-driven cart state
   const [items, setItems] = useState<Array<{ product: ProductItem; quantity: number }>>([]);
   const [cartTotals, setCartTotals] = useState<{ units: number; skus: number; subtotal: number; totalDiscount: number; total: number }>({ units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 });
+  const [deletingIds, setDeletingIds] = useState<Record<number, boolean>>({});
 
   // Calculate total wallet credit from backend cart items
   const totalWalletCredit = useMemo(() => {
@@ -120,44 +122,103 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
     return 1;
   };
 
+  const findProductInProductsCache = (productId: number): any | null => {
+    try {
+      const raw = sessionStorage.getItem('products_cache');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const categories = Array.isArray(parsed) ? parsed : (parsed?.categories || []);
+      const findProductInNodes = (nodes: any[]): any => {
+        for (const node of nodes) {
+          if (Array.isArray(node?.products)) {
+            const found = node.products.find((p: any) => Number(p?.id) === productId);
+            if (found) return found;
+          }
+          if (Array.isArray(node?.subcategories)) {
+            const found = findProductInNodes(node.subcategories);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      return findProductInNodes(categories);
+    } catch {
+      return null;
+    }
+  };
+
+  const mapApiItemsToBasketItems = (
+    apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }>
+  ): Array<{ product: ProductItem; quantity: number }> => {
+    return apiItems
+      .map((it) => {
+        const productId = Number(it?.product?.id ?? it?.product_id);
+        if (!Number.isFinite(productId)) return null;
+
+        const fallbackProduct = cart?.[productId]?.product as any;
+        const cacheProduct = findProductInProductsCache(productId);
+        const p = it?.product ?? fallbackProduct ?? cacheProduct;
+        if (!p) return null;
+
+        const apiStepQty = Number(p?.step_quantity ?? 0);
+        const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId, p as ProductItem);
+        const baseUnit = Number(p?.price ?? it?.original_unit_price ?? it?.unit_price ?? 0);
+        const effectiveUnit = Number(p?.effective_price ?? it?.unit_price ?? baseUnit);
+
+        return {
+          product: {
+            id: productId,
+            name: String(p?.name ?? ""),
+            image: String(p?.image ?? ""),
+            price: String(effectiveUnit),
+            original_price: Number.isFinite(baseUnit) ? baseUnit : undefined,
+            applied_discount_percentage: typeof p?.applied_discount_percentage === "number" ? p.applied_discount_percentage : undefined,
+            wallet_credit: Number(p?.wallet_credit ?? 0),
+            step_quantity: stepQty,
+          } as ProductItem,
+          quantity: Number(it?.quantity) || 0,
+        };
+      })
+      .filter((x): x is { product: ProductItem; quantity: number } => Boolean(x));
+  };
+
+  const extractApiErrorMessage = (error: unknown, fallback: string) => {
+    const err = error as {
+      message?: string;
+      response?: { data?: { message?: string; error?: string } };
+    };
+    return err?.response?.data?.message || err?.response?.data?.error || err?.message || fallback;
+  };
+
+  const applyCartResponse = (res: any) => {
+    const apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }> = res?.data?.cart?.items || [];
+    const mapped = mapApiItemsToBasketItems(apiItems);
+    setItems(mapped);
+    const nextCart: Record<number, { product: ProductItem; quantity: number }> = {};
+    mapped.forEach(({ product, quantity }) => {
+      nextCart[product.id] = { product, quantity };
+    });
+    onCartSync(nextCart);
+    const c = res?.data?.cart;
+    setCartTotals({
+      units: Number(c?.units || 0),
+      skus: Number(c?.skus || 0),
+      subtotal: Number(c?.subtotal || 0),
+      totalDiscount: Number(c?.total_discount || 0),
+      total: Number(c?.total || 0),
+    });
+  };
+
+  const loadCartFromApi = async () => {
+    const res = await api.get('/cart');
+    applyCartResponse(res);
+  };
+
   // Load cart from API on mount and when products update (price may change)
   useEffect(() => {
     const loadCart = async () => {
       try {
-        const res = await api.get('/cart');
-        const apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }> = res?.data?.cart?.items || [];
-        const mapped = apiItems
-          .filter((it) => it?.product)
-          .map((it) => {
-            const productId = Number(it.product.id);
-            const apiStepQty = Number(it.product.step_quantity ?? 0);
-            const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
-            const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
-            const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
-
-            return {
-              product: {
-                id: productId,
-                name: it.product.name,
-                image: it.product.image,
-                price: String(effectiveUnit),
-                original_price: baseUnit,
-                applied_discount_percentage: typeof it.product.applied_discount_percentage === "number" ? it.product.applied_discount_percentage : undefined,
-                wallet_credit: Number(it.product.wallet_credit ?? 0),
-                step_quantity: stepQty,
-              } as ProductItem,
-              quantity: Number(it.quantity) || 0,
-            };
-          });
-        setItems(mapped);
-        const c = res?.data?.cart;
-        setCartTotals({
-          units: Number(c?.units || 0),
-          skus: Number(c?.skus || 0),
-          subtotal: Number(c?.subtotal || 0),
-          totalDiscount: Number(c?.total_discount || 0),
-          total: Number(c?.total || 0),
-        });
+        await loadCartFromApi();
       } catch { }
     };
     loadCart();
@@ -190,39 +251,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
         toast({ title: 'Quantity not available', description: msg, variant: 'destructive' });
         return;
       }
-      const apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }> = res?.data?.cart?.items || [];
-      const mapped = apiItems
-        .filter((it) => it?.product)
-        .map((it) => {
-          const productId = Number(it.product.id);
-          const apiStepQty = Number(it.product.step_quantity ?? 0);
-          const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
-          const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
-          const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
-
-          return {
-            product: {
-              id: productId,
-              name: it.product.name,
-              image: it.product.image,
-              price: String(effectiveUnit),
-              original_price: baseUnit,
-              applied_discount_percentage: typeof it.product.applied_discount_percentage === "number" ? it.product.applied_discount_percentage : undefined,
-              wallet_credit: Number(it.product.wallet_credit ?? 0),
-              step_quantity: stepQty,
-            } as ProductItem,
-            quantity: Number(it.quantity) || 0,
-          };
-        });
-      setItems(mapped);
-      const c = res?.data?.cart;
-      setCartTotals({
-        units: Number(c?.units || 0),
-        skus: Number(c?.skus || 0),
-        subtotal: Number(c?.subtotal || 0),
-        totalDiscount: Number(c?.total_discount || 0),
-        total: Number(c?.total || 0),
-      });
+      applyCartResponse(res);
     } catch (e: any) {
       toast({ title: 'Failed to add item', description: e?.message || 'Please try again', variant: 'destructive' });
     }
@@ -239,37 +268,33 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
       if (decrementQty === 0) return;
 
       const res = await api.post('/cart/decrement', { product_id: product.id, quantity: decrementQty });
-      const apiItems: Array<{ product_id: number; quantity: number; product?: any }> = res?.data?.cart?.items || [];
-      const mapped = apiItems
-        .filter((it) => it?.product)
-        .map((it) => {
-          const productId = Number(it.product.id);
-          const apiStepQty = Number(it.product.step_quantity ?? 0);
-          const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
-
-          return {
-            product: {
-              id: productId,
-              name: it.product.name,
-              image: it.product.image,
-              price: String(it.product.price),
-              wallet_credit: Number(it.product.wallet_credit ?? 0),
-              step_quantity: stepQty,
-            } as ProductItem,
-            quantity: Number(it.quantity) || 0,
-          };
-        });
-      setItems(mapped);
-      const c = res?.data?.cart;
-      setCartTotals({
-        units: Number(c?.units || 0),
-        skus: Number(c?.skus || 0),
-        subtotal: Number(c?.subtotal || 0),
-        totalDiscount: Number(c?.total_discount || 0),
-        total: Number(c?.total || 0),
-      });
+      applyCartResponse(res);
     } catch (e: any) {
       toast({ title: 'Failed to update item', description: e?.message || 'Please try again', variant: 'destructive' });
+    }
+  };
+
+  const apiRemoveItem = async (product: ProductItem) => {
+    const productId = Number(product?.id);
+    if (!Number.isFinite(productId) || productId <= 0) {
+      toast({ title: 'Failed to remove item', description: 'Invalid product id', variant: 'destructive' });
+      return;
+    }
+    try {
+      setDeletingIds((prev) => ({ ...prev, [productId]: true }));
+      const res = await api.post('/cart/set', { product_id: productId, quantity: 0 });
+      applyCartResponse(res);
+    } catch (e: unknown) {
+      try {
+        await loadCartFromApi();
+      } catch { }
+      toast({
+        title: 'Failed to remove item',
+        description: extractApiErrorMessage(e, 'Please try again'),
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingIds((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -321,7 +346,7 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
       </div>
 
       {/* Banner */}
-      <div className="mt-0">
+      <div className="mt-2">
         <Banner />
       </div>
       {adjustments.length > 0 && (
@@ -386,45 +411,8 @@ export function MobileBasket({ onNavigate, cart, increment, decrement, totals, c
 
                   {/* Delete button */}
                   <button
-                    onClick={async () => {
-                      try {
-                        await api.post('/cart/set', { product_id: product.id, quantity: 0 });
-                        const res = await api.get('/cart');
-                        const apiItems: Array<{ product_id: number; quantity: number; product?: any; unit_price?: number; original_unit_price?: number; applied_discount_percentage?: number }> = res?.data?.cart?.items || [];
-                        const mapped = apiItems
-                          .filter((it) => it?.product)
-                          .map((it) => {
-                            const productId = Number(it.product.id);
-                            const apiStepQty = Number(it.product.step_quantity ?? 0);
-                            const stepQty = apiStepQty > 0 ? apiStepQty : getStepQuantity(productId);
-                            const baseUnit = Number(it.product.price ?? it.original_unit_price ?? it.unit_price ?? 0);
-                            const effectiveUnit = Number(it.product.effective_price ?? it.unit_price ?? baseUnit);
-
-                            return {
-                              product: {
-                                id: productId,
-                                name: it.product.name,
-                                image: it.product.image,
-                                price: String(effectiveUnit),
-                                original_price: baseUnit,
-                                applied_discount_percentage: typeof it.product.applied_discount_percentage === "number" ? it.product.applied_discount_percentage : undefined,
-                                wallet_credit: Number(it.product.wallet_credit ?? 0),
-                                step_quantity: stepQty,
-                              } as ProductItem,
-                              quantity: Number(it.quantity) || 0,
-                            };
-                          });
-                        setItems(mapped);
-                        const c = res?.data?.cart;
-                        setCartTotals({
-                          units: Number(c?.units || 0),
-                          skus: Number(c?.skus || 0),
-                          subtotal: Number(c?.subtotal || 0),
-                          totalDiscount: Number(c?.total_discount || 0),
-                          total: Number(c?.total || 0),
-                        });
-                      } catch { }
-                    }}
+                    onClick={() => apiRemoveItem(product)}
+                    disabled={Boolean(deletingIds[product.id])}
                     className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#BDC7DE] hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-5 h-5" strokeWidth={2} />
