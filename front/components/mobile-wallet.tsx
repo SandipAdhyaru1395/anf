@@ -73,7 +73,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
   if (showIntro) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="bg-[#F8F7FC] w-full max-w-[402px] rounded-lg shadow-2xl overflow-hidden flex flex-col">
+        <div className="bg-[#FFFFFF] w-full max-w-[402px] rounded-lg shadow-2xl overflow-hidden flex flex-col">
           <div className="p-8 pb-4 space-y-6">
             <div className="space-y-1">
               <h2 className="text-[#4E5667] font-bold text-[17px]">What is the Wallet?</h2>

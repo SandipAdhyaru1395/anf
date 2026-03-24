@@ -517,14 +517,14 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           {/* Order Details */}
           <div className="px-5 pt-4 pb-3">
             <div className="flex items-start justify-between">
-              <h4 className="font-bold text-[#3F4B63] text-[16px] leading-[1]">Order Details</h4>
+              <h4 className="font-bold text-[#3F4B63] text-[13px] leading-[1]">Order Details</h4>
               <div className="space-y-1 text-right">
                 <div className="flex items-center justify-end gap-5">
-                  <span className="text-[#3F4B63] font-bold text-[16px] leading-none">SKUs</span>
+                  <span className="text-[#3F4B63] font-bold text-[13px] leading-none">SKUs</span>
                   <span className="text-[#5F6C83] text-[14px] leading-none">{cartTotals.skus}</span>
                 </div>
                 <div className="flex items-center justify-end gap-5">
-                  <span className="text-[#3F4B63] font-bold text-[16px] leading-none">Items</span>
+                  <span className="text-[#3F4B63] font-bold text-[13px] leading-none">Items</span>
                   <span className="text-[#5F6C83] text-[14px] leading-none">{cartTotals.units}</span>
                 </div>
               </div>
@@ -534,13 +534,13 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           {/* Delivery Details */}
           <div className="px-5 py-3 border-t border-[#E5EAF3]">
             <div className="flex justify-between items-start mb-1">
-              <h4 className="font-bold text-[#3F4B63] text-[16px]">Delivery</h4>
-              <span className="font-bold text-[#3F4B63] text-[16px] leading-none">{selectedDeliveryMethod?.name} - {format(deliveryRate)}</span>
+              <h4 className="font-bold text-[#3F4B63] text-[13px]">Delivery</h4>
+              <span className="font-bold text-[#3F4B63] text-[13px] leading-none">{selectedDeliveryMethod?.name} - {format(deliveryRate)}</span>
             </div>
-            <div className="text-[#3F4B63] leading-[1.25] text-[14px] text-right">
+            <div className="text-[#3F4B63] leading-[1.25] text-[13px] text-right">
               {selectedBranch ? (
                 <>
-                  <div className="font-bold text-[#4E5667]">{selectedBranch.name}</div>
+                  <div className="font-[500] text-[#4E5667]">{selectedBranch.name}</div>
                   <div>{selectedBranch.address_line1}</div>
                   {selectedBranch.address_line2 && <div>{selectedBranch.address_line2}</div>}
                   <div>{selectedBranch.city}</div>
@@ -555,24 +555,24 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
             <h4 className="font-bold text-[#3F4B63] mb-3 text-[16px]">Summary</h4>
             <div className="space-y-[7px]">
               <div className="flex justify-between">
-                <span className="text-[#5E6A80] font-semibold text-[15px]">Subtotal</span>
-                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(subtotal)}</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">Subtotal</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">{format(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5E6A80] font-semibold text-[15px]">Wallet Discount</span>
-                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(discount)}</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">Wallet Discount</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">{format(discount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5E6A80] font-semibold text-[15px]">Delivery</span>
-                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(deliveryRate)}</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">Delivery</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">{format(deliveryRate)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5E6A80] font-semibold text-[15px]">VAT ({subtotal > 0 ? ((vat/subtotal)*100).toFixed(2) : '20.00'}%)</span>
-                <span className="text-[#5E6A80] font-semibold text-[15px]">{format(vat)}</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">VAT ({subtotal > 0 ? ((vat/subtotal)*100).toFixed(2) : '20.00'}%)</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">{format(vat)}</span>
               </div>
               <div className="flex justify-between text-[16px] pt-3 mt-2">
-                <span className="text-[#3A86E4] font-bold text-[18px]">Payment Total</span>
-                <span className="text-[#3A86E4] font-bold text-[18px]">{format(paymentTotal)}</span>
+                <span className="text-[#3A86E4] font-bold text-[14px]">Payment Total</span>
+                <span className="text-[#3A86E4] font-bold text-[16px]">{format(paymentTotal)}</span>
               </div>
             </div>
           </div>
@@ -581,7 +581,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         {/* Payment options */}
         {!hidePaymentSection && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <h3 className="text-[13px] font-bold text-[#131A44] mb-4 uppercase tracking-wider opacity-60">Payment Method</h3>
+            <h3 className="text-[14px] font-bold text-[#131A44] mb-4 uppercase tracking-wider opacity-60">Payment Method</h3>
             <div className="space-y-3">
               {gatewayAvailable && (
                 <label className="flex items-center gap-3 cursor-pointer">
