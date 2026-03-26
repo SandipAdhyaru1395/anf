@@ -94,6 +94,7 @@ export function MobileShop({
   const { format, symbol } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<TreeNode[]>(initialCategories);
+  const [brandFilter, setBrandFilter] = useState<string | null>(null);
   // Track expanded nodes by path key (e.g., "Vaping", "Vaping::Disposables", "Vaping::Disposables::Brand X")
   const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
   const { toast } = useToast();
@@ -113,6 +114,19 @@ export function MobileShop({
       return isOpen ? prev.filter((p) => p !== path) : [...prev, path];
     });
   };
+
+  // One-time: read brand filter set from dashboard (if any)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("shop_brand_filter_v1");
+      if (raw && String(raw).trim()) {
+        setBrandFilter(String(raw).trim());
+      }
+      sessionStorage.removeItem("shop_brand_filter_v1");
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -296,6 +310,46 @@ export function MobileShop({
       .filter((n): n is TreeNode => Boolean(n));
   }, [categories, searchQuery, showFavorites, isFavorite]);
 
+  // Apply brand filter to roots (only show parent categories that contain the brand)
+  const displayedCategoriesWithBrandFilter = useMemo(() => {
+    const filterName = String(brandFilter || "").trim().toLowerCase();
+    if (!filterName) return displayedCategories;
+
+    // Prune the tree so only the selected brand (and its ancestors) remain.
+    // This ensures we do not show other brands/siblings in the same parent category.
+    const pruneToBrand = (node: TreeNode): TreeNode | null => {
+      const nodeName = String(node?.name || "").trim().toLowerCase();
+      const isMatch = nodeName === filterName;
+
+      const children = Array.isArray(node?.subcategories) ? node.subcategories : [];
+      const prunedChildren = children
+        .map((c) => pruneToBrand(c))
+        .filter((x): x is TreeNode => Boolean(x));
+
+      if (isMatch) {
+        // Keep only this brand node and its products (if any); hide any other subcategories under it.
+        return {
+          ...node,
+          ...(Array.isArray(node.products) ? { products: node.products } : {}),
+          subcategories: [],
+        };
+      }
+
+      if (prunedChildren.length > 0) {
+        return {
+          ...node,
+          subcategories: prunedChildren,
+        };
+      }
+
+      return null;
+    };
+
+    return displayedCategories
+      .map((root) => pruneToBrand(root))
+      .filter((x): x is TreeNode => Boolean(x));
+  }, [displayedCategories, brandFilter]);
+
   // Auto-expand paths when searching to reveal matches.
   // Do NOT collapse on unrelated state changes (e.g., favorites toggle)
   useEffect(() => {
@@ -314,9 +368,36 @@ export function MobileShop({
         }
       });
     };
-    traverse(displayedCategories);
+    traverse(displayedCategoriesWithBrandFilter);
     setExpandedPaths(paths);
-  }, [searchQuery, displayedCategories]);
+  }, [searchQuery, displayedCategoriesWithBrandFilter]);
+
+  // When brand filter is active, auto-expand the first matching root → brand path.
+  useEffect(() => {
+    const filterName = String(brandFilter || "").trim().toLowerCase();
+    if (!filterName) return;
+    if (!displayedCategoriesWithBrandFilter.length) return;
+
+    const findPath = (node: TreeNode, parentPath: string | null): string[] | null => {
+      const path = parentPath ? `${parentPath}::${node.name}` : node.name;
+      if (String(node?.name || "").trim().toLowerCase() === filterName) return [path];
+      if (Array.isArray(node?.subcategories)) {
+        for (const child of node.subcategories) {
+          const res = findPath(child, path);
+          if (res) return [path, ...res];
+        }
+      }
+      return null;
+    };
+
+    const root = displayedCategoriesWithBrandFilter[0];
+    const pathList = findPath(root, null);
+    if (pathList && pathList.length) {
+      setExpandedPaths(Array.from(new Set(pathList)));
+    } else {
+      setExpandedPaths([root.name]);
+    }
+  }, [brandFilter, displayedCategoriesWithBrandFilter]);
 
   // cart and totals are provided by parent
 
@@ -577,7 +658,7 @@ export function MobileShop({
       {/* Category Menu: 370px column, 8px vertical gap; frame 402 + px-4 */}
       <div className="mx-auto min-h-0 w-full max-w-[402px] flex-1 overflow-y-auto px-4 pb-[150px] pt-4">
         <div className="mx-auto w-full max-w-[370px] space-y-2">
-          {displayedCategories.map((node) => (
+          {displayedCategoriesWithBrandFilter.map((node) => (
             <CategoryNode key={node.name} node={node} path={node.name} depth={0} expandedPaths={expandedPaths} togglePath={togglePath} cart={cart} onIncrement={handleIncrement} onDecrement={handleDecrement} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} cartQuantities={cartQuantities} topAncestorIsSpecial={node.is_special === 1} />
           ))}
         </div>

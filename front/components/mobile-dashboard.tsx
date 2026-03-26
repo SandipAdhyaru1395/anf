@@ -486,9 +486,17 @@ export function MobileDashboard({
                     "text-[#EA2428]",
                   ];
                   return (
-                    <div
+                    <button
                       key={b.key ?? i}
-                      className="flex w-[56px] shrink-0 flex-col items-center justify-center gap-1"
+                      type="button"
+                      onClick={() => {
+                        try {
+                          sessionStorage.setItem("shop_brand_filter_v1", b.name);
+                        } catch {}
+                        onNavigate("shop", false);
+                      }}
+                      className="flex w-[56px] shrink-0 cursor-pointer flex-col items-center justify-center gap-1"
+                      aria-label={`Shop brand ${b.name}`}
                     >
                       <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full border border-white bg-white shadow-[0_2px_8px_0_rgba(0,0,0,0.06)]">
                         {b.imageUrl ? (
@@ -517,7 +525,7 @@ export function MobileDashboard({
                       <span className="w-full truncate text-center text-[11.5px] font-bold leading-tight text-[#8A94A6]">
                         {b.name}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
