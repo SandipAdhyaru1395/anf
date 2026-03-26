@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\VatMethod;
 use App\Models\Unit;
 use App\Models\Currency;
+use App\Models\Brand;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
@@ -30,6 +31,23 @@ class SettingController extends Controller
   {
     $setting = Setting::all()->pluck('value', 'key');
     $currencies = Currency::orderBy('currency_code')->get(['id', 'currency_code', 'currency_name', 'symbol']);
+    $brands = Brand::query()
+      ->where('is_active', 1)
+      ->orderBy('name')
+      ->get(['id', 'name']);
+
+    $selectedLeadingBrands = [];
+    $rawLeadingBrands = $setting['leading_brands'] ?? null;
+    if (is_string($rawLeadingBrands) && $rawLeadingBrands !== '') {
+      try {
+        $decoded = json_decode($rawLeadingBrands, true);
+        if (is_array($decoded)) {
+          $selectedLeadingBrands = array_values(array_filter(array_map('intval', $decoded), fn ($v) => $v > 0));
+        }
+      } catch (\Throwable) {
+        $selectedLeadingBrands = [];
+      }
+    }
     // Preselect default currency when only currency_symbol exists (e.g. after migration)
     if (empty($setting['default_currency_id']) && !empty($setting['currency_symbol'])) {
       $match = Currency::where('symbol', $setting['currency_symbol'])->first();
@@ -37,7 +55,7 @@ class SettingController extends Controller
         $setting->put('default_currency_id', (string) $match->id);
       }
     }
-    return view('content.settings.general', compact('setting', 'currencies'));
+    return view('content.settings.general', compact('setting', 'currencies', 'brands', 'selectedLeadingBrands'));
   }
 
   public function viewDeliveryMethod()
@@ -855,7 +873,9 @@ class SettingController extends Controller
       'accountName' => 'nullable|string|max:255',
       'bank' => 'nullable|string|max:255',
       'sortCode' => 'nullable|string|max:20',
-      'accountNo' => 'nullable|string|max:50'
+      'accountNo' => 'nullable|string|max:50',
+      'leading_brands' => 'nullable|array',
+      'leading_brands.*' => 'integer|exists:brands,id'
     ]);
 
     $currencySymbol = '';
@@ -878,7 +898,8 @@ class SettingController extends Controller
       'account_name' => $validated['accountName'] ?? '',
       'bank' => $validated['bank'] ?? '',
       'sort_code' => $validated['sortCode'] ?? '',
-      'account_no' => $validated['accountNo'] ?? ''
+      'account_no' => $validated['accountNo'] ?? '',
+      'leading_brands' => json_encode(array_values(array_unique(array_map('intval', $validated['leading_brands'] ?? []))))
     ];
 
     foreach ($map as $key => $value) {
@@ -926,7 +947,7 @@ class SettingController extends Controller
   public function updateBannerSettings(Request $request)
   {
     $validated = $request->validate([
-      'bannerImage' => 'required|image|mimes:jpg,jpeg,png|max:2048'
+      'bannerImage' => 'required|mimes:jpg,jpeg,png,svg|max:2048'
     ]);
 
     if ($request->hasFile('bannerImage')) {

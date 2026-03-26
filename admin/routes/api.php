@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\DnaCallbackController;
+use App\Http\Controllers\Api\PlanufacWebhookController;
 
 
 // Public auth endpoints
@@ -61,3 +62,6 @@ Route::middleware(['store.maintenance','auth:sanctum'])->group(function () {
 
 // DNA Payments callback (no auth)
 Route::post('/dna/callback', [DnaCallbackController::class, 'handle']);
+
+// Planufac ERP webhook (no auth)
+Route::post('/planufac/webhook', [PlanufacWebhookController::class, 'handle']);

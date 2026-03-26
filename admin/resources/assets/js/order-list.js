@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', function (e) {
   const dt_order_table = document.querySelector('.datatables-order'),
     orderAdd = baseUrl + 'order/add',
     statusObj = {
-      'New': { title: 'New', class: 'bg-label-primary' },
-      'Completed': { title: 'Completed', class: 'bg-success' },
+      'New': { title: 'New', class: 'bg-label-danger' },
+      'Fulfilled': { title: 'Fulfilled', class: 'bg-success' },
       'Cancelled': { title: 'Cancelled', class: 'bg-label-secondary' },
       'Returned': { title: 'Returned', class: 'bg-danger' }
     },
@@ -50,10 +50,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         { data: 'customer_name', orderable: true, searchable: true }, // customer
         { data: 'order_date', orderable: true, searchable: true }, // order date
         { data: 'total_amount', orderable: true, searchable: true }, // grand total
-        { data: 'paid_amount', orderable: true, searchable: true }, // paid
-        { data: null, orderable: false, searchable: false, defaultContent: '' }, // invoice (blank for now)
         { data: 'order_status', orderable: true, searchable: true }, // sale status
-        { data: 'payment_status', orderable: true, searchable: true }, // payment status
         { data: 'id' } // actions
       ],
       columnDefs: [
@@ -127,26 +124,8 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         },
         {
-          // Paid
-          targets: 4,
-          searchable: true,
-          render: function (data, type, full, meta) {
-            const amount = parseFloat(full['paid_amount'] || 0);
-            return `<span class="text-nowrap">${currencySymbol}${amount.toFixed(2)}</span>`;
-          }
-        },
-        {
-          // Invoice (blank for now)
-          targets: 5,
-          searchable: false,
-          orderable: false,
-          render: function () {
-            return '';
-          }
-        },
-        {
           // Sale Status
-          targets: 6,
+          targets: 4,
           width: '80px',
           searchable: true,
           render: function (data, type, full, meta) {
@@ -156,20 +135,6 @@ document.addEventListener('DOMContentLoaded', function (e) {
               <span class="badge px-2 ${statusInfo.class} text-capitalized">
                 ${statusInfo.title}
               </span>`;
-          }
-        },
-        {
-          // Payment Status
-          targets: 7,
-          width: '90px',
-          searchable: true,
-          render: function (data, type, full, meta) {
-            const payment = full['payment_status'];
-            const paymentStatus = paymentObj[payment];
-            return `
-            <span class="badge px-2 ${paymentStatus.class} text-capitalized">
-              ${paymentStatus.title}
-            </span>`;
           }
         },
         {
@@ -205,23 +170,23 @@ document.addEventListener('DOMContentLoaded', function (e) {
               buttons: [
                 {
                   extend: 'print',
-                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                  exportOptions: { columns: [0, 1, 2, 3, 4] }
                 },
                 {
                   extend: 'csv',
-                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                  exportOptions: { columns: [0, 1, 2, 3, 4] }
                 },
                 {
                   extend: 'excel',
-                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                  exportOptions: { columns: [0, 1, 2, 3, 4] }
                 },
                 {
                   extend: 'pdf',
-                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                  exportOptions: { columns: [0, 1, 2, 3, 4] }
                 },
                 {
                   extend: 'copy',
-                  exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                  exportOptions: { columns: [0, 1, 2, 3, 4] }
                 }
               ]
             }
@@ -288,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         const orderStatus = data['order_status'] || '';
         const paymentStatus = data['payment_status'] || '';
         
-        if (orderType === 'EST' && orderStatus === 'Completed') {
+        if (orderType === 'EST' && orderStatus === 'Fulfilled') {
           if (paymentStatus === 'Due' || paymentStatus === 'Partial') {
             row.classList.add('est-order-unpaid');
             row.style.backgroundColor = '#ffe6e6';
@@ -313,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
           row.style.backgroundColor = '#ffffff';
           
           // Apply colors only for EST orders
-          if (orderType === 'EST' && orderStatus === 'Completed') {
+          if (orderType === 'EST' && orderStatus === 'Fulfilled') {
             if (paymentStatus === 'Due' || paymentStatus === 'Partial') {
               row.classList.add('est-order-unpaid');
               row.style.backgroundColor = '#ffe6e6';

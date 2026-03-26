@@ -130,6 +130,26 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ensure interactive elements show pointer cursor */
+  button:not(:disabled),
+  a[href],
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  summary,
+  [role="button"],
+  [role="link"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {

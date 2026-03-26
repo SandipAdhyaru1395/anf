@@ -3,11 +3,21 @@
 @section('title', 'General Settings')
 
 @section('vendor-style')
-@vite(['resources/assets/vendor/libs/dropzone/dropzone.scss','resources/assets/vendor/libs/@form-validation/form-validation.scss'])
+@vite([
+  'resources/assets/vendor/libs/dropzone/dropzone.scss',
+  'resources/assets/vendor/libs/@form-validation/form-validation.scss',
+  'resources/assets/vendor/libs/select2/select2.scss'
+])
 @endsection
 
 @section('vendor-script')
-@vite(['resources/assets/vendor/libs/dropzone/dropzone.js','resources/assets/vendor/libs/@form-validation/popular.js','resources/assets/vendor/libs/@form-validation/bootstrap5.js','resources/assets/vendor/libs/@form-validation/auto-focus.js'])
+@vite([
+  'resources/assets/vendor/libs/dropzone/dropzone.js',
+  'resources/assets/vendor/libs/@form-validation/popular.js',
+  'resources/assets/vendor/libs/@form-validation/bootstrap5.js',
+  'resources/assets/vendor/libs/@form-validation/auto-focus.js',
+  'resources/assets/vendor/libs/select2/select2.js'
+])
 @endsection
 
 @section('page-script')
@@ -198,6 +208,24 @@
                       @enderror
                   </div>
                   <!-- /Media -->
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label mb-1" for="leading-brands">Leading Brands</label>
+                  <select
+                    class="form-select"
+                    id="leading-brands"
+                    name="leading_brands[]"
+                    multiple
+                    data-placeholder="Select leading brands"
+                  >
+                    @foreach ($brands as $b)
+                      <option value="{{ $b->id }}" {{ in_array($b->id, $selectedLeadingBrands ?? [], true) ? 'selected' : '' }}>
+                        {{ $b->name }}
+                      </option>
+                    @endforeach
+                  </select>
+                  <small class="text-muted d-block mt-1">These brands will appear on the mobile dashboard “Leading Brands” section.</small>
                 </div>
               </div>
             </div>

@@ -25,6 +25,7 @@ import {
 import { useCustomer } from "@/components/customer-provider";
 import { startLoading, stopLoading } from "@/lib/loading";
 import { Thumbnail } from "@/components/thumbnail";
+import { useSettings } from "@/components/settings-provider";
 
 /** Primary actions — matches order-details / brand gradient */
 const PRIMARY_BUTTON_GRADIENT: React.CSSProperties = {
@@ -218,6 +219,7 @@ export function MobileDashboard({
 }: MobileDashboardProps) {
   const { symbol } = useCurrency();
   const { customer } = useCustomer();
+  const { settings } = useSettings();
 
   const walletBalance = Number(customer?.wallet_balance || 0);
   const cartWalletCredit = useMemo(() => {
@@ -463,7 +465,19 @@ export function MobileDashboard({
             </h3>
             <div className="brand-scroll-wrapper w-full overflow-hidden rounded-sm bg-[#4A90E5]/5 px-1 py-3">
               <div className="brand-scroll-inner flex min-w-max items-center gap-[14px] px-2">
-                {["Lost Mary", "Elfbar", "Ske", "IVG", "Oxva"].map((b, i) => {
+                {(
+                  (Array.isArray(settings?.leading_brands) && settings?.leading_brands?.length
+                    ? settings.leading_brands.map((b: any) => ({
+                        key: b?.id ?? b?.name,
+                        name: String(b?.name ?? ""),
+                        imageUrl: b?.image_url ?? null,
+                      }))
+                    : ["Lost Mary", "Elfbar", "Ske", "IVG", "Oxva"].map((name) => ({
+                        key: name,
+                        name,
+                        imageUrl: null,
+                      }))) as Array<{ key: any; name: string; imageUrl: string | null }>
+                ).map((b, i) => {
                   const textColors = [
                     "text-[#6D3996]",
                     "text-[#EC9BBB]",
@@ -473,26 +487,35 @@ export function MobileDashboard({
                   ];
                   return (
                     <div
-                      key={i}
+                      key={b.key ?? i}
                       className="flex w-[56px] shrink-0 flex-col items-center justify-center gap-1"
                     >
                       <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full border border-white bg-white shadow-[0_2px_8px_0_rgba(0,0,0,0.06)]">
-                        <span
-                          className={`px-[2px] text-center text-[10px] font-black uppercase leading-none ${textColors[i % textColors.length]}`}
-                          style={{
-                            wordBreak: "break-word",
-                            letterSpacing: "-0.02em",
-                          }}
-                        >
-                          {b.split(" ").map((w) => (
-                            <span key={w} className="block">
-                              {w}
-                            </span>
-                          ))}
-                        </span>
+                        {b.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={b.imageUrl}
+                            alt={b.name}
+                            className="h-[40px] w-[40px] rounded-full object-contain"
+                          />
+                        ) : (
+                          <span
+                            className={`px-[2px] text-center text-[10px] font-black uppercase leading-none ${textColors[i % textColors.length]}`}
+                            style={{
+                              wordBreak: "break-word",
+                              letterSpacing: "-0.02em",
+                            }}
+                          >
+                            {b.name.split(" ").map((w) => (
+                              <span key={w} className="block">
+                                {w}
+                              </span>
+                            ))}
+                          </span>
+                        )}
                       </div>
                       <span className="w-full truncate text-center text-[11.5px] font-bold leading-tight text-[#8A94A6]">
-                        {b}
+                        {b.name}
                       </span>
                     </div>
                   );

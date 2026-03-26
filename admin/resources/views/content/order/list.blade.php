@@ -207,26 +207,60 @@
   .card-datatable {
     padding: 0.75rem;
   }
-  .datatables-order thead th:nth-child(7),
-  .datatables-order thead th:nth-child(8),
-  .datatables-order thead th:nth-child(9) {
-    width: 80px;
-    min-width: 80px;
+  /* Column sizing: keep stable even if DataTables sets widths */
+  table.dataTable.datatables-order {
+    width: 100% !important;
+  }
+  /* Make all columns compact (except Customer) */
+  table.dataTable.datatables-order thead th,
+  table.dataTable.datatables-order tbody td {
+    padding-left: 0.3rem !important;
+    padding-right: 0.3rem !important;
+  }
+
+  /* Order No */
+  table.dataTable.datatables-order thead th:nth-child(1),
+  table.dataTable.datatables-order tbody td:nth-child(1) {
+    width: 92px !important;
+    min-width: 92px !important;
+  }
+  /* Customer (wider) */
+  table.dataTable.datatables-order thead th:nth-child(2),
+  table.dataTable.datatables-order tbody td:nth-child(2) {
+    width: 520px !important;
+    min-width: 380px !important;
+    padding-left: 0.6rem !important;
+    padding-right: 0.6rem !important;
+  }
+  /* Order Date */
+  table.dataTable.datatables-order thead th:nth-child(3),
+  table.dataTable.datatables-order tbody td:nth-child(3) {
+    width: 104px !important;
+    min-width: 104px !important;
+  }
+  /* Grand Total */
+  table.dataTable.datatables-order thead th:nth-child(4),
+  table.dataTable.datatables-order tbody td:nth-child(4) {
+    width: 96px !important;
+    min-width: 96px !important;
+    text-align: center;
+  }
+
+  /* Sale Status */
+  table.dataTable.datatables-order thead th:nth-child(5),
+  table.dataTable.datatables-order tbody td:nth-child(5) {
+    width: 86px !important;
+    min-width: 86px !important;
     text-align: center;
     line-height: 1.2;
   }
-  .datatables-order thead th:nth-child(8) {
-    width: 90px;
-    min-width: 90px;
-  }
-  .datatables-order tbody td:nth-child(7),
-  .datatables-order tbody td:nth-child(8),
-  .datatables-order tbody td:nth-child(9) {
+
+  /* Actions */
+  table.dataTable.datatables-order thead th:nth-child(6),
+  table.dataTable.datatables-order tbody td:nth-child(6) {
     text-align: center;
-    width: 80px;
-  }
-  .datatables-order tbody td:nth-child(8) {
-    width: 90px;
+    width: 74px !important;
+    min-width: 74px !important;
   }
   .datatables-order tbody tr {
     cursor: pointer;
@@ -316,10 +350,7 @@
             <th>Customer</th>
             <th>Order Date</th>
             <th>Grand Total</th>
-            <th>Paid</th>
-            <th>Invoice</th>
             <th>Sale<br>Status</th>
-            <th>Payment<br>Status</th>
             <th>actions</th>
           </tr>
         </thead>

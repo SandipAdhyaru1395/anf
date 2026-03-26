@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Models\Customer;
 use App\Models\SyncUpdate;
+use App\Models\Brand;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use function asset;
@@ -24,6 +25,36 @@ class SettingController extends Controller
 
         $thumbnailPath = $settings->get('company_thumbnail');
         $thumbnailUrl = $thumbnailPath ? asset('storage/'.$thumbnailPath) : null;
+
+        // Leading brands (selected in admin general settings)
+        $leadingBrandIds = [];
+        $rawLeadingBrands = $settings->get('leading_brands');
+        if (is_string($rawLeadingBrands) && $rawLeadingBrands !== '') {
+            try {
+                $decoded = json_decode($rawLeadingBrands, true);
+                if (is_array($decoded)) {
+                    $leadingBrandIds = array_values(array_filter(array_map('intval', $decoded), fn ($v) => $v > 0));
+                }
+            } catch (\Throwable) {
+                $leadingBrandIds = [];
+            }
+        }
+        $leadingBrands = [];
+        if (!empty($leadingBrandIds)) {
+            $brands = Brand::query()
+                ->whereIn('id', $leadingBrandIds)
+                ->where('is_active', 1)
+                ->orderByRaw('FIELD(id,'.implode(',', array_map('intval', $leadingBrandIds)).')')
+                ->get(['id', 'name', 'image']);
+            $leadingBrands = $brands->map(function ($b) {
+                $image = $b->image ? asset('storage/'.$b->image) : null;
+                return [
+                    'id' => (int) $b->id,
+                    'name' => (string) $b->name,
+                    'image_url' => $image,
+                ];
+            })->values()->toArray();
+        }
 
         // Determine if DNA payment gateway is available (enabled + fully configured)
         $dnaEnabled = ($settings->get('dna_payments_enabled') === '1');
@@ -60,6 +91,7 @@ class SettingController extends Controller
                 'currency_symbol' => $settings->get('currency_symbol') ?? '',
                 'banner' => $bannerUrl,
                 'thumbnail' => $thumbnailUrl,
+                'leading_brands' => $leadingBrands,
                 'maintenance_mode_store' => $settings->get('maintenance_mode_store') === '1',
                 'payment_gateway_available' => $dnaGatewayAvailable,
                 'theme' => [

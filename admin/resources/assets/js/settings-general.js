@@ -55,6 +55,16 @@ document.addEventListener('DOMContentLoaded', function (e) {
   initSingleFileDropzone('#dropzone-thumbnail', 'companyThumbnail');
 
   // End Dropzone
+
+  // Leading Brands multi-select (Select2)
+  const leadingBrands = document.getElementById('leading-brands');
+  if (leadingBrands && typeof $ !== 'undefined' && $(leadingBrands).select2) {
+    $(leadingBrands).select2({
+      placeholder: leadingBrands.getAttribute('data-placeholder') || 'Select brands',
+      width: '100%',
+      closeOnSelect: false
+    });
+  }
   
    //For form validation
   const generalSettingsForm = document.getElementById('generalSettingsForm');

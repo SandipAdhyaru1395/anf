@@ -23,6 +23,7 @@ type Settings = {
   maintenance_mode?: boolean | null
   payment_gateway_available?: boolean | null
   theme?: Theme | null
+  leading_brands?: Array<{ id: number; name: string; image_url?: string | null }> | null
 }
 
 type RawSettings = Settings & {
@@ -100,6 +101,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         currency_symbol: s?.currency_symbol ?? null,
         banner: s?.banner ?? null,
         thumbnail: s?.thumbnail ?? null,
+        leading_brands: Array.isArray(s?.leading_brands) ? s.leading_brands : null,
         maintenance_mode: typeof s?.maintenance_mode === 'boolean' ? s.maintenance_mode : null,
         payment_gateway_available: typeof s?.payment_gateway_available === 'boolean' ? s.payment_gateway_available : null,
         theme: s?.theme ? {
