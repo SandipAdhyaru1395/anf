@@ -47,7 +47,7 @@ class SettingController extends Controller
                 ->orderByRaw('FIELD(id,'.implode(',', array_map('intval', $leadingBrandIds)).')')
                 ->get(['id', 'name', 'image']);
             $leadingBrands = $brands->map(function ($b) {
-                $image = $b->image ? asset('storage/'.$b->image) : null;
+                $image = $b->image ? $b->image : null;
                 return [
                     'id' => (int) $b->id,
                     'name' => (string) $b->name,
