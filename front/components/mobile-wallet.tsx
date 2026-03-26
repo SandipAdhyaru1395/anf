@@ -89,32 +89,32 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
   if (showIntro) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#C9C9C9] px-4 py-6">
-        <div className="flex w-full max-w-[402px] flex-col overflow-hidden rounded-lg bg-[#FFFFFF] shadow-2xl">
+        <div className="flex w-full max-w-[402px] flex-col overflow-hidden bg-[#FFFFFF]">
           <div className="p-8 pb-4 space-y-6">
             <div className="space-y-1">
-              <h2 className="text-[#4E5667] font-bold text-[17px]">What is the Wallet?</h2>
-              <p className="text-[#8F98AD] text-[13px] leading-relaxed font-medium">
+              <h2 className="text-[#3D495E] font-bold text-[13px]">What is the Wallet?</h2>
+              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
                 Your wallet stores the credit you have earned from previous orders placed through this platform.
               </p>
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-[#4E5667] font-bold text-[17px]">How is wallet credit earned?</h2>
-              <p className="text-[#8F98AD] text-[13px] leading-relaxed font-medium">
+              <h2 className="text-[#3D495E] font-bold text-[13px]">How is wallet credit earned?</h2>
+              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
                 Each product displays a wallet credit value, showing how much credit will be added to your wallet for every unit purchased. You can also earn additional credit by referring other retailers to the platform.
               </p>
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-[#4E5667] font-bold text-[17px]">How do I use wallet credit?</h2>
-              <p className="text-[#8F98AD] text-[13px] leading-relaxed font-medium">
+              <h2 className="text-[#3D495E] font-bold text-[13px]">How do I use wallet credit?</h2>
+              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
                 Any credit in your wallet is automatically deducted from the total of your next order when you check out.
               </p>
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-[#4E5667] font-bold text-[17px]">Can I earn credit without ordering through the platform?</h2>
-              <p className="text-[#8F98AD] text-[13px] leading-relaxed font-medium">
+              <h2 className="text-[#3D495E] font-bold text-[13px]">Can I earn credit without ordering through the platform?</h2>
+              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
                 No. Wallet credit is only awarded when purchases are made directly through this platform.
               </p>
             </div>
@@ -125,7 +125,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
             onClick={() => {
               setShowIntro(false);
             }}
-            className="mt-4 w-full bg-[#4A90E5] py-4 text-[18px] font-bold text-white transition-colors hover:bg-[#3d7fd4]"
+            className="mt-4 w-full cursor-pointer bg-[#4A90E5] py-4 text-[18px] font-bold text-white transition-colors hover:bg-[#3d7fd4]"
           >
             Ok, Got It
           </button>

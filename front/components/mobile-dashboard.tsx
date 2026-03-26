@@ -14,6 +14,13 @@ import {
   faBell,
   faChevronRight,
   faGift,
+  faBoxOpen,
+  faCubesStacked,
+  faCalendarDays,
+  faClock,
+  faTruckFast,
+  faCircleCheck,
+  faCreditCard,
 } from "@fortawesome/free-solid-svg-icons";
 import { useCustomer } from "@/components/customer-provider";
 import { startLoading, stopLoading } from "@/lib/loading";
@@ -23,6 +30,178 @@ import { Thumbnail } from "@/components/thumbnail";
 const PRIMARY_BUTTON_GRADIENT: React.CSSProperties = {
   background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)",
 };
+
+function normalizeStatus(raw: any) {
+  return String(raw || "")
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function formatOrderDate(raw: any) {
+  if (!raw) return "N/A";
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    // If backend already sends a readable date, keep it.
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) return trimmed;
+    const d = new Date(trimmed);
+    if (!Number.isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return trimmed;
+  }
+  const d = new Date(raw);
+  if (!Number.isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return "N/A";
+}
+
+function pillClassForFulfillment(statusRaw: any) {
+  const s = normalizeStatus(statusRaw);
+  if (s.includes("DELIVER")) return "bg-[#E6F7EF] text-[#1F8A55]";
+  if (s.includes("SHIP")) return "bg-[#E8F3FF] text-[#2868C0]";
+  if (s.includes("CANCEL") || s.includes("FAIL"))
+    return "bg-[#FDECEC] text-[#C81E1E]";
+  // default "PENDING/PROCESSING"
+  return "bg-[#FFF3E0] text-[#A16207]";
+}
+
+function pillClassForPayment(statusRaw: any) {
+  const s = normalizeStatus(statusRaw);
+  if (s.includes("PAID") || s.includes("CAPTURE") || s.includes("SUCCESS"))
+    return "bg-[#E6F7EF] text-[#1F8A55]";
+  if (s.includes("REFUND"))
+    return "bg-[#EEF1F4] text-[#3D495E]";
+  if (s.includes("FAIL") || s.includes("DECLIN") || s.includes("CANCEL"))
+    return "bg-[#FDECEC] text-[#C81E1E]";
+  return "bg-[#FFF3E0] text-[#A16207]";
+}
+
+function pillMetaForFulfillment(statusRaw: any) {
+  const s = normalizeStatus(statusRaw);
+  if (s.includes("DELIVER"))
+    return {
+      label: "Delivered",
+      pillBg: "#EAF7EF",
+      text: "#1F8A55",
+      icon: faCircleCheck,
+    };
+  if (s.includes("SHIP"))
+    return {
+      label: "Shipped",
+      pillBg: "#EAF3FF",
+      text: "#2F80ED",
+      icon: faTruckFast,
+    };
+  if (s.includes("CANCEL") || s.includes("FAIL"))
+    return {
+      label: "Cancelled",
+      pillBg: "#FDECEC",
+      text: "#C81E1E",
+      icon: faCircleCheck,
+    };
+  return {
+    label: "Pending",
+    pillBg: "#FFF3E6",
+    text: "#F2994A",
+    icon: undefined,
+  };
+}
+
+function pillMetaForPayment(statusRaw: any) {
+  const s = normalizeStatus(statusRaw);
+  if (s.includes("PAID") || s.includes("CAPTURE") || s.includes("SUCCESS"))
+    return {
+      label: "Paid",
+      pillBg: "#EAF7EF",
+      text: "#27AE60",
+      icon: faCreditCard,
+    };
+  if (s.includes("REFUND"))
+    return {
+      label: "Refunded",
+      pillBg: "#EEF1F4",
+      text: "#3D495E",
+      icon: faCreditCard,
+    };
+  if (s.includes("FAIL") || s.includes("DECLIN") || s.includes("CANCEL"))
+    return {
+      label: "Failed",
+      pillBg: "#FDECEC",
+      text: "#C81E1E",
+      icon: faCreditCard,
+    };
+  return {
+    label: "Pending",
+    pillBg: "#FFF3E6",
+    text: "#F2994A",
+    icon: undefined,
+  };
+}
+
+function StatusPill({
+  label,
+  color,
+  bg,
+  icon,
+}: {
+  label: string;
+  color: string;
+  bg: string;
+  icon: any;
+}) {
+  const useFigmaPillSpec = true;
+  return (
+    <span
+      className="inline-flex shrink-0 items-center text-[10px] font-semibold leading-none"
+      style={{
+        backgroundColor: bg,
+        color,
+        ...(useFigmaPillSpec
+          ? {
+              minWidth: "52.968px",
+              height: "14.742px",
+              paddingTop: "1.87px",
+              paddingRight: "7.48px",
+              paddingBottom: "1.87px",
+              paddingLeft: "7.48px",
+              gap: "9.36px",
+              borderRadius: "23.39px",
+              border: `0.23px solid ${color}`,
+            }
+          : {
+              height: "18px",
+              paddingLeft: "8px",
+              paddingRight: "8px",
+              gap: "6px",
+              borderRadius: "9999px",
+            }),
+      }}
+    >
+      {icon ? (
+        <span
+          className="inline-flex items-center justify-center rounded-[3px]"
+          style={{ backgroundColor: color }}
+          aria-hidden
+        >
+          <FontAwesomeIcon
+            icon={icon}
+            className={useFigmaPillSpec ? "text-[7px] text-white" : "text-[8px] text-white"}
+          />
+        </span>
+      ) : null}
+      {label}
+    </span>
+  );
+}
 
 interface MobileDashboardProps {
   onNavigate: (page: any, favorites?: boolean) => void;
@@ -151,13 +330,11 @@ export function MobileDashboard({
         </div>
       </header>
 
-      {/* BANNER — 370×93, minimal radius (this screen only) */}
-      <div className="shrink-0 bg-[#FAFBFD] px-4 pb-2 pt-2">
-        <Banner className="mx-auto h-[93px] w-full max-w-[370px] !rounded-[2px]" />
-      </div>
-
-     
       <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] pb-[150px]">
+        {/* BANNER — scrolls with content */}
+        <div className="shrink-0 bg-[#FAFBFD] px-4 pb-2 pt-2">
+          <Banner className="mx-auto h-[93px] w-full max-w-[370px] !rounded-[2px]" />
+        </div>
         <div className="mx-auto flex w-full max-w-[402px] flex-col gap-[10px] px-4 pb-4 pt-4">
     
           <div className="flex w-full max-w-[370px] flex-col gap-2.5 self-center rounded-sm bg-[#EEF1F4] p-2.5">
@@ -332,65 +509,151 @@ export function MobileDashboard({
               </h3>
               <div className="flex flex-col gap-2.5">
                 {orders.map((o, idx) => (
-                  <div
+                  <button
                     key={o.order_number + idx}
-                    role="button"
-                    tabIndex={0}
+                    type="button"
                     onClick={() => onOpenOrder?.(o.order_number)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        onOpenOrder?.(o.order_number);
-                    }}
-                    className="flex cursor-pointer items-stretch rounded-sm border border-[#E2E2E2] bg-white px-3 py-2.5 shadow-sm hover:bg-gray-50"
+                    className="flex h-[71.5224px] w-full items-center gap-4 rounded-[10px] border border-[#4A90E5] bg-white px-4 py-2 transition-colors hover:bg-[#FAFBFD] active:bg-[#F7FAFF]"
                   >
-                    <div className="flex-1 space-y-[5px] border-r border-[#E2E2E2] pr-3 text-[13px] text-[#3D495E]">
-                      <div className="flex justify-between">
-                        <span className="text-[#64748B]">Order No:</span>
-                        <span>{o.order_number}</span>
+                    {/* left icon */}
+                    <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#EAF3FF]">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          aria-hidden="true"
+                        >
+                          <rect
+                            x="4"
+                            y="3.5"
+                            width="10"
+                            height="11"
+                            rx="2"
+                            stroke="#2F80ED"
+                            strokeWidth="1.3"
+                          />
+                          <path
+                            d="M6 6.5H12"
+                            stroke="#2F80ED"
+                            strokeWidth="1.3"
+                            strokeLinecap="round"
+                          />
+                          <path
+                            d="M6 9H10.5"
+                            stroke="#2F80ED"
+                            strokeWidth="1.3"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                    </div>
+
+                    {/* body */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          {(() => {
+                            const f = pillMetaForFulfillment(o.fulfillment_status || o.status);
+                            const p = pillMetaForPayment(
+                              o.payment_status || o.payment || o.financial_status,
+                            );
+                            return (
+                              <>
+                                <StatusPill
+                                  label={f.label}
+                                  color={f.text}
+                                  bg={f.pillBg}
+                                  icon={f.icon}
+                                />
+                                <StatusPill
+                                  label={p.label}
+                                  color={p.text}
+                                  bg={p.pillBg}
+                                  icon={p.icon}
+                                />
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#64748B]">Ordered:</span>
-                        <span>{o.ordered_at || "N/A"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#64748B]">Payment Status:</span>
-                        <span className="uppercase">
-                          {o.payment_status || "PENDING"}
+
+                      <div
+                        className="mt-2 flex items-center justify-between gap-2 text-[13px] font-medium leading-none text-[#3D495E]"
+                        style={{ fontFamily: "Roboto, system-ui, sans-serif", letterSpacing: "0.04em" }}
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="shrink-0">Order:</span>
+                          <span className="min-w-0 truncate">{o.order_number}</span>
+                        </div>
+                        <span className="shrink-0 px-1 text-[#6B7A9C]" aria-hidden>
+                          •
                         </span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span>Total:</span>
+                          <span>
+                            {o.currency_symbol}
+                            {(Number(o.total_paid ?? o.total ?? o.grand_total) || 0).toFixed(2)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#64748B]">
-                          Fulfillment Status:
+
+                      <div
+                        className="mt-2 flex items-center gap-2 text-[11px] font-medium leading-none text-[#6B7A9C]"
+                        style={{ fontFamily: "Roboto, system-ui, sans-serif", letterSpacing: "0.04em" }}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {Number(o.skus ?? 0) || 0} SKUs
                         </span>
-                        <span className="uppercase">
-                          {o.fulfillment_status || "PROCESSING"}
+                        <span className="text-[#6B7A9C]" aria-hidden>
+                          •
                         </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#64748B]">Units:</span>
-                        <span>{o.units || "0"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#64748B]">SKUs:</span>
-                        <span>{o.skus || "0"}</span>
-                      </div>
-                      <div className="flex justify-between pt-1 font-bold">
-                        <span>Total Paid:</span>
-                        <span>
-                          {o.currency_symbol}
-                          {(Number(o.total_paid) || 0).toFixed(2)}
+                        <span className="inline-flex items-center gap-1">
+                          {Number(o.units ?? o.items ?? 0) || 0} Items
+                        </span>
+                        <span className="text-[#6B7A9C]" aria-hidden>
+                          •
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <FontAwesomeIcon
+                            icon={faCalendarDays}
+                            className="text-[11px] text-[#6B7A9C]"
+                            aria-hidden
+                          />
+                          {formatOrderDate(o.ordered_at || o.created_at || o.date)}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center pl-3">
+
+                    {/* right arrow zone (|>) */}
+                    <div className="ml-auto flex shrink-0 items-center justify-center bg-white">
+                      <span
+                        className="mr-2 h-[26px] w-px shrink-0 bg-[#4A90E5]"
+                        aria-hidden
+                      />
                       <FontAwesomeIcon
                         icon={faChevronRight}
-                        className="text-[14px] text-[#4A90E5]"
+                        className="text-[18px] text-[#2F80ED]"
+                        aria-hidden
                       />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
+
+              <button
+                type="button"
+                onClick={() => onNavigate("orders")}
+                className="mt-3 w-full rounded-b-[10px] py-3 text-center text-[14px] font-bold text-[#2F80ED]"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #F5F8FF 0%, #E9F1FF 100%)",
+                  boxShadow:
+                    "0 6px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)",
+                }}
+              >
+                View All Orders
+              </button>
             </section>
           )}
         </div>
@@ -449,7 +712,7 @@ export function MobileDashboard({
           <button
             type="button"
             onClick={() => onNavigate("basket")}
-            className="ml-auto box-border flex h-[35px] w-[116px] max-w-[300px] shrink-0 items-center justify-center rounded-[8px] p-[8px] text-center text-[16px] font-[700px] leading-none tracking-normal text-[#FFFFFF] shadow-sm transition-opacity hover:opacity-95 active:opacity-90"
+            className="ml-auto cursor-pointer box-border flex h-[35px] w-[116px] max-w-[300px] shrink-0 items-center justify-center rounded-[8px] p-[8px] text-center text-[16px] font-[700px] leading-none tracking-normal text-[#FFFFFF] shadow-sm transition-opacity hover:opacity-95 active:opacity-90"
             style={{ fontFamily: "Roboto, system-ui, sans-serif", ...PRIMARY_BUTTON_GRADIENT }}
           >
             View Basket

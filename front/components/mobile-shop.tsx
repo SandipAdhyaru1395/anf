@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Filter, X, ShoppingBag, ChevronDown, ChevronUp, Plus, Minus, Star, Home, User, Heart, Eye, Scan, SlidersHorizontal } from "lucide-react";
+import { Search, X, ShoppingBag, ChevronDown, ChevronUp, Plus, Minus, Heart, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -470,7 +470,7 @@ export function MobileShop({
               imgClassName="object-left object-contain"
             />
           </div>
-          {/* Pill search (filter inside only) + separate circular scan — Figma */}
+          {/* Pill search */}
           <div className="flex w-full items-center gap-2">
             <div className="relative box-border flex h-[35px] min-h-[35px] min-w-0 flex-1 items-center justify-between gap-2 rounded-full border border-[#D0D5EB] bg-[#EAECF7] py-0 pl-4 pr-3">
               <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -491,16 +491,8 @@ export function MobileShop({
                     <X className="h-3.5 w-3.5" strokeWidth={2.5} />
                   </button>
                 ) : null}
-                <SlidersHorizontal className={`h-[18px] w-[18px] shrink-0 text-[#64748B] ${isLoading ? "pointer-events-none" : "cursor-pointer"}`} strokeWidth={2.25} aria-hidden />
               </div>
             </div>
-            <button
-              type="button"
-              className="box-border flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-full border border-[#D0D5EB] bg-[#EAECF7] text-[#64748B] transition-colors hover:bg-[#E0E4F5]"
-              aria-label="Scan"
-            >
-              <Scan className="h-[18px] w-[18px]" strokeWidth={2.25} />
-            </button>
           </div>
         </div>
       </div>
