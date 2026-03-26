@@ -6,13 +6,14 @@ import { Eye, EyeOff } from "lucide-react"
 export type FloatingInputProps = {
   label: string
   containerClassName?: string
+  labelClassName?: string
   inputClassName?: string
   error?: string | null
 } & InputHTMLAttributes<HTMLInputElement>
 
 const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
 function FloatingInput(
-{ label, containerClassName = "", inputClassName = "", type = "text", error, ...rest },
+{ label, containerClassName = "", labelClassName = "", inputClassName = "", type = "text", error, ...rest },
 ref
 ) {
 
@@ -35,7 +36,7 @@ return (
 
 <label
 htmlFor={id}
-className="form-field-label block mb-1"
+className={`form-field-label block mb-1 ${labelClassName}`}
 >
 {label}
 </label>

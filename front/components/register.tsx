@@ -34,10 +34,13 @@ export default function Register() {
   });
 
   const [loading, setLoading] = useState(false);
-  const inputStyle =
-    "w-full h-[50px] !border-2 !border-[#4A90E5] rounded-[10px] px-4 text-[14px] focus:ring-2 focus:ring-blue-100 focus:!border-[#2F76D2] focus:outline-none placeholder:text-gray-500 text-gray-700 bg-white transition-all";
 
-  const sectionTitleStyle = "block text-[#5b6b7a] font-bold text-[14px] text-left";
+  // Styles based on Figma
+  const inputStyle =
+    "w-full h-[50px] rounded-[5px] bg-[#FFFFFF] px-[16px] text-[14px] leading-[18px] text-[#3D495E] border border-[#4A90E5] focus:outline-none focus:ring-0 placeholder:text-[#A8AFBC] transition-all relative z-10";
+
+  const sectionTitleStyle =
+    "block w-full text-[#3D495E] font-semibold text-[16px] leading-[18px] text-left [font-family:Roboto] mb-2 relative z-10";
 
   async function onSubmit(values: any) {
     setLoading(true);
@@ -81,36 +84,52 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] flex flex-col items-center">
-      {/* Main Container */}
-      <div className="register-container shadow-[0_4px_25px_rgba(0,0,0,0.05)]">
+    <div className="min-h-screen flex justify-center bg-[#F2F5F9]">
+      {/* Main Container with Background Image */}
+      <div 
+        className="relative w-[402px] h-[874px] bg-[#FAFBFD] flex flex-col overflow-hidden shadow-sm"
+        style={{
+          backgroundImage: "url('/background.svg')",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "807.18px 652.86px", // Figma Dimensions
+          backgroundPosition: "center 200px", // ઈમેજને થોડી નીચે સેટ કરી છે
+        }}
+      >
+        
+        {/* Background Overlay Color (#4A90E50D) */}
+        <div 
+          className="absolute inset-0 pointer-events-none" 
+          // style={{ backgroundColor: "rgba(74, 144, 229, 0.05)" }} 
+        />
 
         {/* Fixed Header */}
-        <div className="register-header flex justify-center items-center px-4">
+        <div className="relative z-10 pt-[65px] pb-8 flex justify-center items-center">
           <Thumbnail
-            height={22.00458335876465}
-            containerClassName="max-w-[168.8212432861328px] mx-auto"
+            height={23.41}
+            containerClassName="w-[206.47px] max-w-[206.47px] mx-auto !bg-transparent"
           />
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {/* Scrollable Middle Area */}
-          <div className="register-scroll-area min-h-0">
+        <form onSubmit={handleSubmit(onSubmit)} className="relative z-10 flex flex-1 flex-col overflow-hidden px-4">
+          
+          {/* Scrollable Area */}
+          <div className="flex-1 overflow-y-auto pr-1 space-y-6 pb-6 no-scrollbar">
+            
             {/* Company Name */}
-            <div className="flex flex-col gap-2">
-              <label className={sectionTitleStyle}>Company Name</label>
+            <div className="flex flex-col gap-1">
+              <label className={sectionTitleStyle} style={{fontWeight:"500"}}>Company Name</label>
               <input
                 {...register("company", { required: "Company name is required" })}
                 placeholder="Please enter your company name"
                 className={inputStyle}
               />
-              {errors.company && <p className="text-red-500 text-[10px] text-left">{errors.company.message as string}</p>}
+              {errors.company && <p className="text-red-500 text-[10px]">{errors.company.message as string}</p>}
             </div>
 
-            {/* Company Address Section */}
-            <div className="flex flex-col gap-2">
-              <label className={sectionTitleStyle}>Company Address</label>
-              <div className="flex flex-col gap-2">
+            {/* Company Address */}
+            <div className="flex flex-col gap-1">
+              <label className={sectionTitleStyle} style={{fontWeight:"500"}}>Company Address</label>
+              <div className="flex flex-col gap-3">
                 <input
                   {...register("invoice1", { required: "Address line 1 is required" })}
                   placeholder="Invoice address line 1"
@@ -131,58 +150,62 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Contact Number Section */}
-            <div className="flex flex-col gap-2">
-              <label className={sectionTitleStyle}>Contact Number</label>
+            {/* Contact Number */}
+            <div className="flex flex-col gap-1">
+              <label className={sectionTitleStyle} style={{fontWeight:"500"}}>Contact Number</label>
               <input
                 {...register("mobile", { required: "Contact number is required" })}
                 placeholder="Please enter your contact number"
                 className={inputStyle}
               />
-              {errors.mobile && <p className="text-red-500 text-[10px] text-left">{errors.mobile.message as string}</p>}
+              {errors.mobile && <p className="text-red-500 text-[10px]">{errors.mobile.message as string}</p>}
             </div>
 
             {/* Login Details */}
-            <div className="flex flex-col gap-2">
-              <label className={sectionTitleStyle}>Login Details</label>
-              <div className="flex flex-col gap-2 ">
-                <input
-                  type="email"
-                  {...register("email", { required: "Email is required" })}
-                  placeholder="Please enter your email"
-                  className={inputStyle} 
-                />
-                <input
-                  type="password"
-                  {...register("password", { required: "Password is required", minLength: 6 })}
-                  placeholder="Create password"
-                  className={inputStyle}
-                />
-              </div>
-            </div>
+<div className="flex flex-col gap-1">
+  <label className={sectionTitleStyle} style={{ fontWeight: "500" }}>
+    Login Details
+  </label>
+  <div className="flex flex-col gap-3">
+    <input
+      type="email"
+      {...register("email", { required: "Email is required" })}
+      placeholder="Please enter your email"
+      className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5] focus:ring-1 focus:ring-[#4A90E5]`}  style={{ border:"1px solid #4A90E5" }}
+    />
+    <input
+      type="password"
+      {...register("password", { required: "Password is required", minLength: 6 })}
+      placeholder="Create password"
+      className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5] focus:ring-1 focus:ring-[#4A90E5]`} style={{ border:"1px solid #4A90E5" }}
+    />
+  </div>
+</div>
           </div>
 
-          {/* Fixed Footer with Buttons */}
-          <div className="register-footer">
-            <button
-              type="submit"
-              disabled={loading || isSubmitting}
-              className="register-action-button landing-primary-button text-white shadow-md active:scale-[0.98] transition-all"
-            >
-              {loading ? "Registering..." : "Agree & Sign Up"}
-            </button>
+          {/* Fixed Footer Buttons */}
+          <div className="py-6 bg-[#FAFBFD]/80 backdrop-blur-sm">
+            <div className="flex flex-col gap-4">
+              <button
+                type="submit"
+                disabled={loading || isSubmitting}
+                className="w-full h-[48px] rounded-[25px] text-white font-[700px] text-[18px] transition-all active:scale-[0.98] disabled:opacity-70"
+                style={{ background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)" }}
+              >
+                {loading ? "Registering..." : "Agree & Sign Up"}
+              </button>
 
-            <button
-              type="button"
-              onClick={() => router.replace(buildPath("/landing"))}
-              className="register-action-button border-2 border-[#4c91e2] bg-white text-[#4c91e2] hover:bg-blue-50 transition-all font-bold"
-            >
-              Back
-            </button>
+              <button
+                type="button"
+                onClick={() => router.replace(buildPath("/landing"))}
+                className="w-full h-[48px] rounded-[25px] border border-[#4A90E5] bg-white text-[#4A90E5] font-[700px] text-[17px] transition-all active:scale-[0.98]"
+              >
+                Back
+              </button>
+            </div>
           </div>
         </form>
       </div>
     </div>
   );
-
 }

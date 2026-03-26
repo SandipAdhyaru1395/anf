@@ -2,14 +2,14 @@
 
 import api from "@/lib/axios";
 import { useEffect, useState, useMemo } from "react";
-import { Minus, Plus, Home, ShoppingBag, User, Wallet, Star } from "lucide-react";
+import { Minus, Plus, Trash2, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGauge, faShop, faWallet, faUser, faBars, faBagShopping, faPlus, faMinus, faStar, faChartSimple, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faChartSimple, faHeart as faHeartSolid, faShop, faTruck, faUser, faWallet } from "@fortawesome/free-solid-svg-icons";
 import { useCustomer } from "@/components/customer-provider";
 import { useCurrency } from "@/components/currency-provider";
 import { Banner } from "@/components/banner";
-import { ChevronLeft, Trash2, Heart } from "lucide-react";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 interface ProductItem {
   id: number;
@@ -317,41 +317,18 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
     }
   };
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-white">
+    <div
+      className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD]"
+      style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+    >
+      <MobilePageHeader title="Basket" onBack={onBack} />
 
-      {/* <div className="h-[50px] bg-white flex items-center">
-        <div className="w-[66px] h-[25px] flex items-center justify-center">
-          <FontAwesomeIcon icon={faBagShopping} className="text-green-600" style={{ width: "21px", height: "24px" }} />
-        </div>
-        <h1 className="text-lg font-semibold text-gray-300 text-[12px] hover:cursor-pointer hover:underline">Shop</h1>
-        &nbsp;<h1 className="text-lg font-semibold text-gray-100 text-[16px] ">/</h1>
-        &nbsp;<h1 className="text-lg font-semibold text-black-600 text-[16px]">Basket</h1>
-      </div> */}
-
-      {/* Header */}
-      <div className="bg-white flex items-center justify-between px-4 h-[60px] border-b border-gray-100 relative">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1 text-[#8A94A6] hover:text-black transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="text-[15px] font-medium">Back</span>
-        </button>
-
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-bold text-[#1E293B]">
-          Basket
-        </h1>
-
-        <div className="w-[60px]"></div> {/* Spacer for balance */}
-      </div>
-
-      {/* Banner */}
-      <div className="mt-2">
-        <Banner />
+      <div className="mx-auto w-full max-w-[354px] px-0 pt-4">
+        <Banner className="h-[89px] w-full max-w-[354px] rounded-[10px] border border-[#E2E2E2]" />
       </div>
       {adjustments.length > 0 && (
-        <div className="bg-yellow-100 border-b border-yellow-300 text-yellow-900 px-4 py-2 text-sm">
-          <div className="font-semibold mb-1">We adjusted some items to available stock:</div>
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[13px] leading-snug text-amber-950">
+          <div className="mb-1 font-bold">We adjusted some items to available stock:</div>
           <ul className="list-disc pl-5">
             {adjustments.map((a, idx) => (
               <li key={idx}>
@@ -361,145 +338,169 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
           </ul>
         </div>
       )}
-      <div className="flex-1 bg-white overflow-y-auto mt-[4px] pb-56">
-        {items.map(({ product, quantity }) => (
-          <div key={product.id} className="flex relative border-b border-gray-100 py-4 px-4 gap-4">
-            {/* Product Image */}
-            <div className="w-[85px] h-[85px] flex-shrink-0 bg-white border border-gray-100 rounded-lg overflow-hidden flex items-center justify-center p-1">
-              <img
-                src={product.image || defaultImagePath}
-                onError={handleImageError}
-                alt={product.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
 
-            {/* Product Details */}
-            <div className="flex-1 flex flex-col min-w-0">
-              <h3 className="text-[13px] font-bold text-[#1E293B] leading-snug uppercase mb-1 line-clamp-2">
-                {product.name}
-              </h3>
+      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto bg-[#FAFBFD] pb-[220px] pt-1">
+        {items.map(({ product, quantity }) => {
+          const unitPrice = parseFloat((product.price ?? "0").replace(/[^\d.\-]+/g, "")) || 0;
+          const lineTotal = unitPrice * quantity;
+          const walletLine = (Number(product.wallet_credit) || 0) * quantity;
+          return (
+            <div
+              key={product.id}
+              className="flex gap-3 border-b border-[#E2E2E2] bg-white px-4 py-3"
+            >
+              <div className="flex h-[85px] w-[85px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#E8ECF4] bg-white p-1">
+                <img
+                  src={product.image || defaultImagePath}
+                  onError={handleImageError}
+                  alt={product.name}
+                  className="h-full w-full object-contain"
+                />
+              </div>
 
-              <div className="flex items-center gap-4 mt-2 mb-3">
-                {/* Quantity Selector */}
-                <div className="flex items-center bg-[#131A44] rounded-full h-[32px] px-1 gap-1">
-                  <button
-                    onClick={() => apiDecrement(product)}
-                    className="w-8 h-8 flex items-center justify-center text-[#4A90E5] hover:opacity-80 transition-opacity"
-                  >
-                    <Minus className="w-4 h-4" strokeWidth={3} />
-                  </button>
-                  <span className="min-w-[24px] text-center text-white text-[14px] font-bold">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => apiIncrement(product)}
-                    className="w-8 h-8 flex items-center justify-center text-[#4A90E5] hover:opacity-80 transition-opacity"
-                  >
-                    <Plus className="w-4 h-4" strokeWidth={3} />
-                  </button>
-                </div>
+              <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+                <h3 className="line-clamp-2 text-[12px] font-medium uppercase leading-none tracking-[0.03em] text-[#0A0835]">
+                  {product.name}
+                </h3>
 
-                <div className="flex items-center gap-2">
-                  {/* Favourite button */}
-                  <button
-                    onClick={() => toggleFavorite(product)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#BDC7DE] hover:text-[#4A90E5] transition-colors"
-                  >
-                    <Heart className={`w-5 h-5 ${favourites[product.id] ? "fill-[#35D6EC] text-[#35D6EC]" : ""}`} strokeWidth={2} />
-                  </button>
-
-                  {/* Delete button */}
-                  <button
-                    onClick={() => apiRemoveItem(product)}
-                    disabled={Boolean(deletingIds[product.id])}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#BDC7DE] hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" strokeWidth={2} />
-                  </button>
+                {/* Figma Control / Price: horizontal, justify-between, ~34px */}
+                <div className="flex min-h-[34px] w-full items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-[34px] shrink-0 items-center rounded-full bg-[#0A0835] px-0.5">
+                      <button
+                        type="button"
+                        onClick={() => apiDecrement(product)}
+                        className="flex h-8 w-8 items-center justify-center text-white transition-opacity hover:opacity-80"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="h-4 w-4" strokeWidth={2.5} />
+                      </button>
+                      <span className="min-w-[22px] text-center text-[14px] font-bold leading-none text-white">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => apiIncrement(product)}
+                        className="flex h-8 w-8 items-center justify-center text-white transition-opacity hover:opacity-80"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-4 w-4" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(product)}
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center text-[#BDC7DE] transition-colors ${favourites[product.id] ? "text-[#4A90E5]" : "hover:text-[#4A90E5]"}`}
+                      aria-label={favourites[product.id] ? "Remove from favourites" : "Add to favourites"}
+                    >
+                      <Heart className={`h-5 w-5 ${favourites[product.id] ? "fill-[#4A90E5] text-[#4A90E5]" : ""}`} strokeWidth={2} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => apiRemoveItem(product)}
+                      disabled={Boolean(deletingIds[product.id])}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center text-[#BDC7DE] transition-colors hover:text-red-500 disabled:opacity-50"
+                      aria-label="Remove from basket"
+                    >
+                      <Trash2 className="h-5 w-5" strokeWidth={2} />
+                    </button>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end justify-center text-right">
+                    <span className="text-[15px] font-bold leading-tight tracking-tight text-[#0A0835]">{format(lineTotal)}</span>
+                    <span className="mt-0.5 text-[12px] font-semibold leading-none text-[#4A90E5]">
+                      +{symbol}
+                      {walletLine.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Price section */}
-            <div className="flex flex-col items-end justify-center min-w-[70px]">
-              {(() => {
-                const unitPrice = parseFloat((product.price ?? '0').replace(/[^\d.\-]+/g, '')) || 0;
-                const total = unitPrice * quantity;
-                return (
-                  <>
-                    <span className="text-[17px] font-bold text-[#1E293B]">
-                      {format(total)}
-                    </span>
-                    {typeof product.wallet_credit === "number" && product.wallet_credit > 0 && (
-                      <div className="flex items-center gap-1 text-[#4A90E5] mt-1">
-                        <FontAwesomeIcon icon={faWallet} className="text-[12px]" />
-                        <span className="text-[12px] font-bold">
-                          {symbol}{(product.wallet_credit * quantity).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        ))}
-        {items.length === 0 && <div className="px-4 py-12 text-center text-[15px] font-medium text-[#8A94A6]">Your basket is empty</div>}
+          );
+        })}
+        {items.length === 0 ? (
+          <div className="px-4 py-14 text-center text-[15px] font-medium text-[#8F98AD]">Your basket is empty</div>
+        ) : null}
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[402px] bg-white border-t z-50 shadow-[0px_-1px_8px_0px_#555E5814]">
-        <div className="bg-[#F3F4F9] border-t border-[#DCE1EE] px-4 py-3 flex flex-col items-center gap-2">
-          {/* Stats row */}
-            <div className="flex items-center justify-center gap-2 text-[14px] text-[#4E5667] font-bold">
-              <span>{cartTotals.units} Units</span>
-              <span className="text-[#DCE1EE] font-normal px-1">|</span>
-              <span>{cartTotals.skus} SKUs</span>
-              <span className="text-[#DCE1EE] font-normal px-1">|</span>
-              <span>{format(cartTotals.total)}</span>
-              <span className="text-[#DCE1EE] font-normal px-1">|</span>
-              <div className="flex items-center gap-1 text-[#4A90E5]">
-                <FontAwesomeIcon icon={faWallet} className="text-[14px]" />
-                <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
-              </div>
-            </div>
+      {/* Sticky summary — Figma: gradient #E8E8ED → #F4F2F9, shadow, px 23, Shop nav below */}
+      <div
+        className="fixed bottom-[64px] left-1/2 z-40 w-full max-w-[402px] -translate-x-1/2 bg-gradient-to-b from-[#E8E8ED] to-[#F4F2F9] px-[23px] pb-[13px] pt-4 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-[13px] font-bold leading-none text-[#3D495E]">
+          <span>{cartTotals.units} Units</span>
+          <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+          <span>{cartTotals.skus} SKUs</span>
+          <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+          <span>{format(cartTotals.total)}</span>
+          <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+          <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#4A90E5]">
+            <FontAwesomeIcon icon={faTruck} className="text-[12px]" aria-hidden />
+            <span>
+              +{symbol}
+              {totalWalletCredit.toFixed(2)}
+            </span>
+          </span>
+        </div>
+        <p className="mt-2 text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]">Includes FREE delivery</p>
+        <button
+          type="button"
+          onClick={handleCheckout}
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-[25px] bg-gradient-to-b from-[#2868C0] to-[#4C92E9] text-[16px] font-bold leading-none text-white shadow-[0_2px_10px_rgba(40,104,192,0.35)] transition-opacity hover:opacity-95 active:opacity-90"
+        >
+          Checkout
+        </button>
+      </div>
 
-            {/* Delivery Info */}
-            <div className="text-[13px] text-[#8F98AD] font-bold">
-              Includes FREE delivery
-            </div>
-
-            {/* Full-width Checkout Button */}
+      <nav
+        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        aria-label="Main navigation"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+          <div className="flex h-[40px] w-[316px] max-w-full items-center justify-between">
             <button
-              onClick={handleCheckout}
-              className="w-full bg-[#4A90E5] text-white py-3 rounded-[30px] font-bold text-[17px] hover:bg-[#3B7DCF] transition-colors shadow-sm shadow-[#4A90E53D] mt-1"
+              type="button"
+              onClick={() => onNavigate("dashboard")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
-              Checkout
+              <FontAwesomeIcon icon={faChartSimple} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none">Dashboard</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("shop", false)}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 text-[#4A90E5]"
+              aria-current="page"
+            >
+              <FontAwesomeIcon icon={faShop} className="h-[23px] w-[23px] shrink-0 text-[23px] leading-none text-[#4A90E5]" aria-hidden />
+              <span className="inline-flex h-[13px] min-w-[28px] items-center justify-center text-center text-[11px] font-medium leading-none text-[#4A90E5]">
+                Shop
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("shop", true)}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon icon={faHeartSolid} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none">Favourites</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("wallet")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon icon={faWallet} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none">Wallet</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("account")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon icon={faUser} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none">Account</span>
             </button>
           </div>
-        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
-          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
-            <span>Dashboard</span>
-          </button>
-          <button onClick={() => onNavigate("shop")} className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none relative h-full justify-center">
-            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
-            <span>Shop</span>
-            <div className="absolute bottom-[2px] w-[20px] h-[2px] bg-[#4A90E5] rounded-full"></div>
-          </button>
-          <button onClick={() => onNavigate("shop", true)} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
-            <span>Favourites</span>
-          </button>
-          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
-            <span>Wallet</span>
-          </button>
-          <button onClick={() => onNavigate("account")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
-            <span>Account</span>
-          </button>
         </div>
       </nav>
     </div>

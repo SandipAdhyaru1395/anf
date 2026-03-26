@@ -1,31 +1,22 @@
 
 "use client";
-import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/components/currency-provider";
 import { Banner } from "@/components/banner";
 import React, { useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { ChevronRight } from "lucide-react";
-import Image from "next/image";
 import api from "@/lib/axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartSimple,
   faHeart,
   faShop,
-  faStar,
   faWallet,
   faUser,
   faBell,
   faChevronRight,
-  faCreditCard,
-  faCoins,
   faGift,
 } from "@fortawesome/free-solid-svg-icons";
 import { useCustomer } from "@/components/customer-provider";
 import { startLoading, stopLoading } from "@/lib/loading";
-import { useSettings } from "@/components/settings-provider";
-import { resolveBackendAssetUrl } from "@/lib/utils";
 import { Thumbnail } from "@/components/thumbnail";
 
 /** Primary actions — matches order-details / brand gradient */
@@ -48,7 +39,6 @@ export function MobileDashboard({
 }: MobileDashboardProps) {
   const { symbol } = useCurrency();
   const { customer } = useCustomer();
-  const { settings } = useSettings();
 
   const walletBalance = Number(customer?.wallet_balance || 0);
   const cartWalletCredit = useMemo(() => {
@@ -58,10 +48,6 @@ export function MobileDashboard({
       return sum + (Number.isFinite(credit) ? credit : 0) * (Number.isFinite(qty) ? qty : 0);
     }, 0);
   }, [cart]);
-  const logoSrc =
-    resolveBackendAssetUrl(settings?.company_logo_url) ??
-    settings?.company_logo_url ??
-    null;
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
@@ -71,7 +57,9 @@ export function MobileDashboard({
         if (typeof window !== "undefined") {
           startLoading();
         }
-        const res = await api.get("/orders");
+        const res = await api.get("/orders", {
+          params: { limit: 500, _ts: Date.now() },
+        });
         const json = res.data;
         if (!isMounted) return;
         if (json?.success && Array.isArray(json.orders)) {
@@ -152,248 +140,404 @@ export function MobileDashboard({
   }, []);
 
   return (
-    <div className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-white shadow-sm">
-      {/* HEADER — does not scroll */}
-      <header className="z-50 flex h-[70px] w-full shrink-0 items-center justify-center bg-white border-b border-[#E2E2E2] px-4">
-        <Thumbnail
-          height={22.00458335876465}
-          containerClassName="max-w-[168.8212432861328px]"
-        />
+    <div className="relative mx-auto flex h-[100dvh] max-h-[874px] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD] shadow-sm">
+      {/* HEADER — 16px horizontal → 370px content */}
+      <header className="z-50 flex w-full shrink-0 flex-col bg-[#F8F7FC] px-4 pb-4 pt-[65px] shadow-[0_5px_15px_0_rgba(85,94,88,0.09)]">
+        <div className="flex min-h-[22.51px] w-full items-center justify-center pt-1 pr-[15px]">
+          <Thumbnail
+            height={22.51}
+            containerClassName="max-w-[198.53px] w-full !bg-transparent"
+          />
+        </div>
       </header>
 
-      {/* BANNER — fixed under header; matches design spacing */}
-      <div className="shrink-0 bg-white px-3 pb-2 pt-3">
-        <Banner className="h-[94px] w-full max-w-[380px]" />
+      {/* BANNER — 370×93, minimal radius (this screen only) */}
+      <div className="shrink-0 bg-[#FAFBFD] px-4 pb-2 pt-2">
+        <Banner className="mx-auto h-[93px] w-full max-w-[370px] !rounded-[2px]" />
       </div>
 
-      {/* SCROLLABLE: everything below banner */}
-      <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto pb-[150px] bg-[#F5F6FA] pt-1">
-        <div className="px-3 flex flex-col gap-2.5 pt-1">
-          {/* REFERRAL */}
-        <div className="w-full bg-[#4A90E5] text-white rounded-[6px] px-3.5 py-3 pr-[80px] relative overflow-hidden shadow-[0_2px_4px_0_#4A90E530]">
-          <h2 className="font-bold text-[14px]">Referral Rewards</h2>
-          <p className="text-[12px] opacity-90 mt-0.5 relative z-10 leading-tight">
-            Refer a friend to earn Rewards
-          </p>
-          {/* Custom SVG Illustration Mock */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-90 scale-90">
-             <div className="relative text-[#1E293B]">
-               <FontAwesomeIcon icon={faCreditCard} className="text-[28px] -rotate-[15deg] transform shadow-sm" />
-             </div>
-             <div className="absolute left-[-10px] bottom-0 text-[#F59E0B] z-10">
-               <FontAwesomeIcon icon={faCoins} className="text-[18px]" />
-             </div>
-             <div className="text-[#10B981] z-0 -ml-1 mt-3">
-               <FontAwesomeIcon icon={faGift} className="text-[20px]" />
-             </div>
-          </div>
-        </div>
-
-          {/* WALLET */}
-          <button
-            onClick={() => onNavigate("wallet")}
-            className="w-full h-[38px] flex items-center justify-between px-3 border border-[#4A90E5] rounded-[6px] bg-white"
-          >
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faWallet} className="text-[#4A90E5] text-[15px]" />
-              <span className="text-[12.5px] font-bold text-[#4E5667]">
-                {symbol}{walletBalance.toFixed(2)} credit in your wallet
-              </span>
-            </div>
-            <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[12px] opacity-80" />
-          </button>
-
-          {/* BUTTONS */}
-          <div className="w-full flex gap-2">
-            <button
-              type="button"
-              onClick={() => onNavigate("shop")}
-              className="flex h-[36px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[6px] text-[13px] font-[700] leading-none text-white shadow-sm transition-opacity hover:opacity-95"
+     
+      <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] pb-[150px]">
+        <div className="mx-auto flex w-full max-w-[402px] flex-col gap-[10px] px-4 pb-4 pt-4">
+    
+          <div className="flex w-full max-w-[370px] flex-col gap-2.5 self-center rounded-sm bg-[#EEF1F4] p-2.5">
+            
+            <div
+              className="relative w-full overflow-hidden rounded-sm py-2.5 pl-2.5 pr-[84px] text-white shadow-sm"
               style={PRIMARY_BUTTON_GRADIENT}
             >
-              <FontAwesomeIcon icon={faShop} className="text-[14px]" />
-              Shop
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate("shop", true)}
-              className="flex h-[36px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-[6px] text-[13px] font-[700] leading-none text-white shadow-sm transition-opacity hover:opacity-95"
-              style={PRIMARY_BUTTON_GRADIENT}
-            >
-              <FontAwesomeIcon icon={faHeart} className="text-[14px] " />
-              Favourites
-            </button>
-          </div>
-        </div>
-
-        {/* NOTIFICATIONS */}
-        <div className="px-3 mt-6">
-          <h3 className="text-[15.5px] font-bold text-[#4E5667] mb-2.5 ml-0.5">
-            Recent Notifications
-          </h3>
-          <div className="flex flex-col gap-2">
-            {[1, 2, 3].map((n) => (
-              <button
-                key={n}
-                className="w-full h-[38px] flex items-center justify-between px-3 border border-[#A7C8F2] rounded-[6px] bg-white shadow-sm cursor-pointer"
+              <h2
+                className="text-[13px] font-black leading-tight tracking-[0.02em] text-white"
+                style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
               >
-                <div className="flex items-center gap-2.5">
-                  <FontAwesomeIcon icon={faBell} className="text-[#4A90E5] text-[14px]" />
-                  <span className="text-[12.5px] font-bold text-[#4E5667]">
-                    Notification
-                  </span>
+                Referral Rewards
+              </h2>
+              <p
+                className="mt-1 text-[11px] font-medium leading-snug tracking-[0.02em] text-white/85"
+                style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+              >
+                Refer a friend to earn Rewards
+              </p>
+              <div
+                className="pointer-events-none absolute inset-y-0 right-1.5 flex w-[76px] items-end justify-end pb-1.5"
+                aria-hidden
+              >
+                <div className="relative h-[58px] w-[72px]">
+                  <div className="absolute bottom-0 left-0 flex items-end gap-px">
+                    <span className="h-[13px] w-[13px] rounded-full bg-gradient-to-br from-[#FCD34D] via-[#F59E0B] to-[#D97706] shadow-[0_1px_2px_rgba(0,0,0,0.2)]" />
+                    <span className="mb-px h-[15px] w-[15px] rounded-full bg-gradient-to-br from-[#FDE68A] via-[#F59E0B] to-[#B45309] shadow-[0_1px_3px_rgba(0,0,0,0.22)]" />
+                    <span className="h-[12px] w-[12px] rounded-full bg-gradient-to-br from-[#FBBF24] to-[#D97706] shadow-[0_1px_2px_rgba(0,0,0,0.2)]" />
+                  </div>
+                  <div className="absolute right-0 top-0 z-[1] w-[58px] rotate-[-10deg] rounded-sm bg-[#1E293B] px-1 py-1.5 shadow-md ring-1 ring-white/10">
+                    <div className="h-0.5 w-full rounded-sm bg-slate-500/80" />
+                    <p className="mt-1 text-center text-[5.5px] font-bold leading-none tracking-[0.1em] text-white">
+                      EARN CREDIT
+                    </p>
+                  </div>
+                  <div className="absolute bottom-0 right-0 z-[2] translate-x-0.5">
+                    <FontAwesomeIcon
+                      icon={faGift}
+                      className="text-[20px] text-[#64748B] drop-shadow-sm"
+                    />
+                  </div>
                 </div>
-                <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[12px] opacity-80" />
-              </button>
-            ))}
-          </div>
-        </div>
+              </div>
+            </div>
 
-        {/* BRANDS */}
-        <div className="px-3 mt-6">
-          <h3 className="text-[15.5px] font-bold text-[#4E5667] mb-2.5 ml-0.5">
-            Leading Brands
-          </h3>
-          <div className="brand-scroll-wrapper w-full bg-[#4A90E5]/5 rounded-[8px] py-3 px-1 overflow-hidden">
-            <div className="brand-scroll-inner flex items-center min-w-max px-2 gap-[14px]">
-              {["Lost Mary", "Elfbar", "Ske", "IVG", "Oxva"].map((b, i) => {
-                const textColors = ["text-[#6D3996]", "text-[#EC9BBB]", "text-[#3D495E]", "text-[#E61D24]", "text-[#EA2428]"];
-                return (
-                  <div key={i} className="flex flex-col items-center justify-center w-[56px] gap-1">
-                    <div className="w-[56px] h-[56px] bg-white rounded-full shadow-[0_2px_8px_0_rgba(0,0,0,0.06)] flex items-center justify-center border border-white flex-shrink-0">
-                      <span className={`text-[10px] font-black uppercase text-center leading-[1.0] px-[2px] ${textColors[i % textColors.length]}`} style={{ wordBreak: 'break-word', letterSpacing: '-0.02em' }}>
-                        {b.split(" ").map(w => <span key={w} className="block">{w}</span>)}
-                      </span>
-                    </div>
-                    <span className="text-[11.5px] font-bold text-[#8A94A6] text-center w-full truncate leading-tight">
-                      {b}
+            {/* WALLET — Figma: fill max 354px, fixed 34px row, px 16, 1px #4A90E5, radius 5px */}
+            <button
+              type="button"
+              onClick={() => onNavigate("wallet")}
+              className="box-border flex h-[34px] w-full max-w-[354px] shrink-0 items-center justify-between rounded-[5px] border border-[#4A90E5] bg-white px-4 transition-colors hover:bg-[#FAFBFD]"
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
+                <FontAwesomeIcon
+                  icon={faWallet}
+                  className="shrink-0 text-[14px] text-[#4A90E5]"
+                />
+                <span className="truncate text-left text-[12px] font-bold leading-none text-[#3D495E]">
+                  {symbol}
+                  {walletBalance.toFixed(2)} credit in your wallet
+                </span>
+              </div>
+              <FontAwesomeIcon
+                icon={faChevronRight}
+                className="shrink-0 text-[12px] text-[#4A90E5]"
+              />
+            </button>
+
+           
+            <div className="flex w-full gap-2">
+              <button
+                type="button"
+                onClick={() => onNavigate("shop")}
+                className="flex h-[38px] min-h-[38px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-sm text-[15px] font-bold leading-none text-white shadow-[0_2px_4px_rgba(74,144,229,0.3)] transition-opacity hover:opacity-95 active:opacity-90"
+                style={PRIMARY_BUTTON_GRADIENT}
+              >
+                <FontAwesomeIcon icon={faShop} className="text-[14px]" />
+                Shop
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate("shop", true)}
+                className="flex h-[38px] min-h-[38px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-sm text-[13px] font-bold leading-none text-white shadow-[0_2px_4px_rgba(74,144,229,0.3)] transition-opacity hover:opacity-95 active:opacity-90"
+                style={PRIMARY_BUTTON_GRADIENT}
+              >
+                <FontAwesomeIcon icon={faHeart} className="text-[14px]" />
+                Favourites
+              </button>
+            </div>
+          </div>
+
+          {/* NOTIFICATIONS */}
+          <section className="w-full max-w-[370px] self-center">
+            <h3 className="mb-2 text-[15px] font-bold leading-tight text-[#FAFBFD]">
+              Recent Notifications
+            </h3>
+            <div className="flex flex-col gap-2">
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className="box-border flex min-h-[34px] w-full cursor-pointer items-center justify-between rounded-[5px] border border-[#4A90E5] bg-white py-[10px] pl-4 pr-4 transition-colors hover:bg-[#FAFBFD]"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
+                    <FontAwesomeIcon
+                      icon={faBell}
+                      className="shrink-0 text-[14px] text-[#4A90E5]"
+                    />
+                    <span className="truncate text-left text-[12px] font-bold leading-none text-[#4E5667]">
+                      Notification
                     </span>
                   </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* ORDERS */}
-        {orders.length > 0 && (
-          <div className="px-3 mt-6">
-            <h3 className="text-[16px] font-bold text-[#3D495E] mb-3 ml-0.5 tracking-tight">
-              Recent Orders
-            </h3>
-            <div className="flex flex-col gap-2.5">
-              {orders.map((o, idx) => (
-                <div key={o.order_number + idx} onClick={() => onOpenOrder && onOpenOrder(o.order_number)} className="bg-white border border-[#E2E2E2] rounded-[6px] px-3 py-2.5 cursor-pointer hover:bg-gray-50 flex items-stretch shadow-sm">
-                  <div className="flex-1 space-y-[5px] text-[13px] text-[#3D495E] pr-3 border-r border-[#E2E2E2]">
-                    <div className="flex justify-between">
-                      <span className="text-[#64748B]">Order No:</span>
-                      <span>{o.order_number}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#64748B]">Ordered:</span>
-                      <span>{o.ordered_at || "N/A"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#64748B]">Payment Status:</span>
-                      <span className="uppercase">{o.payment_status || "PENDING"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#64748B]">Fulfillment Status:</span>
-                      <span className="uppercase">{o.fulfillment_status || "PROCESSING"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#64748B]">Units:</span>
-                      <span>{o.units || "0"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#64748B]">SKUs:</span>
-                      <span>{o.skus || "0"}</span>
-                    </div>
-                    <div className="flex justify-between font-bold pt-1">
-                      <span>Total Paid:</span>
-                      <span>{o.currency_symbol}{(Number(o.total_paid) || 0).toFixed(2)}</span>
-                    </div>
-                  </div>
-                  <div className="pl-3 flex items-center justify-center">
-                    <FontAwesomeIcon icon={faChevronRight} className="text-[#4A90E5] text-[14px]" />
-                  </div>
-                </div>
+                  <FontAwesomeIcon
+                    icon={faChevronRight}
+                    className="shrink-0 text-[12px] text-[#4A90E5]"
+                  />
+                </button>
               ))}
             </div>
-          </div>
-        )}
+          </section>
+
+          {/* BRANDS */}
+          <section className="w-full max-w-[370px] self-center">
+            <h3 className="mb-2 text-[15px] font-bold leading-tight text-[#4E5667]">
+              Leading Brands
+            </h3>
+            <div className="brand-scroll-wrapper w-full overflow-hidden rounded-sm bg-[#4A90E5]/5 px-1 py-3">
+              <div className="brand-scroll-inner flex min-w-max items-center gap-[14px] px-2">
+                {["Lost Mary", "Elfbar", "Ske", "IVG", "Oxva"].map((b, i) => {
+                  const textColors = [
+                    "text-[#6D3996]",
+                    "text-[#EC9BBB]",
+                    "text-[#3D495E]",
+                    "text-[#E61D24]",
+                    "text-[#EA2428]",
+                  ];
+                  return (
+                    <div
+                      key={i}
+                      className="flex w-[56px] shrink-0 flex-col items-center justify-center gap-1"
+                    >
+                      <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full border border-white bg-white shadow-[0_2px_8px_0_rgba(0,0,0,0.06)]">
+                        <span
+                          className={`px-[2px] text-center text-[10px] font-black uppercase leading-none ${textColors[i % textColors.length]}`}
+                          style={{
+                            wordBreak: "break-word",
+                            letterSpacing: "-0.02em",
+                          }}
+                        >
+                          {b.split(" ").map((w) => (
+                            <span key={w} className="block">
+                              {w}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                      <span className="w-full truncate text-center text-[11.5px] font-bold leading-tight text-[#8A94A6]">
+                        {b}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* ORDERS */}
+          {orders.length > 0 && (
+            <section className="w-full max-w-[370px] self-center">
+              <h3 className="mb-2 text-[15px] font-bold leading-tight text-[#4E5667]">
+                Recent Orders
+              </h3>
+              <div className="flex flex-col gap-2.5">
+                {orders.map((o, idx) => (
+                  <div
+                    key={o.order_number + idx}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenOrder?.(o.order_number)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        onOpenOrder?.(o.order_number);
+                    }}
+                    className="flex cursor-pointer items-stretch rounded-sm border border-[#E2E2E2] bg-white px-3 py-2.5 shadow-sm hover:bg-gray-50"
+                  >
+                    <div className="flex-1 space-y-[5px] border-r border-[#E2E2E2] pr-3 text-[13px] text-[#3D495E]">
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">Order No:</span>
+                        <span>{o.order_number}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">Ordered:</span>
+                        <span>{o.ordered_at || "N/A"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">Payment Status:</span>
+                        <span className="uppercase">
+                          {o.payment_status || "PENDING"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">
+                          Fulfillment Status:
+                        </span>
+                        <span className="uppercase">
+                          {o.fulfillment_status || "PROCESSING"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">Units:</span>
+                        <span>{o.units || "0"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">SKUs:</span>
+                        <span>{o.skus || "0"}</span>
+                      </div>
+                      <div className="flex justify-between pt-1 font-bold">
+                        <span>Total Paid:</span>
+                        <span>
+                          {o.currency_symbol}
+                          {(Number(o.total_paid) || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center pl-3">
+                      <FontAwesomeIcon
+                        icon={faChevronRight}
+                        className="text-[14px] text-[#4A90E5]"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       </main>
 
-      {/* BASKET BAR */}
-      <div className="fixed bottom-[74px] left-1/2 w-full max-w-[402px] h-[60px] -translate-x-1/2 bg-[#F3F4F9] border-t border-[#DCE1EE] pt-[12px] pr-[8px] pb-[12px] pl-[8px] z-40">
-        <div className="flex h-full items-center justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 text-[13px] text-[#3E4A62] font-bold whitespace-nowrap tracking-tight">
-              <span>{totals.units} Units</span>
-              <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
-              <span>{totals.skus} SKUs</span>
-              <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
-              <span>{symbol}{totals.total.toFixed(2)}</span>
-              <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
-              <span className="inline-flex items-center gap-[3px] text-[#4A90E5] font-bold">
-                <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" />
+      {/* BASKET BAR — Mobile Sticky Cart: stats Roboto 700 13px/100% #3D495E; dividers 1px #D2D0E1; wallet row gap 5px */}
+      <div
+        className="fixed bottom-[64px] left-1/2 z-40 box-border flex w-full max-w-[402px] -translate-x-1/2 items-center bg-white px-[12px] py-2.5 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        aria-label="Mobile sticky cart"
+      >
+        <div className="flex min-h-0 w-full items-center gap-2">
+          <div className="flex min-w-0 flex-col justify-center">
+            <div
+              className="flex min-w-0 items-center whitespace-nowrap"
+              style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+            >
+              <span className="inline-flex h-[15px] items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
+                {totals.units} Units
+              </span>
+              <span
+                className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]"
+                aria-hidden
+              />
+              <span className="inline-flex h-[15px] items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
+                {totals.skus} SKUs
+              </span>
+              <span
+                className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]"
+                aria-hidden
+              />
+              <span className="inline-flex h-[15px] shrink-0 items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
+                {symbol}
+                {totals.total.toFixed(2)}
+              </span>
+              <span
+                className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]"
+                aria-hidden
+              />
+              <span className="inline-flex h-[15px] shrink-0 items-center gap-[5px] text-[13px] font-bold leading-none tracking-normal text-[#4A90E5]">
+                <FontAwesomeIcon
+                  icon={faWallet}
+                  className="text-[12px] opacity-90"
+                  aria-hidden
+                />
                 <span>+{symbol}{cartWalletCredit.toFixed(2)}</span>
               </span>
             </div>
-            <div className="text-[12px] text-[#727C90] mt-[2px] font-medium text-center">
+            <p
+              className="mt-1 w-full text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]"
+              style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+            >
               Includes FREE delivery
-            </div>
+            </p>
           </div>
 
           <button
             type="button"
             onClick={() => onNavigate("basket")}
-            className="w-[116px] h-[35px] max-w-[300px] rounded-[5px] p-[8px] text-[15px] font-normal leading-none text-white shadow-sm transition-opacity hover:opacity-95 flex items-center justify-center"
-            style={PRIMARY_BUTTON_GRADIENT}
+            className="ml-auto box-border flex h-[35px] w-[116px] max-w-[300px] shrink-0 items-center justify-center rounded-[8px] p-[8px] text-center text-[16px] font-[700px] leading-none tracking-normal text-[#FFFFFF] shadow-sm transition-opacity hover:opacity-95 active:opacity-90"
+            style={{ fontFamily: "Roboto, system-ui, sans-serif", ...PRIMARY_BUTTON_GRADIENT }}
           >
             View Basket
           </button>
         </div>
       </div>
 
-      {/* BOTTOM NAV */}
-      <nav className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0] z-50">
-        <button
-          onClick={() => onNavigate("dashboard")}
-          className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
-          <span>Dashboard</span>
-        </button>
-        <button
-          onClick={() => onNavigate("shop")}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faShop} className="text-[23px]" />
-          <span>Shop</span>
-        </button>
-        <button
-          onClick={() => onNavigate("shop", true)}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
-          <span>Favourites</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate("wallet")}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
-          <span>Wallet</span>
-        </button>
-        <button
-          onClick={() => onNavigate("account")}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faUser} className="text-[23px]" />
-          <span>Account</span>
-        </button>
+      {/* BOTTOM NAV — Figma: 316×40 row; icon↔label gap 4px; inactive tabs 60% opacity; active icon 23px, inactive 20px */}
+      <nav
+        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-[#F6F4FA] px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        aria-label="Main navigation"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+          <div className="flex h-[40px] w-[316px] max-w-full items-center justify-between">
+            <button
+              type="button"
+              onClick={() => onNavigate("dashboard")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 text-[#4A90E5]"
+              aria-current="page"
+            >
+              <FontAwesomeIcon
+                icon={faChartSimple}
+                className="h-[23px] w-[23px] shrink-0 text-[23px] leading-none text-[#4A90E5]"
+                aria-hidden
+              />
+              <span className="inline-flex h-[13px] min-w-[52px] items-center justify-center text-center text-[11px] font-medium leading-none tracking-normal text-[#4A90E5]">
+                Dashboard
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("shop")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon
+                icon={faShop}
+                className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
+                aria-hidden
+              />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">
+                Shop
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("shop", true)}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon
+                icon={faHeart}
+                className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
+                aria-hidden
+              />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">
+                Favourites
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("wallet")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon
+                icon={faWallet}
+                className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
+                aria-hidden
+              />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">
+                Wallet
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("account")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon
+                icon={faUser}
+                className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
+                aria-hidden
+              />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">
+                Account
+              </span>
+            </button>
+          </div>
+        </div>
       </nav>
     </div>
   );

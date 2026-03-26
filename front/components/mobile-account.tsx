@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useSettings } from "@/components/settings-provider";
+import { useCustomer } from "@/components/customer-provider";
 import { useRouter } from "next/navigation";
-import { buildPath } from "@/lib/utils";
+import { buildPath, resolveBackendAssetUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -14,7 +14,6 @@ import {
   faWallet,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  ChevronLeft,
   Building2,
   ChevronRight,
   CircleHelp,
@@ -27,7 +26,9 @@ import {
   ShoppingBag,
   User,
   Wallet,
+  type LucideIcon,
 } from "lucide-react";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 interface MobileAccountProps {
   onNavigate: (page: any, favorites?: boolean) => void;
@@ -38,18 +39,24 @@ interface MobileAccountProps {
   clearCart: () => void;
 }
 
-export function MobileAccount({ onNavigate, cart, increment, decrement, totals, clearCart }: MobileAccountProps) {
+export function MobileAccount(props: MobileAccountProps) {
+  const { onNavigate } = props;
   const router = useRouter();
   const { settings } = useSettings();
+  const { customer } = useCustomer();
+
+  const bannerSrc = resolveBackendAssetUrl(settings?.banner) ?? settings?.banner ?? null;
+  const displayName = customer?.name?.trim() || customer?.company_name?.trim() || "Customer Name";
+  const displayEmail = customer?.email?.trim() || "example@gmail.com";
 
   const handleLogout = async () => {
     try {
       try {
         await api.post("/logout");
-      } catch { }
+      } catch { /* empty */ }
       try {
         window.localStorage.removeItem("auth_token");
-      } catch { }
+      } catch { /* empty */ }
     } finally {
       try {
         router.replace(buildPath("/login"));
@@ -59,136 +66,133 @@ export function MobileAccount({ onNavigate, cart, increment, decrement, totals, 
     }
   };
 
-  const menuItems = [
+  const menuItems: { label: string; icon: LucideIcon; action: () => void; badge?: boolean }[] = [
     { label: "My Details", icon: User, action: () => onNavigate("company-details") },
     { label: "My Branches", icon: Home, action: () => onNavigate("branches") },
     { label: "My Orders", icon: ShoppingBag, action: () => onNavigate("orders") },
     { label: "Payment Methods", icon: CreditCard, action: () => onNavigate("PaymentResultHandler") },
     { label: "My Wallet", icon: Wallet, action: () => onNavigate("wallet") },
     { label: "Contact Us", icon: MessageCircle, action: () => onNavigate("contact-us") },
-    { label: "About Us", icon: CircleHelp, action: () => onNavigate("about-us") },
+    { label: "About Us", icon: CircleHelp, action: () => onNavigate("about-us"), badge: true },
     { label: "Authentication", icon: Lock, action: () => onNavigate("authentication") },
     { label: "Settings", icon: Settings, action: () => onNavigate("settings") },
-    { label: "Terms And Conditions", icon: FileText, action: () => onNavigate("terms-and-conditions") },
+    { label: "Terms And Conditions", icon: FileText, action: () => onNavigate("terms-and-conditions"), badge: true },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col mx-auto w-full max-w-[402px] bg-white relative shadow-sm">
-      {/* HEADER */}
-      <header className="w-full h-[60px] bg-white flex items-center justify-center border-b border-[#F1F2F7] sticky top-0 z-50">
-        <button
-          onClick={() => onNavigate("dashboard")}
-          className="absolute left-3 text-[#64748B] text-[13px] flex items-center font-medium"
-          type="button"
-        >
-          <ChevronLeft size={18} strokeWidth={2} className="mr-0.5" />
-          <span>Back</span>
-        </button>
-        <h1 className="text-[17px] font-bold text-[#3D495E]">Account</h1>
-      </header>
+    <div
+      className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD]"
+      style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+    >
+      <MobilePageHeader variant="plain" title="Account" onBack={() => onNavigate("dashboard")} />
 
-      {/* SCROLLABLE CONTENT */}
-      <main className="w-full flex-1 overflow-y-auto pb-[130px] bg-white">
-        {/* Banner */}
-        <div className="px-3 py-3 relative z-0">
-          <div className="w-full h-[94px]" style={{ borderRadius: "10px", overflow: "hidden" }}>
-            {settings?.banner && (
-              <img src={settings.banner} alt="Banner" className="w-full h-full object-cover" />
-            )}
-          </div>
-        </div>
-
-        {/* Profile Info */}
-        <div className="flex items-center gap-[14px] px-4 py-[6px] w-full bg-white mb-2">
-          <div className="w-[54px] h-[54px] rounded-full bg-[#4A90E5] flex items-center justify-center text-white flex-shrink-0">
-            <User size={30} strokeWidth={2} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[15.5px] font-bold text-[#3D495E] leading-tight">Customer Name</span>
-            <span className="text-[13px] text-[#8A94A6]">example@gmail.com</span>
-          </div>
-        </div>
-
-        {/* Menu Items */}
-        <div className="bg-white w-full">
-          {menuItems.map((item, i) => (
-            <div
-              key={i}
-              onClick={item.action}
-              className="flex items-center justify-between px-4 py-[14px] border-b border-[#F1F2F7] cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-[14px]">
-                <item.icon size={19} strokeWidth={1.8} className="text-[#3D495E]" />
-                <span className="text-[14.5px] font-bold text-[#3D495E]">{item.label}</span>
+      {/* Figma frame 402×874 area: #FAFBFD; content column 370 fill; px-4 (16) sides; pb clears nav */}
+      <main className="scrollbar-hide min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-4 pb-[72px] pt-0">
+        <div className="mx-auto flex w-full max-w-[370px] flex-col gap-3">
+          {bannerSrc ? (
+            <div className="shrink-0 pt-2">
+              <div className="h-[93px] w-full overflow-hidden rounded-[2px] border border-[#E2E2E2] bg-white">
+                <img src={bannerSrc} alt="Promotional banner" className="h-full w-full object-cover object-center" />
               </div>
-              <ChevronRight size={18} strokeWidth={2} className="text-[#64748B] opacity-70" />
             </div>
-          ))}
+          ) : null}
 
-          {/* Logout Item */}
-          <div
-            onClick={handleLogout}
-            className="flex items-center justify-between px-4 py-[14px] border-b border-[#F1F2F7] cursor-pointer hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center gap-[14px]">
-              <Building2 size={19} strokeWidth={1.8} className="text-[#3D495E]" />
-              <span className="text-[14.5px] font-bold text-[#3D495E]">Logout</span>
+          {/* Frame 56: py 20, gap 16 avatar–text */}
+          <div className="flex w-full items-center gap-4 py-5">
+            <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full bg-[#4A90E5] text-white">
+              <User size={28} strokeWidth={1.75} aria-hidden />
             </div>
-            <ChevronRight size={18} strokeWidth={2} className="text-[#64748B] opacity-70" />
+            <div className="flex min-w-0 flex-col justify-center">
+              <span className="truncate text-[20px] font-bold leading-[18px] tracking-normal text-[#181725]">{displayName}</span>
+              <span className="mt-0.5 truncate text-[16px] font-normal leading-[18px] tracking-normal text-[#7C7C7C]">{displayEmail}</span>
+            </div>
+          </div>
+
+          {/*
+            List: fill 370, space-between rows; generous vertical padding (~14px) for tap targets.
+            Label: 15px / 600 / 3% / #3D495E. Icons: outline style, dark grey #3D495E, stroke 1.5.
+          */}
+          <div className="flex w-full flex-col">
+            {menuItems.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={item.action}
+                className="box-border flex min-h-[52px] w-full items-center justify-between border-b border-[#E2E2E2] py-3.5 text-left transition-colors hover:bg-white/60 active:bg-white/80"
+              >
+                <div className="flex min-w-0 items-center gap-3.5">
+                  <item.icon
+                    className="h-[20px] w-[20px] shrink-0 text-[#3D495E]"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  <span className="truncate text-[15px] font-[700] capitalize leading-none tracking-[0.03em] text-[#3D495E]">
+                    {item.label}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-2.5 pl-2">
+                  {item.badge ? (
+                    <span
+                      className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#4A90E5] text-[11px] font-bold text-white"
+                      aria-hidden
+                    >
+                      P
+                    </span>
+                  ) : null}
+                  <ChevronRight className="h-[18px] w-[18px] shrink-0 text-[#B0B0B0]" strokeWidth={2} aria-hidden />
+                </div>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="box-border flex min-h-[52px] w-full items-center justify-between border-b border-[#E2E2E2] py-3.5 text-left transition-colors hover:bg-white/60 active:bg-white/80"
+            >
+              <div className="flex min-w-0 items-center gap-3.5">
+                <Building2 className="h-[20px] w-[20px] shrink-0 text-[#3D495E]" strokeWidth={1.5} aria-hidden />
+                <span className="truncate text-[15px] font-[700] capitalize leading-none tracking-[0.03em] text-[#3D495E]">
+                  Logout
+                </span>
+              </div>
+              <ChevronRight className="h-[18px] w-[18px] shrink-0 text-[#B0B0B0]" strokeWidth={2} aria-hidden />
+            </button>
           </div>
         </div>
       </main>
 
-      {/* Floating P Buttons */}
-      <div className="fixed bottom-[140px] left-1/2 w-full max-w-[402px] -translate-x-1/2 pointer-events-none z-40">
-        <div className="absolute right-[16px] pointer-events-auto w-[46px] h-[46px] bg-[#0B87E8] rounded-full flex items-center justify-center text-white text-[22px] font-bold shadow-[0_2px_10px_0_rgba(11,135,232,0.4)] border-[3px] border-white cursor-pointer">
-          P
+      <nav
+        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-[#F6F4FA] px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        aria-label="Main navigation"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+          <div className="flex h-[40px] w-[316px] max-w-full items-center justify-center gap-2">
+            <button type="button" onClick={() => onNavigate("dashboard")} className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faChartSimple} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Dashboard</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("shop", false)} className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faShop} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Shop</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("shop", true)} className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faHeart} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Favourites</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("wallet")} className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faWallet} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Wallet</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("account")} className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[#4A90E5]" aria-current="page">
+              {/* Figma: user silhouette inside thick blue ring */}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[2.5px] border-[#4A90E5] bg-[#F6F4FA]">
+                <FontAwesomeIcon icon={faUser} className="h-[18px] w-[18px] text-[18px] leading-none text-[#4A90E5]" aria-hidden />
+              </span>
+              <span className="text-center text-[11px] font-bold leading-none tracking-normal text-[#4A90E5]">Account</span>
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="fixed bottom-[84px] left-1/2 w-full max-w-[402px] -translate-x-1/2 pointer-events-none z-40">
-        <div className="absolute right-[16px] pointer-events-auto w-[46px] h-[46px] bg-[#0B87E8] rounded-full flex items-center justify-center text-white text-[22px] font-bold shadow-[0_2px_10px_0_rgba(11,135,232,0.4)] border-[3px] border-white cursor-pointer">
-          P
-        </div>
-      </div>
-
-      {/* BOTTOM NAV */}
-      <nav className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0] shadow-[0px_-1px_8px_0px_#555E5814] z-50">
-        <button
-          onClick={() => onNavigate("dashboard")}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
-          <span>Dashboard</span>
-        </button>
-        <button
-          onClick={() => onNavigate("shop")}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faShop} className="text-[23px]" />
-          <span>Shop</span>
-        </button>
-        <button
-          onClick={() => onNavigate("shop", true)}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
-          <span>Favourites</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate("wallet")}
-          className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
-          <span>Wallet</span>
-        </button>
-        <button
-          onClick={() => onNavigate("account")}
-          className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none"
-        >
-          <FontAwesomeIcon icon={faUser} className="text-[23px]" />
-          <span>Account</span>
-        </button>
       </nav>
     </div>
   );

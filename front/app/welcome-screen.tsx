@@ -27,11 +27,11 @@ export default function SplashScreen({
 
   return (
     settings?.company_logo_url ? (
-      <div className="min-h-screen bg-white flex items-center justify-center app-container">
+      <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center app-container">
         <img
           src={settings.company_logo_url}
           alt="Logo"
-          className="app-logo animate-pulse"
+          className="app-logo"
         />
       </div>
     ) : null

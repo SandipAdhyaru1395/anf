@@ -25,6 +25,14 @@ type Settings = {
   theme?: Theme | null
 }
 
+type RawSettings = Settings & {
+  banner_url?: string | null
+  banner_image?: string | null
+  banner_image_url?: string | null
+  company_thumbnail?: string | null
+  company_thumbnail_url?: string | null
+}
+
 type Versions = {
   Product?: number
   Order?: number
@@ -42,11 +50,30 @@ type SettingsContextValue = {
 
 /** Fix Laravel /storage URLs vs Next dev origin (NEXT_PUBLIC_API_URL). */
 function normalizeSettingsMediaUrls(s: Settings): Settings {
+  const raw = s as RawSettings
+  const rawBanner =
+    raw.banner ??
+    raw.banner_url ??
+    raw.banner_image ??
+    raw.banner_image_url ??
+    null
+  const rawThumb =
+    raw.thumbnail ??
+    raw.company_thumbnail ??
+    raw.company_thumbnail_url ??
+    null
+  const rawLogo = raw.company_logo_url ?? null
+
+  const normalizedLogo = resolveBackendAssetUrl(rawLogo) ?? rawLogo ?? null
+  const normalizedThumb = resolveBackendAssetUrl(rawThumb) ?? rawThumb ?? null
+  const normalizedBanner = resolveBackendAssetUrl(rawBanner) ?? rawBanner ?? null
+
   return {
-    ...s,
-    company_logo_url: resolveBackendAssetUrl(s.company_logo_url) ?? s.company_logo_url ?? null,
-    banner: resolveBackendAssetUrl(s.banner) ?? s.banner ?? null,
-    thumbnail: resolveBackendAssetUrl(s.thumbnail) ?? s.thumbnail ?? null,
+    ...raw,
+    company_logo_url: normalizedLogo,
+    // Fallback ensures promo image area is not empty when banner is missing.
+    banner: normalizedBanner ?? normalizedThumb ?? normalizedLogo,
+    thumbnail: normalizedThumb,
   }
 }
 
@@ -59,8 +86,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [serverMaintenance, setServerMaintenance] = useState<boolean>(false)
   const [versions, setVersions] = useState<Versions | null>(null)
 
-  const fetchSettings = async () => {
-    setLoading(true)
+  const fetchSettings = async (silent = false) => {
+    if (!silent) setLoading(true)
     setError(null)
     try {
       const res = await api.get('/settings')
@@ -266,7 +293,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setVersions(null)
       try { sessionStorage.removeItem('settings_cache') } catch {}
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -294,6 +321,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           setSettings(cachedSettings)
         }
         setLoading(false)
+        // Always revalidate in background so newly updated banner/logo/settings appear
+        // without requiring users to clear session storage manually.
+        fetchSettings(true)
         return
       }
     } catch {}

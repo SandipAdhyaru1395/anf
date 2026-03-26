@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, X, ShoppingBag, ChevronDown, ChevronUp, Plus, Minus, Star, Home, Wallet, User, Heart, RefreshCw, Scan, SlidersHorizontal } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Search, Filter, X, ShoppingBag, ChevronDown, ChevronUp, Plus, Minus, Star, Home, User, Heart, Eye, Scan, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -50,10 +51,6 @@ function getProductStockInfo(product: ProductItem): { known: boolean; stock: num
   }
   return { known: true, stock: n };
 }
-
-const PRIMARY_BUTTON_GRADIENT: React.CSSProperties = {
-  background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)",
-};
 
 // Generic tree node that can be either a category (has subcategories)
 // or a brand (has products). Brands appear as subcategories of leaf categories.
@@ -458,44 +455,53 @@ export function MobileShop({
     return () => clearTimeout(timer);
   }, []);
 
-  /** Logo + thumbnail + search — same chrome for loading and loaded; soft shadow under whole top block */
+  /** Header: #F8F7FC, logo left, search row; shadow 0 5 15 #555E58 9% */
   const shopTopChrome = (
-    <div className="sticky top-0 z-[60] w-full shrink-0 bg-white shadow-[0_4px_16px_-4px_rgba(15,23,42,0.12)]">
-      <header className="w-full border-b border-[#F1F2F7] bg-white">
-        <div
-          className="flex w-full min-h-[38px] items-center"
-          style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 14, gap: 8 , marginTop :"50px" }}
-        >
-          <Thumbnail
-            height={25.00458335876465}
-            containerClassName="max-w-[168.8212432861328px]"
-            imgClassName="object-left "
-          />
-        </div>
-      </header>
-      <div className="px-[14px] pb-[12px] pt-[20px] bg-white">
-        <div className="flex items-center gap-[10px]">
-          <div className="relative flex h-[42px] flex-1 items-center rounded-[21px] bg-[#F3F4F9] px-[16px]">
-            <Search className="mr-2 h-4 w-4 text-[#8A94A6]" strokeWidth={2.5} />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              readOnly={isLoading}
-              aria-busy={isLoading}
-              className="h-full w-full border-none bg-transparent pl-0 pr-10 text-[14px] text-[#3D495E] shadow-none placeholder:text-[#8A94A6] focus-visible:ring-0 disabled:cursor-wait disabled:opacity-90"
-              style={{ border: "none", boxShadow: "none" }}
-              placeholder="Search products, brands, SKUs..."
+    <div className="sticky top-0 z-[60] w-full shrink-0 bg-[#F8F7FC] shadow-[0_5px_15px_0_rgba(85,94,88,0.09)]">
+      <div
+        className="mx-auto flex w-full max-w-[402px] flex-col gap-4 px-4 pb-2 pt-8"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <div className="flex min-h-0 w-full max-w-[370px] flex-col items-stretch justify-between gap-4">
+          <div className="flex w-full justify-start">
+            <Thumbnail
+              height={SHOP_LOGO_BOX.height}
+              containerClassName="max-w-[168.8212432861328px] !bg-transparent"
+              imgClassName="object-left object-contain"
             />
-            {!isLoading && searchQuery && (
-              <button type="button" onClick={() => setSearchQuery("")} className="absolute right-[46px] top-1/2 -translate-y-1/2">
-                <X className="h-4 w-4 cursor-pointer text-[#8A94A6]" />
-              </button>
-            )}
-            <SlidersHorizontal className={`absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#8A94A6] ${isLoading ? "pointer-events-none" : "cursor-pointer"}`} />
           </div>
-          <button type="button" className="flex h-[42px] w-[42px] items-center justify-center rounded-[14px] bg-[#F3F4F9] text-[#8A94A6]" aria-label="Scan">
-            <Scan className="h-5 w-5" />
-          </button>
+          {/* Pill search (filter inside only) + separate circular scan — Figma */}
+          <div className="flex w-full items-center gap-2">
+            <div className="relative box-border flex h-[35px] min-h-[35px] min-w-0 flex-1 items-center justify-between gap-2 rounded-full border border-[#D0D5EB] bg-[#EAECF7] py-0 pl-4 pr-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <Search className="h-4 w-4 shrink-0 text-[#64748B]" strokeWidth={2.25} aria-hidden />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  readOnly={isLoading}
+                  aria-busy={isLoading}
+                  className="min-h-0 w-full min-w-0 border-none bg-transparent p-0 text-[14px] leading-none text-[#3D495E] shadow-none placeholder:text-[#8A94A6] focus-visible:ring-0 disabled:cursor-wait disabled:opacity-90"
+                  style={{ border: "none", boxShadow: "none" }}
+                  placeholder="Search products, brands, SKUs..."
+                />
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {!isLoading && searchQuery ? (
+                  <button type="button" onClick={() => setSearchQuery("")} className="flex h-6 w-6 items-center justify-center rounded-full text-[#64748B] hover:bg-[#DCE1F0]" aria-label="Clear search">
+                    <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </button>
+                ) : null}
+                <SlidersHorizontal className={`h-[18px] w-[18px] shrink-0 text-[#64748B] ${isLoading ? "pointer-events-none" : "cursor-pointer"}`} strokeWidth={2.25} aria-hidden />
+              </div>
+            </div>
+            <button
+              type="button"
+              className="box-border flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-full border border-[#D0D5EB] bg-[#EAECF7] text-[#64748B] transition-colors hover:bg-[#E0E4F5]"
+              aria-label="Scan"
+            >
+              <Scan className="h-[18px] w-[18px]" strokeWidth={2.25} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -503,7 +509,7 @@ export function MobileShop({
 
   if (isLoading) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-[402px] flex-col bg-white">
+      <div className="mx-auto flex min-h-screen w-full max-w-[402px] flex-col bg-[#FAFBFD]">
         {shopTopChrome}
         <div className="flex flex-1 flex-col items-center justify-center px-6 pb-[100px]">
           {companyLogoSrc ? (
@@ -512,28 +518,60 @@ export function MobileShop({
             <div className="h-24 w-48 max-w-[85%] rounded-lg bg-[#F3F4F9] animate-pulse" />
           )}
         </div>
-        <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[402px] -translate-x-1/2 bg-[#F1F2F7] shadow-[0_-4px_16px_-4px_rgba(15,23,42,0.12)]">
-          <div className="grid h-[74px] grid-cols-5 items-center border-t border-[#E4E7F0] px-2 pb-[10px] pt-2">
-            <button type="button" onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]">
-              <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
-              <span>Dashboard</span>
-            </button>
-            <button type="button" onClick={() => onNavigate("shop", false)} className={`flex flex-col items-center gap-1 text-[11px] font-bold leading-none ${!showFavorites ? "text-[#4A90E5]" : "text-[#BDC7DE]"}`}>
-              <FontAwesomeIcon icon={faShop} className="text-[23px]" />
-              <span>Shop</span>
-            </button>
-            <button type="button" onClick={() => onNavigate("shop", true)} className={`flex flex-col items-center gap-1 text-[11px] font-bold leading-none ${showFavorites ? "text-[#4A90E5]" : "text-[#BDC7DE]"}`}>
-              <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
-              <span>Favourites</span>
-            </button>
-            <button type="button" onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]">
-              <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
-              <span>Wallet</span>
-            </button>
-            <button type="button" onClick={() => onNavigate("account")} className="flex flex-col items-center gap-1 text-[11px] font-bold leading-none text-[#BDC7DE]">
-              <FontAwesomeIcon icon={faUser} className="text-[23px]" />
-              <span>Account</span>
-            </button>
+        <nav
+          className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+          aria-label="Main navigation"
+          style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+        >
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+            <div className="flex h-[40px] w-[316px] max-w-full items-center justify-between">
+              <button
+                type="button"
+                onClick={() => onNavigate("dashboard")}
+                className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              >
+                <FontAwesomeIcon icon={faChartSimple} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+                <span className="text-center text-[10px] font-bold leading-none tracking-normal">Dashboard</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate("shop", false)}
+                className={`flex h-full min-w-0 flex-col items-center justify-center gap-1 ${!showFavorites ? "text-[#4A90E5]" : "opacity-60 text-[#BDC7DE]"}`}
+                aria-current={!showFavorites ? "page" : undefined}
+              >
+                <FontAwesomeIcon
+                  icon={faShop}
+                  className={`shrink-0 leading-none text-[#4A90E5] ${!showFavorites ? "h-[23px] w-[23px] text-[23px]" : "h-[20px] w-[20px] text-[20px] text-[#BDC7DE]"}`}
+                  aria-hidden
+                />
+                <span className={`text-center text-[11px] leading-none tracking-normal ${!showFavorites ? "inline-flex h-[13px] min-w-[28px] items-center justify-center font-medium" : "text-[10px] font-bold"}`}>
+                  Shop
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate("shop", true)}
+                className={`flex h-full min-w-0 flex-col items-center justify-center gap-1 ${showFavorites ? "text-[#4A90E5]" : "opacity-60 text-[#BDC7DE]"}`}
+                aria-current={showFavorites ? "page" : undefined}
+              >
+                <FontAwesomeIcon
+                  icon={faHeart}
+                  className={`shrink-0 leading-none ${showFavorites ? "h-[23px] w-[23px] text-[23px] text-[#4A90E5]" : "h-[20px] w-[20px] text-[20px] text-[#BDC7DE]"}`}
+                  aria-hidden
+                />
+                <span className={`text-center text-[11px] leading-none tracking-normal ${showFavorites ? "inline-flex h-[13px] min-w-[46px] items-center justify-center font-medium" : "text-[10px] font-bold"}`}>
+                  Favourites
+                </span>
+              </button>
+              <button type="button" onClick={() => onNavigate("wallet")} className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+                <FontAwesomeIcon icon={faWallet} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+                <span className="text-center text-[10px] font-bold leading-none tracking-normal">Wallet</span>
+              </button>
+              <button type="button" onClick={() => onNavigate("account")} className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+                <FontAwesomeIcon icon={faUser} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+                <span className="text-center text-[10px] font-bold leading-none tracking-normal">Account</span>
+              </button>
+            </div>
           </div>
         </nav>
       </div>
@@ -541,71 +579,121 @@ export function MobileShop({
   }
 
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-white">
+    <div className="mx-auto flex min-h-screen w-full max-w-[402px] flex-col bg-[#FAFBFD]">
       {shopTopChrome}
 
-      {/* Categories (recursive) */}
-      <div className="space-y-2 overflow-y-auto pb-56 px-[12px] pt-[12px] bg-white">
-        {displayedCategories.map((node) => (
-          <CategoryNode key={node.name} node={node} path={node.name} depth={0} expandedPaths={expandedPaths} togglePath={togglePath} cart={cart} onIncrement={handleIncrement} onDecrement={handleDecrement} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} cartQuantities={cartQuantities} topAncestorIsSpecial={node.is_special === 1} />
-        ))}
+      {/* Category Menu: 370px column, 8px vertical gap; frame 402 + px-4 */}
+      <div className="mx-auto min-h-0 w-full max-w-[402px] flex-1 overflow-y-auto px-4 pb-[150px] pt-4">
+        <div className="mx-auto w-full max-w-[370px] space-y-2">
+          {displayedCategories.map((node) => (
+            <CategoryNode key={node.name} node={node} path={node.name} depth={0} expandedPaths={expandedPaths} togglePath={togglePath} cart={cart} onIncrement={handleIncrement} onDecrement={handleDecrement} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} cartQuantities={cartQuantities} topAncestorIsSpecial={node.is_special === 1} />
+          ))}
+        </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 bg-white shadow-[0_-4px_16px_-4px_rgba(15,23,42,0.12)]">
-        {/* Basket Summary */}
-         <div className="fixed bottom-[74px] left-1/2 w-full max-w-[402px] h-[60px] -translate-x-1/2 bg-[#F3F4F9] border-t border-[#DCE1EE] pt-[12px] pr-[8px] pb-[12px] pl-[8px] z-40">
-              <div className="flex h-full items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5 text-[13px] text-[#3E4A62] font-bold whitespace-nowrap tracking-tight">
-                    <span>{totals.units} Units</span>
-                    <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
-                    <span>{totals.skus} SKUs</span>
-                    <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
-                    <span>{symbol}{totals.total.toFixed(2)}</span>
-                    <span className="text-[#D0D7E6] font-normal px-[2px]">|</span>
-                    <span className="inline-flex items-center gap-[3px] text-[#4A90E5] font-bold">
-                      <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" />
-                      <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
-                    </span>
-                  </div>
-                  <div className="text-[12px] text-[#727C90] mt-[2px] font-medium text-center">
-                    Includes FREE delivery
-                  </div>
-                </div>
-      
-                <button
-                  type="button"
-                  onClick={() => onNavigate("basket")}
-                  className="w-[116px] h-[35px] max-w-[300px] rounded-[5px] p-[8px] text-[15px] font-normal leading-none text-white shadow-sm transition-opacity hover:opacity-95 flex items-center justify-center"
-                  style={PRIMARY_BUTTON_GRADIENT}
-                >
-                  View Basket
-                </button>
-              </div>
+      {/* Mobile Sticky Cart — Figma: 402×60 hug, py-12 px-8, gradient #E8E8ED→#F4F2F9, shadow up; space-between */}
+      <div
+        className="fixed bottom-[64px] left-1/2 z-40 box-border flex min-h-[60px] w-full max-w-[402px] -translate-x-1/2 items-center bg-gradient-to-b from-[#E8E8ED] to-[#F4F2F9] px-2 py-3 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        aria-label="Mobile sticky cart"
+      >
+        <div className="flex min-h-0 w-full items-center gap-2">
+          <div className="flex min-w-0 flex-col justify-center">
+            <div
+              className="flex min-w-0 items-center whitespace-nowrap"
+              style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+            >
+              <span className="inline-flex h-[15px] items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
+                {totals.units} Units
+              </span>
+              <span className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
+              <span className="inline-flex h-[15px] items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
+                {totals.skus} SKUs
+              </span>
+              <span className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
+              <span className="inline-flex h-[15px] shrink-0 items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
+                {symbol}
+                {totals.total.toFixed(2)}
+              </span>
+              <span className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
+              <span className="inline-flex h-[15px] shrink-0 items-center gap-[5px] text-[13px] font-bold leading-none tracking-normal text-[#4A90E5]">
+                <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" aria-hidden />
+                <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
+              </span>
             </div>
+            <p
+              className="mt-1 w-full text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]"
+              style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+            >
+              Includes FREE delivery
+            </p>
+          </div>
 
-        <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center bg-[#F1F2F7] border-t border-[#E4E7F0]">
-          <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faChartSimple} className="text-[23px]" />
-            <span>Dashboard</span>
+          <button
+            type="button"
+            onClick={() => onNavigate("basket")}
+            className="ml-auto box-border flex h-[35px] w-[116px] max-w-[300px] shrink-0 items-center justify-center rounded-[8px] bg-[#4A90E5] p-[8px] text-center text-[16px] font-[700] leading-none tracking-normal text-white shadow-sm transition-colors hover:bg-[#3d7fd4] active:bg-[#3570c2]"
+            style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+          >
+            View Basket
           </button>
-          <button onClick={() => onNavigate("shop", false)} className="flex flex-col items-center gap-[4px] text-[#4A90E5] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faShop} className="text-[23px]" />
-            <span>Shop</span>
-          </button>
-          <button onClick={() => onNavigate("shop", true)} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faHeart} className="text-[23px]" />
-            <span>Favourites</span>
-          </button>
-          <button onClick={() => onNavigate("wallet")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faWallet} className="text-[23px]" />
-            <span>Wallet</span>
-          </button>
-          <button onClick={() => onNavigate("account")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">
-            <FontAwesomeIcon icon={faUser} className="text-[23px]" />
-            <span>Account</span>
-          </button>
+        </div>
+      </div>
+
+      {/* Bottom nav — Figma Mobile Navigation Bar; Shop or Favourites active */}
+      <nav
+        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        aria-label="Main navigation"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+          <div className="flex h-[40px] w-[316px] max-w-full items-center justify-between">
+            <button
+              type="button"
+              onClick={() => onNavigate("dashboard")}
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+            >
+              <FontAwesomeIcon icon={faChartSimple} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Dashboard</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("shop", false)}
+              className={`flex h-full min-w-0 flex-col items-center justify-center gap-1 ${!showFavorites ? "text-[#4A90E5]" : "opacity-60 text-[#BDC7DE]"}`}
+              aria-current={!showFavorites ? "page" : undefined}
+            >
+              <FontAwesomeIcon
+                icon={faShop}
+                className={`shrink-0 leading-none ${!showFavorites ? "h-[23px] w-[23px] text-[23px] text-[#4A90E5]" : "h-[20px] w-[20px] text-[20px] text-[#BDC7DE]"}`}
+                aria-hidden
+              />
+              <span className={`text-center text-[11px] leading-none tracking-normal ${!showFavorites ? "inline-flex h-[13px] min-w-[28px] items-center justify-center font-medium text-[#4A90E5]" : "text-[10px] font-bold"}`}>
+                Shop
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("shop", true)}
+              className={`flex h-full min-w-0 flex-col items-center justify-center gap-1 ${showFavorites ? "text-[#4A90E5]" : "opacity-60 text-[#BDC7DE]"}`}
+              aria-current={showFavorites ? "page" : undefined}
+            >
+              <FontAwesomeIcon
+                icon={faHeart}
+                className={`shrink-0 leading-none ${showFavorites ? "h-[23px] w-[23px] text-[23px] text-[#4A90E5]" : "h-[20px] w-[20px] text-[20px] text-[#BDC7DE]"}`}
+                aria-hidden
+              />
+              <span className={`text-center text-[11px] leading-none tracking-normal ${showFavorites ? "inline-flex h-[13px] min-w-[46px] items-center justify-center font-medium text-[#4A90E5]" : "text-[10px] font-bold"}`}>
+                Favourites
+              </span>
+            </button>
+            <button type="button" onClick={() => onNavigate("wallet")} className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faWallet} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Wallet</span>
+            </button>
+            <button type="button" onClick={() => onNavigate("account")} className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]">
+              <FontAwesomeIcon icon={faUser} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Account</span>
+            </button>
+          </div>
         </div>
       </nav>
     </div>
@@ -658,31 +746,30 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
   };
 
   const depthColors = [
-    "bg-[#E9007F]", // depth 0 - Deep Pink
-    "bg-[#E2EFFF]", // depth 1 - Light Blue
-    "bg-[#F3F4F6]", // depth 2 - Light Gray
-    "bg-gray-100", // depth 3
-    "bg-gray-50", // depth 4
-    "", // depth 5+
+    "bg-[#ED008C]", // depth 0 — Figma "New In" magenta
+    "bg-[#E2EFFF]", // depth 1 — light blue
+    "border border-[#E6E8F2] bg-white", // depth 2 — Figma Subbrand: white + hairline border
+    "bg-gray-100",
+    "bg-gray-50",
+    "",
   ];
 
   if (node.is_special == 1) {
-    var bgClass = "bg-[#E9007F]";
+    var bgClass = "bg-[#ED008C]";
   } else {
     var bgClass = depthColors[Math.min(depth, depthColors.length - 1)];
   }
 
-  const buttonClasses = depth === 0
-    ? `w-full h-[46px] mx-auto ${bgClass} flex items-center justify-between pl-[14px] pr-[14px] rounded-[6px] font-bold`
-    : `w-full h-[52px] mx-auto ${bgClass} flex items-center justify-between pl-[10px] pr-[14px] rounded-[6px] font-bold`;
+  /* Figma Category bar: 370 fill, min-h 49, py 7 px 16, inner gap 10, radius 10 */
+  const buttonClasses = `w-full min-h-[49px] mx-auto ${bgClass} flex items-center justify-between gap-[10px] py-[7px] px-4 rounded-[10px] font-bold shadow-sm`;
 
   const nameTextColorClass = depth === 0 || node.is_special === 1 ? "text-white text-[15.5px]" : "text-[#1E293B] text-[15.5px]";
   const iconColorClass = depth === 0 || node.is_special === 1 ? "text-white opacity-100" : "text-[#4A90E5] opacity-100";
 
   return (
-    <div className="space-y-0 relative pb-[6px]">
-      <button onClick={() => togglePath(path, depth === 0)} className={`${buttonClasses} hover:cursor-pointer transition-colors relative z-10`}>
-        <div className={`flex items-center gap-3`}>
+    <div className="relative space-y-0 pb-2">
+      <button onClick={() => togglePath(path, depth === 0)} className={`${buttonClasses} relative z-10 cursor-pointer transition-colors hover:opacity-[0.98]`}>
+        <div className="flex min-w-0 items-center gap-[10px]">
           {hasProducts && (
             <div className="w-[42px] h-[42px] bg-white rounded-md border border-[#DCE1EE] overflow-hidden flex items-center justify-center p-0.5 offer-products">
               <img src={node?.image || defaultBrandImagePath} alt="" className="w-[36px] h-[36px] object-contain" onError={handleBrandImageError} />
@@ -704,11 +791,11 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
           })()}
           {node.badge && <Badge className={`${node.badgeColor} text-white bg-[#0AB386] text-[10px] font-black tracking-widest px-[6px] py-[2px] rounded-[4px] ml-1 uppercase`}>{node.badge}</Badge>}
         </div>
-        {isOpen ? <ChevronUp className={`w-6 h-6 ${iconColorClass}`} /> : <ChevronDown className={`w-6 h-6 ${iconColorClass}`} />}
+        {isOpen ? <ChevronUp className={`h-6 w-6 shrink-0 ${iconColorClass}`} strokeWidth={2.5} /> : <ChevronDown className={`h-6 w-6 shrink-0 ${iconColorClass}`} strokeWidth={2.5} />}
       </button>
 
       {isOpen && (
-        <div className="space-y-3 mt-2">
+        <div className="mt-2 space-y-2">
           {hasChildren &&
             node.subcategories!.map((child) => {
               const childPath = `${path}::${child.name}`;
@@ -716,62 +803,112 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
             })}
 
           {hasProducts && (
-            <div className="grid grid-cols-3 w-[370px] gap-[5px] pb-[16px] mx-auto">
+            <div className="mx-auto grid w-full grid-cols-3 gap-2 pb-4">
               {node.products!.map((product) => {
                 const stock = Number((product as any)?.quantity ?? (product as any)?.available_qty ?? 0);
                 const allowOutOfStock = Boolean((product as any)?.allow_out_of_stock);
                 const isOut = !allowOutOfStock && stock <= 0;
                 return (
-                  <div key={product.id} className="group bg-white border border-[#E9ECF4] rounded-[10px] overflow-hidden shadow-[0_2px_4px_0_rgba(0,0,0,0.02)] flex flex-col w-[115px] h-[222px] relative mx-auto">
-                    <div className="relative h-[105px] bg-white flex items-center justify-center pt-2 pb-1 px-1">
-                      <img src={product.image || defaultImagePath} alt={product.name} className="w-full h-[95px] object-contain mix-blend-multiply" onError={handleImageError} />
-                      {/* Heart Icon Top Right */}
-                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onToggleFavorite(product); }} className="absolute top-[4px] right-[4px] w-[22px] h-[22px] rounded-full border border-[#C7CFDE] flex items-center justify-center bg-[#EEF2F8] shadow-sm z-10 transition-colors cursor-pointer">
-                        <Heart className={`w-[13px] h-[13px] ${isFavorite(product.id) ? "text-[#35D6EC] fill-[#35D6EC]" : "text-[#5B667E]"}`} strokeWidth={3} />
+                  <div key={product.id} className="group relative mx-auto flex h-[222px] w-full min-w-0 max-w-[118px] flex-col overflow-hidden rounded-[10px] border border-[#E9ECF4] bg-white shadow-[0_2px_4px_0_rgba(0,0,0,0.02)]">
+                    <div className="relative flex h-[105px] items-center justify-center bg-white px-1 pb-1 pt-2">
+                      {/* Image clicks do not add to cart — only explicit + button */}
+                      <img src={product.image || defaultImagePath} alt={product.name} className="pointer-events-none h-[95px] w-full object-contain mix-blend-multiply" draggable={false} onError={handleImageError} />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void onToggleFavorite(product);
+                        }}
+                        className={`pointer-events-auto absolute right-[4px] top-[4px] z-10 flex h-[32px] w-[32px] cursor-pointer items-center justify-center rounded-full border bg-white transition-colors ${isFavorite(product.id) ? "border-[#4A90E5]" : "border-[#D1D5DB]"}`}
+                        aria-label={isFavorite(product.id) ? "Remove from favourites" : "Add to favourites"}
+                      >
+                        <Heart
+                          className="h-[15px] w-[15px] shrink-0"
+                          fill={isFavorite(product.id) ? "#4A90E5" : "#D1D5DB"}
+                          color={isFavorite(product.id) ? "#4A90E5" : "#D1D5DB"}
+                          strokeWidth={0}
+                        />
                       </button>
 
-                      {/* Plus / Cart Floating Widget overlapping bottom boundary */}
-                      <div className="absolute right-[6px] -bottom-[12px] z-10">
+                      <div className="pointer-events-auto absolute -bottom-[12px] right-[6px] z-10">
                         {(() => {
                           if (cartQuantities[product.id]) {
                             return (
-                              <div className="flex bg-[#1E2A44] rounded-full shadow-md items-center h-[26px] px-[2px] gap-[1px]">
-                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onDecrement(product); }} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
-                                  <Minus className="w-[14px] h-[14px]" strokeWidth={3} />
+                              <div className="flex h-[26px] items-center gap-px rounded-full bg-[#1E2A44] px-[2px] shadow-md">
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onDecrement(product); }} className="flex h-[22px] w-[22px] cursor-pointer items-center justify-center text-[#4A90E5]">
+                                  <Minus className="h-[14px] w-[14px]" strokeWidth={3} />
                                 </button>
-                                <span className="text-white text-[10px] font-bold min-w-[14px] text-center">{cartQuantities[product.id]}</span>
-                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onIncrement(product); }} className="w-[22px] h-[22px] text-[#4A90E5] flex items-center justify-center cursor-pointer">
-                                  <Plus className="w-[14px] h-[14px]" strokeWidth={3} />
+                                <span className="min-w-[14px] text-center text-[10px] font-bold text-white">{cartQuantities[product.id]}</span>
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onIncrement(product); }} className="flex h-[22px] w-[22px] cursor-pointer items-center justify-center text-[#4A90E5]" aria-label="Add to basket">
+                                  <Plus className="h-[14px] w-[14px]" strokeWidth={3} />
                                 </button>
                               </div>
-                            )
+                            );
                           }
                           return (
-                            <button type="button" disabled={isOut} onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!isOut) void onIncrement(product); }} className={`w-[26px] h-[26px] bg-[#1E2A44] border-[1.5px] border-[#35D6EC] shadow-md rounded-full flex items-center justify-center cursor-pointer ${isOut ? "opacity-50 pointer-events-none" : ""}`}>
-                              <Plus className="w-4 h-4 text-[#35D6EC]" strokeWidth={3} />
+                            <button
+                              type="button"
+                              disabled={isOut}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (!isOut) void onIncrement(product);
+                              }}
+                              className={`flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full bg-[#4A90E5] shadow-md ring-1 ring-[#4A90E5]/35 ${isOut ? "pointer-events-none opacity-50" : ""}`}
+                              aria-label="Add to basket"
+                            >
+                              <Plus className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                             </button>
-                          )
+                          );
                         })()}
                       </div>
                     </div>
 
                     <div className="flex-1 flex flex-col pt-4 px-[8px] pb-1 relative bg-white overflow-hidden">
-                      <div className="h-[24px] -mx-[8px] px-[6px] mb-[4px] bg-[#EAF0FA] flex items-center justify-between">
-                        <span className="font-bold text-[13px] text-[#131A44] leading-none">{symbol}{product.price}</span>
-                        {typeof product.wallet_credit === "number" && (
-                          <span className="inline-flex items-center gap-[2px] text-[#4A90E5] font-semibold text-[8px] whitespace-nowrap">
-                            <Wallet className="w-[10px] h-[10px] opacity-90" strokeWidth={2.2} />
-                            <span>{symbol}{product.wallet_credit.toFixed(2)}</span>
-                          </span>
-                        )}
+                      <div className="mb-[4px] flex h-[24px] min-h-[24px] -mx-[8px] items-center justify-between gap-1 bg-[#EAF0FA] px-[6px]">
+                        <span className="truncate font-bold text-[13px] leading-none text-[#131A44]">
+                          {symbol}
+                          {product.price}
+                        </span>
+                        <span className="flex min-w-0 shrink-0 items-center gap-1">
+                          {product.rrp != null && String(product.rrp).trim() !== "" && (
+                            <span className="inline-flex max-w-[48px] items-center gap-0.5 truncate text-[9px] font-semibold text-[#4A90E5] line-through decoration-[#4A90E5] decoration-1">
+                              <ShoppingBag className="h-2.5 w-2.5 shrink-0 opacity-90" strokeWidth={2.2} aria-hidden />
+                              <span className="truncate">
+                                {symbol}
+                                {product.rrp}
+                              </span>
+                            </span>
+                          )}
+                          {typeof product.wallet_credit === "number" && (
+                            <span className="inline-flex items-center gap-[2px] whitespace-nowrap text-[8px] font-semibold text-[#4A90E5]">
+                              <ShoppingBag className="h-2.5 w-2.5 shrink-0 opacity-90" strokeWidth={2.2} aria-hidden />
+                              <span>
+                                {symbol}
+                                {product.wallet_credit.toFixed(2)}
+                              </span>
+                            </span>
+                          )}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-[#64748B] font-bold leading-[1.3] uppercase tracking-tight" style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      <span
+                        className="text-[10px] font-bold uppercase leading-[1.3] tracking-tight text-[#1E293B]"
+                        style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                      >
                         {product.name}
                       </span>
                     </div>
 
-                    <button type="button" className="w-full h-[32px] bg-[#4A90E5] text-white text-[10px] font-bold flex items-center justify-center gap-1.5 transition-colors mt-auto flex-shrink-0 cursor-pointer">
-                      <RefreshCw className="w-3 h-3 opacity-90" strokeWidth={2.5} />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="mt-auto flex min-h-[26px] w-full shrink-0 cursor-pointer items-center justify-center gap-1 bg-[#4A90E5] px-2 py-1.5 text-[9px] font-normal leading-none text-white shadow-[0_2px_6px_rgba(74,144,229,0.25)] transition-colors hover:bg-[#3d7fd4]"
+                    >
+                      <Eye className="h-2.5 w-2.5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
                       Quick View
                     </button>
                   </div>

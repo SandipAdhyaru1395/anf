@@ -127,19 +127,52 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
 
   const isFavorite = (productId: number) => favoriteProductIds.includes(Number(productId))
 
+  const persistFavoriteIdsToCache = (ids: number[]) => {
+    try {
+      const raw = sessionStorage.getItem("customer_cache")
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      sessionStorage.setItem(
+        "customer_cache",
+        JSON.stringify({
+          ...parsed,
+          favoriteProductIds: ids,
+        }),
+      )
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("customer_cache_updated"))
+      }
+    } catch {
+      // ignore cache persistence issues
+    }
+  }
+
   const setFavorite = async (productId: number, next: boolean) => {
     const id = Number(productId)
     // optimistic update
-    setFavoriteProductIds((prev) => next ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((x) => x !== id))
+    setFavoriteProductIds((prev) => {
+      const updated = next
+        ? (prev.includes(id) ? prev : [...prev, id])
+        : prev.filter((x) => x !== id)
+      persistFavoriteIdsToCache(updated)
+      return updated
+    })
     try {
       if (next) {
         await api.post('/favorites/add', { product_id: id })
       } else {
         await api.delete('/favorites/remove', { data: { product_id: id } })
       }
-    } catch {
+    } catch (e) {
       // revert on error
-      setFavoriteProductIds((prev) => !next ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((x) => x !== id))
+      setFavoriteProductIds((prev) => {
+        const reverted = !next
+          ? (prev.includes(id) ? prev : [...prev, id])
+          : prev.filter((x) => x !== id)
+        persistFavoriteIdsToCache(reverted)
+        return reverted
+      })
+      throw e
     }
   }
 
