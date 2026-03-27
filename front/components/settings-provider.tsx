@@ -3,7 +3,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
 import api from "@/lib/axios"
 import { resolveBackendAssetUrl } from "@/lib/utils"
-import { fetchProductsAndStoreCache, shouldFetchProductsFromServer } from "@/lib/products-cache"
+import {
+  fetchProductsAndStoreCacheDeduped,
+  SETTINGS_VERSIONS_CACHE_KEY,
+  shouldFetchProductsFromServer,
+} from "@/lib/products-cache"
 
 type Theme = {
   use_default?: boolean | null
@@ -122,6 +126,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       })
       setServerMaintenance(false)
       try { sessionStorage.setItem('settings_cache', JSON.stringify(normalized)) } catch {}
+      try {
+        sessionStorage.setItem(
+          SETTINGS_VERSIONS_CACHE_KEY,
+          JSON.stringify({
+            Product: typeof v?.Product === 'number' ? v.Product : null,
+            Order: typeof v?.Order === 'number' ? v.Order : null,
+            Customer: typeof v?.Customer === 'number' ? v.Customer : null,
+          })
+        )
+      } catch {}
 
       // Background: reconcile caches by version (products/orders)
       try {
@@ -131,11 +145,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           Customer: typeof v?.Customer === 'number' ? v.Customer : 0,
         }
 
-        // Reconcile Products cache (only when settings Product version is newer than the cache)
+        // Products: only when settings Product version is newer than products_cache (deduped across callers)
         ;(async () => {
           try {
             if (shouldFetchProductsFromServer(vers.Product)) {
-              await fetchProductsAndStoreCache(vers.Product)
+              await fetchProductsAndStoreCacheDeduped(vers.Product)
             }
           } catch {}
         })()
@@ -226,6 +240,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings(null)
       setVersions(null)
       try { sessionStorage.removeItem('settings_cache') } catch {}
+      try { sessionStorage.removeItem(SETTINGS_VERSIONS_CACHE_KEY) } catch {}
     } finally {
       if (!silent) setLoading(false)
     }
@@ -237,6 +252,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const raw = sessionStorage.getItem('settings_cache')
       if (raw) {
         const cachedSettings = JSON.parse(raw)
+        try {
+          const vraw = sessionStorage.getItem(SETTINGS_VERSIONS_CACHE_KEY)
+          if (vraw) {
+            const v = JSON.parse(vraw)
+            setVersions({
+              Product: typeof v?.Product === 'number' ? v.Product : undefined,
+              Order: typeof v?.Order === 'number' ? v.Order : undefined,
+              Customer: typeof v?.Customer === 'number' ? v.Customer : undefined,
+            })
+          }
+        } catch {}
         // Ensure new fields exist in cached settings
         if (cachedSettings) {
           if (!cachedSettings.hasOwnProperty('banner')) {

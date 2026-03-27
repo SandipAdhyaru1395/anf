@@ -5,6 +5,21 @@ export const PRODUCTS_CACHE_KEY = "products_cache"
 
 export const PRODUCTS_CACHE_UPDATED_EVENT = "products_cache_updated"
 
+/** Persisted alongside `settings_cache` when /settings returns (for version checks without extra calls). */
+export const SETTINGS_VERSIONS_CACHE_KEY = "settings_versions_cache"
+
+function hasAuthToken(): boolean {
+  if (typeof window === "undefined") return false
+  try {
+    return !!window.localStorage.getItem("auth_token")
+  } catch {
+    return false
+  }
+}
+
+/** Single in-flight /products; concurrent callers wait for the same request. */
+let productsFetchInFlight: Promise<boolean> | null = null
+
 /** Normalize /products response: filter empty branches, qty fields, dedupe by id. */
 export function normalizeProductsCategoriesFromResponse(data: unknown): any[] | null {
   const d = data as { categories?: unknown } | null
@@ -76,17 +91,22 @@ export function getCachedProductsVersion(): number {
 }
 
 /**
- * Call /products only when there is no cache, or when settings `Product` version is newer than cached.
+ * Call /products only when:
+ * - Authenticated user has no products cache yet (e.g. cleared storage), or
+ * - settings `Product` version is newer than `products_cache.version` (compare with `settings_versions_cache` / API).
+ * Guests never trigger a product fetch from settings.
  */
 export function shouldFetchProductsFromServer(serverProductVersion: number): boolean {
   try {
     const raw = sessionStorage.getItem(PRODUCTS_CACHE_KEY)
-    if (!raw) return true
+    if (!raw) {
+      return hasAuthToken() && serverProductVersion > 0
+    }
     const cached = getCachedProductsVersion()
     if (!serverProductVersion) return false
     return serverProductVersion > cached
   } catch {
-    return true
+    return false
   }
 }
 
@@ -112,6 +132,23 @@ export async function fetchProductsAndStoreCache(productVersion: number): Promis
   if (!deduped) return false
   storeProductsCache(productVersion, deduped)
   return true
+}
+
+/**
+ * Same as {@link fetchProductsAndStoreCache} but coalesces concurrent callers into one HTTP request.
+ */
+export async function fetchProductsAndStoreCacheDeduped(productVersion: number): Promise<boolean> {
+  if (productsFetchInFlight) {
+    return productsFetchInFlight
+  }
+  productsFetchInFlight = (async () => {
+    try {
+      return await fetchProductsAndStoreCache(productVersion)
+    } finally {
+      productsFetchInFlight = null
+    }
+  })()
+  return productsFetchInFlight
 }
 
 /**

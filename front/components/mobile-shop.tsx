@@ -15,12 +15,6 @@ import { useCustomer } from "@/components/customer-provider";
 import { useSettings } from "@/components/settings-provider";
 import { startLoading, stopLoading } from "@/lib/loading";
 import { resolveBackendAssetUrl } from "@/lib/utils";
-import {
-  fetchProductsAndStoreCache,
-  normalizeProductsCategoriesFromResponse,
-  shouldFetchProductsFromServer,
-  storeProductsCache,
-} from "@/lib/products-cache";
 
 interface MobileShopProps {
   onNavigate: (page: any, favorites?: boolean) => void;
@@ -94,7 +88,7 @@ export function MobileShop({
   totals = { units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 },
   showFavorites = false
 }: Partial<MobileShopProps>) {
-  const { settings, versions } = useSettings();
+  const { settings } = useSettings();
   const resolvedLogo =
     resolveBackendAssetUrl(settings?.company_logo_url) ?? settings?.company_logo_url ?? null;
   const resolvedThumb =
@@ -184,40 +178,7 @@ export function MobileShop({
           /* ignore */
         }
       };
-
-      const serverProductVersion =
-        typeof versions?.Product === "number" ? versions.Product : 0;
-
-      (async () => {
-        try {
-          const hasCache = !!sessionStorage.getItem("products_cache");
-          if (hasCache) {
-            if (serverProductVersion && shouldFetchProductsFromServer(serverProductVersion)) {
-              await fetchProductsAndStoreCache(serverProductVersion);
-            }
-            if (!isMounted) return;
-            readCategoriesFromStorage();
-            return;
-          }
-
-          let pv = serverProductVersion;
-          if (!pv) {
-            try {
-              const settingsRes = await api.get("/settings");
-              pv = Number(settingsRes?.data?.versions?.Product || 0) || 0;
-            } catch { }
-          }
-          if (pv) {
-            await fetchProductsAndStoreCache(pv);
-          } else {
-            const res = await api.get("/products");
-            const deduped = normalizeProductsCategoriesFromResponse(res?.data);
-            if (deduped) storeProductsCache(0, deduped);
-          }
-          if (!isMounted) return;
-          readCategoriesFromStorage();
-        } catch { }
-      })();
+      readCategoriesFromStorage();
     } catch { }
     // Listen for cache updates to re-render with latest data
     const onProductsCacheUpdated = () => {
@@ -243,7 +204,7 @@ export function MobileShop({
         window.removeEventListener("products_cache_updated", onProductsCacheUpdated);
       }
     };
-  }, [versions?.Product]);
+  }, []);
 
   // Derived categories filtered by search/favourites and top-level special stock logic.
   const displayedCategories = useMemo(() => {
