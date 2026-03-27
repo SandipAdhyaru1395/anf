@@ -42,7 +42,7 @@ class ProductController extends Controller
 
   public function index()
   {
-    $data['total_products_count'] = Product::all()->count();
+    $data['total_products_count'] = Product::count();
     $data['active_products_count'] = Product::where('is_active', 1)->count();
     $data['inactive_products_count'] = Product::where('is_active', 0)->count();
 

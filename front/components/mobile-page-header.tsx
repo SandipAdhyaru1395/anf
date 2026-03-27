@@ -24,12 +24,12 @@ export function MobilePageHeader({ title, onBack, variant = "tinted", noTopPaddi
     <header
       className={
         plain
-          ? "z-50 w-full shrink-0 border-b border-[#E2E2E2] bg-[#FAFBFD]"
+          ? "z-50 w-full shrink-0  bg-[#FAFBFD]"
           : "z-50 w-full shrink-0 bg-[#F8F7FC] shadow-[0_5px_15px_0_rgba(85,94,88,0.09)]"
       }
     >
       <div
-        className={`mx-auto box-border w-full max-w-[402px] pb-4 ${plain ? "px-4 pt-0" : `px-[29px]}`}`}
+        className={`mx-auto box-border w-full max-w-[402px] py-4 ${plain ? "p-4" : `px-[29px]}`}`}
         style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
       >
         <div className="relative flex min-h-[1.25rem] items-center justify-center">

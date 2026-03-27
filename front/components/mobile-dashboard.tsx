@@ -230,6 +230,16 @@ export function MobileDashboard({
     }, 0);
   }, [cart]);
   const [orders, setOrders] = useState<any[]>([]);
+  const leadingBrands = useMemo(() => {
+    if (!Array.isArray(settings?.leading_brands) || settings.leading_brands.length === 0) {
+      return [] as Array<{ key: any; name: string; imageUrl: string | null }>;
+    }
+    return settings.leading_brands.map((b: any) => ({
+      key: b?.id ?? b?.name,
+      name: String(b?.name ?? ""),
+      imageUrl: b?.image_url ?? null,
+    }));
+  }, [settings?.leading_brands]);
 
   useEffect(() => {
     let isMounted = true;
@@ -462,78 +472,68 @@ export function MobileDashboard({
           */}
 
           {/* BRANDS */}
-          <section className="w-full max-w-[370px] self-center">
-            <h3 className="mb-2 text-[15px] font-bold leading-tight text-[#4E5667]">
-              Leading Brands
-            </h3>
-            <div className="brand-scroll-wrapper w-full overflow-hidden rounded-sm bg-[#4A90E5]/5 px-1 py-3">
-              <div className="brand-scroll-inner flex min-w-max items-center gap-[14px] px-2">
-                {(
-                  (Array.isArray(settings?.leading_brands) && settings?.leading_brands?.length
-                    ? settings.leading_brands.map((b: any) => ({
-                        key: b?.id ?? b?.name,
-                        name: String(b?.name ?? ""),
-                        imageUrl: b?.image_url ?? null,
-                      }))
-                    : ["Lost Mary", "Elfbar", "Ske", "IVG", "Oxva"].map((name) => ({
-                        key: name,
-                        name,
-                        imageUrl: null,
-                      }))) as Array<{ key: any; name: string; imageUrl: string | null }>
-                ).map((b, i) => {
-                  const textColors = [
-                    "text-[#6D3996]",
-                    "text-[#EC9BBB]",
-                    "text-[#3D495E]",
-                    "text-[#E61D24]",
-                    "text-[#EA2428]",
-                  ];
-                  return (
-                    <button
-                      key={b.key ?? i}
-                      type="button"
-                      onClick={() => {
-                        try {
-                          sessionStorage.setItem("shop_brand_filter_v1", b.name);
-                        } catch {}
-                        onNavigate("shop", false);
-                      }}
-                      className="flex w-[56px] shrink-0 cursor-pointer flex-col items-center justify-center gap-1"
-                      aria-label={`Shop brand ${b.name}`}
-                    >
-                      <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full border border-white bg-white shadow-[0_2px_8px_0_rgba(0,0,0,0.06)]">
-                        {b.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={b.imageUrl}
-                            alt={b.name}
-                            className="h-[40px] w-[40px] rounded-full object-contain"
-                          />
-                        ) : (
-                          <span
-                            className={`px-[2px] text-center text-[10px] font-black uppercase leading-none ${textColors[i % textColors.length]}`}
-                            style={{
-                              wordBreak: "break-word",
-                              letterSpacing: "-0.02em",
-                            }}
-                          >
-                            {b.name.split(" ").map((w) => (
-                              <span key={w} className="block">
-                                {w}
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                      </div>
-                      <span className="w-full truncate text-center text-[11.5px] font-bold leading-tight text-[#8A94A6]">
-                        {b.name}
-                      </span>
-                    </button>
-                  );
-                })}
+          {leadingBrands.length > 0 && (
+            <section className="w-full max-w-[370px] self-center">
+              <h3 className="mb-2 text-[15px] font-bold leading-tight text-[#4E5667]">
+                Leading Brands
+              </h3>
+              <div className="brand-scroll-wrapper w-full overflow-hidden rounded-sm bg-[#4A90E5]/5 px-1 py-3">
+                <div className="brand-scroll-inner flex min-w-max items-center gap-[14px] px-2">
+                  {leadingBrands.map((b, i) => {
+                    const textColors = [
+                      "text-[#6D3996]",
+                      "text-[#EC9BBB]",
+                      "text-[#3D495E]",
+                      "text-[#E61D24]",
+                      "text-[#EA2428]",
+                    ];
+                    return (
+                      <button
+                        key={b.key ?? i}
+                        type="button"
+                        onClick={() => {
+                          try {
+                            sessionStorage.setItem("shop_brand_filter_v1", b.name);
+                          } catch {}
+                          onNavigate("shop", false);
+                        }}
+                        className="flex w-[56px] shrink-0 cursor-pointer flex-col items-center justify-center gap-1"
+                        aria-label={`Shop brand ${b.name}`}
+                      >
+                        <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full border border-white bg-white shadow-[0_2px_8px_0_rgba(0,0,0,0.06)]">
+                          {b.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={b.imageUrl}
+                              alt={b.name}
+                              className="h-[40px] w-[40px] rounded-full object-contain"
+                            />
+                          ) : (
+                            <span
+                              className={`px-[2px] text-center text-[10px] font-black uppercase leading-none ${textColors[i % textColors.length]}`}
+                              style={{
+                                wordBreak: "break-word",
+                                letterSpacing: "-0.02em",
+                              }}
+                            >
+                              {b.name.split(" ").map((w) => (
+                                <span key={w} className="block">
+                                  {w}
+                                </span>
+                              ))}
+                            </span>
+                          )}
+                        </div>
+                        <span className="w-full truncate text-center text-[11.5px] font-bold leading-tight text-[#8A94A6]">
+                          {b.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* ORDERS */}
           {orders.length > 0 && (

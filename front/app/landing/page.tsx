@@ -35,7 +35,8 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-[#f0f2f5]">
+    // <div className="flex min-h-screen w-full items-center justify-center bg-[#f0f2f5]">
+    <div className="flex min-h-screen w-full items-center justify-center">
       <div className="fullscreen-sec relative flex min-h-screen w-full flex-col items-center overflow-hidden bg-[#FAFBFD] shadow-xl sm:h-screen sm:max-h-[874px] sm:max-w-[402px]">
         <div className="relative w-full h-full flex flex-col items-center">
           <div
