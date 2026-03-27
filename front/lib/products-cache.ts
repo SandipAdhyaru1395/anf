@@ -9,6 +9,13 @@ export const PRODUCTS_CACHE_UPDATED_EVENT = "products_cache_updated"
 /** Persisted alongside `settings_cache` when /settings returns (for version checks without extra calls). */
 export const SETTINGS_VERSIONS_CACHE_KEY = "settings_versions_cache"
 
+/** Laravel/JSON sometimes yields numeric versions as strings; always compare as numbers. */
+export function coerceVersion(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
 function hasAuthToken(): boolean {
   if (typeof window === "undefined") return false
   try {
@@ -80,22 +87,12 @@ export function normalizeProductsCategoriesFromResponse(data: unknown): any[] | 
   return dedupeProductsInTree(filteredWithQuantities)
 }
 
-/** Backend may send versions as numbers or numeric strings. */
-export function normalizeCacheVersion(value: unknown): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value
-  if (typeof value === "string") {
-    const n = Number(value.trim())
-    return Number.isFinite(n) ? n : 0
-  }
-  return 0
-}
-
 export function getCachedProductsVersion(): number {
   try {
     const raw = sessionStorage.getItem(PRODUCTS_CACHE_KEY)
     if (!raw) return 0
     const parsed = JSON.parse(raw)
-    return normalizeCacheVersion(parsed?.version)
+    return coerceVersion(parsed?.version)
   } catch {
     return 0
   }
@@ -108,8 +105,8 @@ export function getCachedProductsVersion(): number {
  * Guests never trigger a product fetch from settings.
  */
 export function shouldFetchProductsFromServer(serverProductVersion: number): boolean {
-  const server = normalizeCacheVersion(serverProductVersion)
   try {
+    const server = coerceVersion(serverProductVersion)
     const raw = sessionStorage.getItem(PRODUCTS_CACHE_KEY)
     if (!raw) {
       return hasAuthToken() && server > 0
@@ -124,7 +121,8 @@ export function shouldFetchProductsFromServer(serverProductVersion: number): boo
 
 export function storeProductsCache(version: number, categories: any[]): void {
   try {
-    sessionStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ version, categories }))
+    const v = coerceVersion(version)
+    sessionStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ version: v, categories }))
   } catch {
     return
   }
@@ -137,32 +135,15 @@ export function storeProductsCache(version: number, categories: any[]): void {
   }
 }
 
-/**
- * If we already have category data but version was never written (0), align the stored
- * version from /settings without calling /products again (avoids duplicate fetch after login).
- */
-export function patchProductsCacheVersionFromSettings(serverProductVersion: number): void {
-  const server = normalizeCacheVersion(serverProductVersion)
-  if (!server) return
-  try {
-    const raw = sessionStorage.getItem(PRODUCTS_CACHE_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw)
-    if (normalizeCacheVersion(parsed?.version) !== 0) return
-    const cats = parsed?.categories
-    if (!Array.isArray(cats) || cats.length === 0) return
-    storeProductsCache(server, cats)
-  } catch {
-    /* ignore */
-  }
-}
-
 /** GET /products, normalize, write session cache + dispatch. Returns false if response unusable. */
 export async function fetchProductsAndStoreCache(productVersion: number): Promise<boolean> {
   const res = await api.get("/products")
-  const deduped = normalizeProductsCategoriesFromResponse(res?.data)
+  const body = res?.data
+  const deduped =
+    normalizeProductsCategoriesFromResponse(body) ??
+    normalizeProductsCategoriesFromResponse((body as { data?: unknown })?.data)
   if (!deduped) return false
-  storeProductsCache(normalizeCacheVersion(productVersion), deduped)
+  storeProductsCache(coerceVersion(productVersion), deduped)
   return true
 }
 
@@ -188,16 +169,17 @@ export async function fetchProductsAndStoreCacheDeduped(productVersion: number):
  */
 export async function refreshProductsCacheAfterLogin(loginVersions: { Product?: number } | null | undefined): Promise<void> {
   const res = await api.get("/products")
-  const deduped = normalizeProductsCategoriesFromResponse(res?.data)
+  const body = res?.data
+  const deduped =
+    normalizeProductsCategoriesFromResponse(body) ??
+    normalizeProductsCategoriesFromResponse((body as { data?: unknown })?.data)
   if (!deduped) return
 
-  const lv = loginVersions as { Product?: unknown; product?: unknown } | null | undefined
-  let v = normalizeCacheVersion(lv?.Product ?? lv?.product)
+  let v = coerceVersion(loginVersions?.Product)
   if (!v) {
     try {
       const sr = await getSettingsSerialized()
-      const sp = (sr?.data?.versions as { Product?: unknown } | undefined)?.Product
-      v = normalizeCacheVersion(sp)
+      v = coerceVersion(sr?.data?.versions?.Product)
     } catch {
       /* keep v */
     }
