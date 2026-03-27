@@ -76,6 +76,10 @@ const SHOP_LOGO_BOX = {
   opacity: 1 as const,
 } as const;
 
+const PRIMARY_BUTTON_GRADIENT: React.CSSProperties = {
+  background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)",
+};
+
 export function MobileShop({
   onNavigate = () => { },
   cart = {},
@@ -666,10 +670,14 @@ export function MobileShop({
 
       {/* Mobile Sticky Cart — Figma: 402×60 hug, py-12 px-8, gradient #E8E8ED→#F4F2F9, shadow up; space-between */}
       <div
-        className="fixed bottom-[64px] left-1/2 z-40 box-border flex min-h-[60px] w-full max-w-[402px] -translate-x-1/2 items-center bg-gradient-to-b from-[#E8E8ED] to-[#F4F2F9] px-2 py-3 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        className="fixed bottom-[64px] left-1/2 z-40 box-border flex h-[60px] w-full max-w-[402px] -translate-x-1/2 items-center px-2 py-3 opacity-100 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        style={{
+          background:
+            "linear-gradient(3.99deg, #E8E8ED -13.48%, #F4F2F9 56.67%)",
+        }}
         aria-label="Mobile sticky cart"
       >
-        <div className="flex min-h-0 w-full items-center gap-2">
+        <div className="mx-auto flex h-[36px] w-[386px] max-w-[800px] min-h-0 items-center justify-between gap-2">
           <div className="flex min-w-0 flex-col justify-center">
             <div
               className="flex min-w-0 items-center whitespace-nowrap"
@@ -678,23 +686,29 @@ export function MobileShop({
               <span className="inline-flex h-[15px] items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
                 {totals.units} Units
               </span>
-              <span className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
+              <span className="mx-3 h-[12px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
               <span className="inline-flex h-[15px] items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
                 {totals.skus} SKUs
               </span>
-              <span className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
+              <span className="mx-3 h-[12px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
               <span className="inline-flex h-[15px] shrink-0 items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
                 {symbol}
                 {totals.total.toFixed(2)}
               </span>
-              <span className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
+              <span className="mx-3 h-[12px] w-px shrink-0 self-center bg-[#D2D0E1]" aria-hidden />
               <span className="inline-flex h-[15px] shrink-0 items-center gap-[5px] text-[13px] font-bold leading-none tracking-normal text-[#4A90E5]">
-                <FontAwesomeIcon icon={faWallet} className="text-[12px] opacity-90" aria-hidden />
+                <span className="inline-flex h-[14px] w-[14px] items-center justify-center rounded-[3px] bg-[#4A90E5]">
+                  <FontAwesomeIcon
+                    icon={faWallet}
+                    className="text-[9px] text-white"
+                    aria-hidden
+                  />
+                </span>
                 <span>+{symbol}{totalWalletCredit.toFixed(2)}</span>
               </span>
             </div>
             <p
-              className="mt-1 w-full text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]"
+              className="mt-1.5 w-full text-center text-[12px] font-normal leading-none tracking-[0.03em] text-[#68676E]"
               style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
             >
               Includes FREE delivery
@@ -704,8 +718,8 @@ export function MobileShop({
           <button
             type="button"
             onClick={() => onNavigate("basket")}
-            className="ml-auto box-border flex h-[35px] w-[116px] max-w-[300px] shrink-0 items-center justify-center rounded-[8px] bg-[#4A90E5] p-[8px] text-center text-[16px] font-[700] leading-none tracking-normal text-white shadow-sm transition-colors hover:bg-[#3d7fd4] active:bg-[#3570c2]"
-            style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+            className="box-border flex h-[34px] w-[120px] max-w-[300px] shrink-0 items-center justify-center rounded-[6px] px-3 text-center text-[16px] font-bold leading-none tracking-normal text-[#FFFFFF] shadow-sm transition-opacity hover:opacity-95 active:opacity-90"
+            style={{ fontFamily: "Roboto, system-ui, sans-serif", ...PRIMARY_BUTTON_GRADIENT }}
           >
             View Basket
           </button>

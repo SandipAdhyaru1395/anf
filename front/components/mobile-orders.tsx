@@ -145,7 +145,7 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
     >
       <MobilePageHeader title="My Orders" onBack={onBack} />
 
-      <main className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-6 pb-[80px] pt-4">
+      <main className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-6 pb-[80px]">
         <div className="mx-auto flex w-full max-w-[354px] flex-col gap-4">
           <Banner className="h-[89px] max-w-[354px] rounded-[10px] border border-[#E2E2E2]" />
 

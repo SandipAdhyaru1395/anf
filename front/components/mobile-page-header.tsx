@@ -11,11 +11,13 @@ type MobilePageHeaderProps = {
    * `plain` — Account Figma: #FAFBFD frame + #E2E2E2 bottom rule, title #181725, Back #6B7280.
    */
   variant?: "tinted" | "plain";
+  /** Remove large top offset used by tinted header. */
+  noTopPadding?: boolean;
   /** e.g. Order Summary status pill on the right */
   trailing?: ReactNode;
 };
 
-export function MobilePageHeader({ title, onBack, variant = "tinted", trailing }: MobilePageHeaderProps) {
+export function MobilePageHeader({ title, onBack, variant = "tinted", noTopPadding = false, trailing }: MobilePageHeaderProps) {
   const plain = variant === "plain";
 
   return (
@@ -27,7 +29,7 @@ export function MobilePageHeader({ title, onBack, variant = "tinted", trailing }
       }
     >
       <div
-        className={`mx-auto box-border w-full max-w-[402px] pb-4 pt-[65px] ${plain ? "px-4" : "px-[29px]"}`}
+        className={`mx-auto box-border w-full max-w-[402px] pb-4 ${plain ? "px-4 pt-0" : `px-[29px]}`}`}
         style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
       >
         <div className="relative flex min-h-[1.25rem] items-center justify-center">

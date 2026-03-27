@@ -16,13 +16,9 @@ import {
 import {
   Building2,
   ChevronRight,
-  CircleHelp,
-  CreditCard,
   FileText,
   Home,
-  Lock,
   MessageCircle,
-  Settings,
   ShoppingBag,
   User,
   Wallet,
@@ -66,17 +62,17 @@ export function MobileAccount(props: MobileAccountProps) {
     }
   };
 
-  const menuItems: { label: string; icon: LucideIcon; action: () => void; badge?: boolean }[] = [
+  const menuItems: { label: string; icon: LucideIcon; action: () => void }[] = [
     { label: "My Details", icon: User, action: () => onNavigate("company-details") },
     { label: "My Branches", icon: Home, action: () => onNavigate("branches") },
     { label: "My Orders", icon: ShoppingBag, action: () => onNavigate("orders") },
-    { label: "Payment Methods", icon: CreditCard, action: () => onNavigate("PaymentResultHandler") },
+    // { label: "Payment Methods", icon: CreditCard, action: () => onNavigate("PaymentResultHandler") },
     { label: "My Wallet", icon: Wallet, action: () => onNavigate("wallet") },
     { label: "Contact Us", icon: MessageCircle, action: () => onNavigate("contact-us") },
-    { label: "About Us", icon: CircleHelp, action: () => onNavigate("about-us"), badge: true },
-    { label: "Authentication", icon: Lock, action: () => onNavigate("authentication") },
-    { label: "Settings", icon: Settings, action: () => onNavigate("settings") },
-    { label: "Terms And Conditions", icon: FileText, action: () => onNavigate("terms-and-conditions"), badge: true },
+    // { label: "About Us", icon: CircleHelp, action: () => onNavigate("about-us") },
+    // { label: "Authentication", icon: Lock, action: () => onNavigate("authentication") },
+    // { label: "Settings", icon: Settings, action: () => onNavigate("settings") },
+    { label: "Terms And Conditions", icon: FileText, action: () => onNavigate("terms-and-conditions") },
   ];
 
   return (
@@ -131,14 +127,6 @@ export function MobileAccount(props: MobileAccountProps) {
                   </span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2.5 pl-2">
-                  {item.badge ? (
-                    <span
-                      className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#4A90E5] text-[11px] font-bold text-white"
-                      aria-hidden
-                    >
-                      P
-                    </span>
-                  ) : null}
                   <ChevronRight className="h-[18px] w-[18px] shrink-0 text-[#B0B0B0]" strokeWidth={2} aria-hidden />
                 </div>
               </button>

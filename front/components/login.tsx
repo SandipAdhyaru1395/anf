@@ -86,7 +86,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex justify-center bg-[#F2F5F9]">
       <div 
-        className="relative w-[402px] h-[874px] bg-[#FAFBFD] pt-[65px] pr-[16px] pb-[24px] pl-4 flex flex-col gap-8 overflow-hidden shadow-sm"
+        className="relative w-[402px] h-[874px] bg-[#FAFBFD] pr-[16px] pl-4 flex flex-col gap-8 overflow-hidden shadow-sm"
         style={{
           backgroundColor: "#FAFBFD",
           backgroundImage: "url('./background.svg')",
@@ -197,7 +197,7 @@ export default function Login() {
   <Link 
     href={buildPath("/forgot-password")} 
     className="text-[#3D495E] text-[13px] font-medium underline [font-family:Roboto]"
-    style={{ fontWeight: 500 }} // ચોક્કસ 500 વેઇટ આપવા માટે
+    style={{ fontWeight: 500 }} 
   >
     Forgotten your password?
   </Link>

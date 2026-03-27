@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useSettings } from "@/components/settings-provider";
 import { buildPath } from "@/lib/utils";
 import Image from "next/image";
@@ -7,63 +8,101 @@ import Image from "next/image";
 export default function LandingPage() {
   const { settings } = useSettings();
   const logoSrc = settings?.company_logo_url;
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isCompactActions, setIsCompactActions] = useState(false);
+
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const hasScrolled = container.scrollTop > 120;
+      setShowScrollTop(hasScrolled);
+      setIsCompactActions(container.scrollTop > 40);
+    };
+
+    container.addEventListener("scroll", onScroll);
+    onScroll();
+
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
-    <div className="flex min-h-screen w-screen items-center justify-center">
-      <div className="flex h-[874px] w-[402px] max-w-full flex-col items-center bg-[#FAFBFD] pt-[65px] pb-[65px]">
-        <div className="relative w-[402px] h-[744px] max-h-[800px] flex flex-col items-center justify-between overflow-hidden">
+    <div className="flex min-h-screen w-full items-center justify-center bg-[#f0f2f5]">
+      <div className="fullscreen-sec relative flex min-h-screen w-full flex-col items-center overflow-hidden bg-[#FAFBFD] shadow-xl sm:h-screen sm:max-h-[874px] sm:max-w-[402px]">
+        <div className="relative w-full h-full flex flex-col items-center">
           <div
-            className="absolute left-[20px] right-0 bottom-0 top-[76px] z-0 pointer-events-none"
+            className="absolute inset-0 z-0 pointer-events-none"
             style={{
-              // backgroundColor: "#6497EA0D",
               backgroundImage: "url('/background.svg')",
               backgroundRepeat: "no-repeat",
-              backgroundSize: "contain",
-              backgroundPosition: "center",
+              backgroundSize: "auto 90%",
+              backgroundPosition: "top 60px right",
             }}
           />
 
-        {/* Logo Section */}
-        <div className="relative z-10 flex flex-col items-center">
-          {logoSrc ? (
-            <Image
-              src={logoSrc}
-              alt="Logo"
-              width={214}
-              height={151}
-              className="app-logo-auth  block mx-auto"
-              priority
-            />
-          ) : null}
-        </div>
-
-
-
-        {/* Buttons Section */}
-        <div className="relative z-10 flex w-[402px] h-[112px] flex-col items-center gap-[16px] px-[32px]">
-          <button
-            onClick={() => (window.location.href = buildPath("/login"))}
-            className="w-[338px] h-[48px] rounded-[25px] px-[26px] py-[15px] text-center text-[20px] leading-[18px] [font-family:Roboto] text-[#FFFFFF] hover:cursor-pointer active:scale-[0.98] transition-all"
-            style={{ background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)" , fontWeight: "700" }}
+          <div
+            ref={contentRef}
+            className="relative z-10 flex h-full w-full flex-col items-center justify-between px-[18px] pt-[20px] pb-[22px] sm:px-[32px] sm:pt-[20px] sm:pb-[60px] overflow-y-auto no-scrollbar"
           >
-            Log In
-          </button>
+            {/* Logo Section */}
+            <div className="sticky top-0 z-10 flex w-full flex-col items-center shrink-0 bg-transparent py-2">
+              {logoSrc ? (
+                <Image
+                  src={logoSrc}
+                  alt="Logo"
+                  width={214}
+                  height={151}
+                  className="block mx-auto h-auto w-[155px] sm:w-[214px]"
+                  priority
+                />
+              ) : null}
+            </div>
 
+            <div className="flex w-full flex-col items-center gap-[12px] mt-[34px] sm:mt-0 shrink-0">
+              <button
+                onClick={() => (window.location.href = buildPath("/login"))}
+                className={`w-full rounded-[25px] text-center [font-family:Roboto] text-[#FFFFFF] hover:cursor-pointer active:scale-[0.98] transition-all font-[700] ${
+                  isCompactActions
+                    ? "max-w-[268px] h-[38px] px-[20px] py-[9px] text-[18px] leading-[16px]"
+                    : "max-w-[306px] h-[44px] px-[22px] py-[12px] text-[18px] leading-[16px] sm:max-w-[338px] sm:h-[48px] sm:px-[26px] sm:py-[15px] sm:text-[20px] sm:leading-[18px]"
+                }`}
+                style={{ background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)" }}
+              >
+                Log In
+              </button>
+
+              <button
+                onClick={() => (window.location.href = buildPath("/register"))}
+                className={`flex w-full items-center justify-center rounded-[25px] border border-[#4A90E5] bg-[#FFFFFF] text-center font-[700] [font-family:Roboto] text-[#4A90E5] hover:cursor-pointer active:scale-[0.98] transition-all ${
+                  isCompactActions
+                    ? "max-w-[268px] h-[38px] px-[20px] py-[9px] text-[18px] leading-[16px]"
+                    : "max-w-[306px] h-[44px] px-[22px] py-[12px] text-[18px] leading-[16px] sm:max-w-[338px] sm:h-[48px] sm:px-[26px] sm:py-[15px] sm:text-[20px] sm:leading-[18px]"
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {showScrollTop ? (
           <button
-            onClick={() => window.location.href = buildPath("/register")}
-            className="flex w-[338px] h-[48px] items-center justify-center rounded-[25px] border border-[#4A90E5] bg-[#FFFFFF] px-[26px] py-[15px] text-center text-[20px] leading-[18px] font-[700] [font-family:Roboto] text-[#4A90E5] hover:cursor-pointer active:scale-[0.98] transition-all" style={{ fontWeight: "700" }}
+            onClick={scrollToTop}
+            className="absolute bottom-4 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-[#4C92E9] text-sm text-white shadow-lg transition-transform active:scale-95 sm:bottom-5 sm:right-5 sm:h-10 sm:w-10 sm:text-base"
+            aria-label="Scroll to top"
           >
-            Sign Up
+            ↑
           </button>
-        </div>
-        
-        </div>
+        ) : null}
       </div>
     </div>
   );
 }
-
-
-
-
-

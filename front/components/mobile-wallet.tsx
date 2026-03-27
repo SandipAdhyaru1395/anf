@@ -83,8 +83,8 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
   const bannerSrc =
     resolveBackendAssetUrl(settings?.banner) ?? settings?.banner ?? null;
   const wallet = Number(customer?.wallet_balance || 0);
-  /** Always show the wallet explainer first when opening Wallet. */
-  const [showIntro, setShowIntro] = useState(true);
+  /** Show wallet explainer only when user taps info icon. */
+  const [showIntro, setShowIntro] = useState(false);
 
   if (showIntro) {
     return (
@@ -136,7 +136,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
 
   return (
     <div className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD]" style={{ fontFamily: "Roboto, system-ui, sans-serif" }}>
-      <MobilePageHeader title="Wallet" onBack={() => onNavigate("dashboard")} />
+      <MobilePageHeader title="Wallet" onBack={() => onNavigate("dashboard")} noTopPadding />
 
             <div className="shrink-0 bg-[#FAFBFD] px-4 pb-2 pt-2">
               <Banner className="mx-auto h-[93px] w-full max-w-[370px] !rounded-[2px]" />
@@ -163,6 +163,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
                 </span>
                 <button
                   type="button"
+                  onClick={() => setShowIntro(true)}
                   className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-full border border-white/75 bg-white/10 transition-opacity hover:opacity-90"
                   aria-label="Wallet balance information"
                 >

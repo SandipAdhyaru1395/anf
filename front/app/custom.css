@@ -280,3 +280,5 @@ button.box-shadow-bottom {
 .delivery-info div:empty {
   display: none;
 }
+
+.fullscreen-sec{height:100vh}

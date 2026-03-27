@@ -45,7 +45,7 @@ export function MobileRepDetails({ onNavigate, onBack }: MobileRepDetailsProps) 
       </div>
 
       {/* Rep Details Section */}
-      <div className="bg-white p-[10px] pt-[20px] mb-[82px]">
+      <div className="bg-white p-[10px] mb-[82px]">
         {/* Header with Avatar and Name */}
         <div className="border-b border-gray-100 mb-[24px]">
           <div className="flex items-center">

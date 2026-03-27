@@ -12,6 +12,7 @@ import { MobileCompanyDetails } from "@/components/mobile-company-details"
 import { MobileOrders } from "@/components/mobile-orders"
 import { MobileOrderDetails } from "@/components/mobile-order-details"
 import { MobileBranches } from "@/components/mobile-branches"
+import { MobileContactUs } from "@/components/mobile-contact-us"
 import SplashScreen from "./welcome-screen"
 
 type PageKey =
@@ -26,6 +27,7 @@ type PageKey =
   | "orders"
   | "order-details"
   | "branches"
+  | "contact-us"
 
 export default function Home() {
   const [hasToken, setHasToken] = useState<boolean | null>(null)
@@ -231,6 +233,14 @@ export default function Home() {
       <MobileBranches
         onNavigate={handleNavigate}
         onBack={() => handleNavigate("account")}
+      />
+    )
+  }
+
+  if (currentPage === "contact-us") {
+    return (
+      <MobileContactUs
+        onNavigate={handleNavigate}
       />
     )
   }

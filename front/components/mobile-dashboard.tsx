@@ -341,6 +341,7 @@ export function MobileDashboard({
     
           <div className="flex w-full max-w-[370px] flex-col gap-2.5 self-center rounded-sm bg-[#EEF1F4] p-2.5">
             
+            {/*
             <div
               className="relative w-full overflow-hidden rounded-sm py-2.5 pl-2.5 pr-[84px] text-white shadow-sm"
               style={PRIMARY_BUTTON_GRADIENT}
@@ -382,6 +383,7 @@ export function MobileDashboard({
                 </div>
               </div>
             </div>
+            */}
 
             {/* WALLET — Figma: fill max 354px, fixed 34px row, px 16, 1px #4A90E5, radius 5px */}
             <button
@@ -428,7 +430,7 @@ export function MobileDashboard({
             </div>
           </div>
 
-          {/* NOTIFICATIONS */}
+          {/*
           <section className="w-full max-w-[370px] self-center">
             <h3 className="mb-2 text-[15px] font-bold leading-tight text-[#FAFBFD]">
               Recent Notifications
@@ -457,6 +459,7 @@ export function MobileDashboard({
               ))}
             </div>
           </section>
+          */}
 
           {/* BRANDS */}
           <section className="w-full max-w-[370px] self-center">
@@ -657,7 +660,7 @@ export function MobileDashboard({
                     </div>
 
                     {/* right arrow zone (|>) */}
-                    <div className="ml-auto flex shrink-0 items-center justify-center bg-white">
+                    <div className="ml-auto cursor-pointer flex shrink-0 items-center justify-center bg-white">
                       <span
                         className="mr-2 h-[26px] w-px shrink-0 bg-[#4A90E5]"
                         aria-hidden
@@ -675,7 +678,7 @@ export function MobileDashboard({
               <button
                 type="button"
                 onClick={() => onNavigate("orders")}
-                className="mt-3 w-full rounded-b-[10px] py-3 text-center text-[14px] font-bold text-[#2F80ED]"
+                className="mt-3 cursor-pointer w-full rounded-b-[10px] py-3 text-center text-[14px] font-bold text-[#2F80ED]"
                 style={{
                   background:
                     "linear-gradient(180deg, #F5F8FF 0%, #E9F1FF 100%)",
@@ -692,10 +695,14 @@ export function MobileDashboard({
 
       {/* BASKET BAR — Mobile Sticky Cart: stats Roboto 700 13px/100% #3D495E; dividers 1px #D2D0E1; wallet row gap 5px */}
       <div
-        className="fixed bottom-[64px] left-1/2 z-40 box-border flex w-full max-w-[402px] -translate-x-1/2 items-center bg-white px-[12px] py-2.5 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        className="fixed bottom-[64px] left-1/2 z-40 box-border flex h-[60px] w-full max-w-[402px] -translate-x-1/2 items-center px-2 py-3 opacity-100 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        style={{
+          background:
+            "linear-gradient(3.99deg, #E8E8ED -13.48%, #F4F2F9 56.67%)",
+        }}
         aria-label="Mobile sticky cart"
       >
-        <div className="flex min-h-0 w-full items-center gap-2">
+        <div className="mx-auto flex h-[36px] w-[386px] max-w-[800px] min-h-0 items-center justify-between gap-2">
           <div className="flex min-w-0 flex-col justify-center">
             <div
               className="flex min-w-0 items-center whitespace-nowrap"
@@ -705,14 +712,14 @@ export function MobileDashboard({
                 {totals.units} Units
               </span>
               <span
-                className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]"
+                className="mx-3 h-[12px] w-px shrink-0 self-center bg-[#D2D0E1]"
                 aria-hidden
               />
               <span className="inline-flex h-[15px] items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
                 {totals.skus} SKUs
               </span>
               <span
-                className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]"
+                className="mx-3 h-[12px] w-px shrink-0 self-center bg-[#D2D0E1]"
                 aria-hidden
               />
               <span className="inline-flex h-[15px] shrink-0 items-center text-[13px] font-bold leading-none tracking-normal text-[#3D495E]">
@@ -720,20 +727,25 @@ export function MobileDashboard({
                 {totals.total.toFixed(2)}
               </span>
               <span
-                className="mx-1 h-[11px] w-px shrink-0 self-center bg-[#D2D0E1]"
+                className="mx-3 h-[12px] w-px shrink-0 self-center bg-[#D2D0E1]"
                 aria-hidden
               />
               <span className="inline-flex h-[15px] shrink-0 items-center gap-[5px] text-[13px] font-bold leading-none tracking-normal text-[#4A90E5]">
-                <FontAwesomeIcon
-                  icon={faWallet}
-                  className="text-[12px] opacity-90"
-                  aria-hidden
-                />
-                <span>+{symbol}{cartWalletCredit.toFixed(2)}</span>
+                <span className="inline-flex h-[14px] w-[14px] items-center justify-center rounded-[3px] bg-[#4A90E5]">
+                  <FontAwesomeIcon
+                    icon={faWallet}
+                    className="text-[9px] text-white"
+                    aria-hidden
+                  />
+                </span>
+                <span>
+                  +{symbol}
+                  {cartWalletCredit.toFixed(2)}
+                </span>
               </span>
             </div>
             <p
-              className="mt-1 w-full text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]"
+              className="mt-1.5 w-full text-center text-[12px] font-normal leading-none tracking-[0.03em] text-[#68676E]"
               style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
             >
               Includes FREE delivery
@@ -743,7 +755,7 @@ export function MobileDashboard({
           <button
             type="button"
             onClick={() => onNavigate("basket")}
-            className="ml-auto cursor-pointer box-border flex h-[35px] w-[116px] max-w-[300px] shrink-0 items-center justify-center rounded-[8px] p-[8px] text-center text-[16px] font-[700px] leading-none tracking-normal text-[#FFFFFF] shadow-sm transition-opacity hover:opacity-95 active:opacity-90"
+            className="cursor-pointer box-border flex h-[34px] w-[120px] max-w-[300px] shrink-0 items-center justify-center rounded-[6px] px-3 text-center text-[16px] font-bold leading-none tracking-normal text-[#FFFFFF] shadow-sm transition-opacity hover:opacity-95 active:opacity-90"
             style={{ fontFamily: "Roboto, system-ui, sans-serif", ...PRIMARY_BUTTON_GRADIENT }}
           >
             View Basket
@@ -760,9 +772,9 @@ export function MobileDashboard({
         <div className="flex min-h-0 w-full flex-1 items-center justify-center">
           <div className="flex h-[40px] w-[316px] max-w-full items-center justify-between">
             <button
-              type="button"
+              type="button" 
               onClick={() => onNavigate("dashboard")}
-              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 text-[#4A90E5]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 text-[#4A90E5]"
               aria-current="page"
             >
               <FontAwesomeIcon
@@ -777,7 +789,7 @@ export function MobileDashboard({
             <button
               type="button"
               onClick={() => onNavigate("shop")}
-              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faShop}
@@ -791,7 +803,7 @@ export function MobileDashboard({
             <button
               type="button"
               onClick={() => onNavigate("shop", true)}
-              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faHeart}
@@ -805,7 +817,7 @@ export function MobileDashboard({
             <button
               type="button"
               onClick={() => onNavigate("wallet")}
-              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faWallet}
@@ -819,7 +831,7 @@ export function MobileDashboard({
             <button
               type="button"
               onClick={() => onNavigate("account")}
-              className="flex h-full min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faUser}
