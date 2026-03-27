@@ -6,6 +6,8 @@ import { getSettingsSerialized } from "@/lib/settings-api"
 import { resolveBackendAssetUrl } from "@/lib/utils"
 import {
   fetchProductsAndStoreCacheDeduped,
+  normalizeCacheVersion,
+  patchProductsCacheVersionFromSettings,
   SETTINGS_VERSIONS_CACHE_KEY,
   shouldFetchProductsFromServer,
 } from "@/lib/products-cache"
@@ -119,11 +121,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           button_login: s.theme.button_login ?? null,
         } : null,
       })
+      const productVer = normalizeCacheVersion(v?.Product)
+      const orderVer = normalizeCacheVersion(v?.Order)
+      const customerVer = normalizeCacheVersion(v?.Customer)
       setSettings(normalized)
       setVersions({
-        Product: typeof v?.Product === 'number' ? v.Product : undefined,
-        Order: typeof v?.Order === 'number' ? v.Order : undefined,
-        Customer: typeof v?.Customer === 'number' ? v.Customer : undefined,
+        Product: productVer || undefined,
+        Order: orderVer || undefined,
+        Customer: customerVer || undefined,
       })
       setServerMaintenance(false)
       try { sessionStorage.setItem('settings_cache', JSON.stringify(normalized)) } catch {}
@@ -131,9 +136,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.setItem(
           SETTINGS_VERSIONS_CACHE_KEY,
           JSON.stringify({
-            Product: typeof v?.Product === 'number' ? v.Product : null,
-            Order: typeof v?.Order === 'number' ? v.Order : null,
-            Customer: typeof v?.Customer === 'number' ? v.Customer : null,
+            Product: productVer || null,
+            Order: orderVer || null,
+            Customer: customerVer || null,
           })
         )
       } catch {}
@@ -141,14 +146,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       // Background: reconcile caches by version (products/orders)
       try {
         const vers = {
-          Product: typeof v?.Product === 'number' ? v.Product : 0,
-          Order: typeof v?.Order === 'number' ? v.Order : 0,
-          Customer: typeof v?.Customer === 'number' ? v.Customer : 0,
+          Product: productVer,
+          Order: orderVer,
+          Customer: customerVer,
         }
 
-        // Products: only when settings Product version is newer than products_cache (deduped across callers)
+        // Products: align version metadata without HTTP when cache is fresh but version was 0; then fetch only if server > cache
         ;(async () => {
           try {
+            patchProductsCacheVersionFromSettings(vers.Product)
             if (shouldFetchProductsFromServer(vers.Product)) {
               await fetchProductsAndStoreCacheDeduped(vers.Product)
             }
@@ -258,9 +264,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           if (vraw) {
             const v = JSON.parse(vraw)
             setVersions({
-              Product: typeof v?.Product === 'number' ? v.Product : undefined,
-              Order: typeof v?.Order === 'number' ? v.Order : undefined,
-              Customer: typeof v?.Customer === 'number' ? v.Customer : undefined,
+              Product: normalizeCacheVersion(v?.Product) || undefined,
+              Order: normalizeCacheVersion(v?.Order) || undefined,
+              Customer: normalizeCacheVersion(v?.Customer) || undefined,
             })
           }
         } catch {}
