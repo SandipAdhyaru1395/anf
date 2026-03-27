@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
 import api from "@/lib/axios"
+import { getSettingsSerialized } from "@/lib/settings-api"
 import { resolveBackendAssetUrl } from "@/lib/utils"
 import {
   fetchProductsAndStoreCacheDeduped,
@@ -96,7 +97,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (!silent) setLoading(true)
     setError(null)
     try {
-      const res = await api.get('/settings')
+      const res = await getSettingsSerialized()
       const s = res?.data?.settings
       const v = res?.data?.versions
       const normalized: Settings = normalizeSettingsMediaUrls({

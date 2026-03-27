@@ -1,4 +1,5 @@
 import api from "@/lib/axios"
+import { getSettingsSerialized } from "@/lib/settings-api"
 
 /** Session key for product tree + version (settings `versions.Product`). */
 export const PRODUCTS_CACHE_KEY = "products_cache"
@@ -169,7 +170,7 @@ export async function refreshProductsCacheAfterLogin(loginVersions: { Product?: 
   }
   if (!v) {
     try {
-      const sr = await api.get("/settings")
+      const sr = await getSettingsSerialized()
       const sp = sr?.data?.versions?.Product
       const n = typeof sp === "number" ? sp : Number(sp || 0)
       if (Number.isFinite(n) && n > 0) v = n
