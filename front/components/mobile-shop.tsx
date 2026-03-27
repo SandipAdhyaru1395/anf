@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGauge, faShop, faWallet, faUser, faBars, faStar, faSearch, faChartSimple, faHeart } from "@fortawesome/free-solid-svg-icons";
 import api from "@/lib/axios";
+import { fetchProducts } from "@/lib/fetch-products";
 import { Thumbnail } from "@/components/thumbnail";
 import { useCurrency } from "@/components/currency-provider";
 import { useCustomer } from "@/components/customer-provider";
@@ -201,7 +202,7 @@ export function MobileShop({
               productVersion = Number(vers?.Product || 0) || 0;
             } catch { }
 
-            const res = await api.get("/products");
+            const res = await fetchProducts();
             const data = res.data;
             if (!isMounted) return;
             if (Array.isArray(data?.categories)) {

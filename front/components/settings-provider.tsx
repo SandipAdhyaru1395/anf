@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
 import api from "@/lib/axios"
+import { fetchProducts } from "@/lib/fetch-products"
 import { resolveBackendAssetUrl } from "@/lib/utils"
 
 type Theme = {
@@ -142,7 +143,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
               } catch {}
             }
             if (vers.Product && vers.Product !== cachedVersion) {
-              const res = await api.get('/products')
+              const res = await fetchProducts()
               const data = res?.data
               if (Array.isArray(data?.categories)) {
                 const filterNodesWithProducts = (nodes: any[]): any[] => {
