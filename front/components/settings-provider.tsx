@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
 import api from "@/lib/axios"
-import { fetchProducts } from "@/lib/fetch-products"
 import { resolveBackendAssetUrl } from "@/lib/utils"
+import { fetchProductsAndStoreCache, shouldFetchProductsFromServer } from "@/lib/products-cache"
 
 type Theme = {
   use_default?: boolean | null
@@ -131,80 +131,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           Customer: typeof v?.Customer === 'number' ? v.Customer : 0,
         }
 
-        // Reconcile Products cache
+        // Reconcile Products cache (only when settings Product version is newer than the cache)
         ;(async () => {
           try {
-            const raw = sessionStorage.getItem('products_cache')
-            let cachedVersion = 0
-            if (raw) {
-              try {
-                const parsed = JSON.parse(raw)
-                if (typeof parsed?.version === 'number') cachedVersion = parsed.version
-              } catch {}
-            }
-            if (vers.Product && vers.Product !== cachedVersion) {
-              const res = await fetchProducts()
-              const data = res?.data
-              if (Array.isArray(data?.categories)) {
-                const filterNodesWithProducts = (nodes: any[]): any[] => {
-                  return nodes
-                    .map((node: any) => {
-                      const filteredChildren = Array.isArray(node?.subcategories) ? filterNodesWithProducts(node.subcategories) : undefined
-                      const productsCount = Array.isArray(node?.products) ? node.products.length : 0
-                      const hasProductsHere = productsCount > 0
-                      const hasProductsInChildren = Array.isArray(filteredChildren) && filteredChildren.length > 0
-                      if (!hasProductsHere && !hasProductsInChildren) {
-                        return null as unknown as any
-                      }
-                      return { ...node, ...(filteredChildren ? { subcategories: filteredChildren } : {}) }
-                    })
-                    .filter((n: any) => Boolean(n))
-                }
-                const filtered = filterNodesWithProducts(data.categories as any[])
-                // Normalize products to include `quantity` alongside `available_qty`
-                const normalizeProductQuantities = (nodes: any[]): any[] => {
-                  return nodes.map((node: any) => {
-                    const withProducts = Array.isArray(node?.products)
-                      ? {
-                          products: node.products.map((p: any) => ({
-                            ...p,
-                            quantity: typeof p?.quantity === 'number' ? p.quantity : (p?.available_qty ?? 0),
-                          })),
-                        }
-                      : {}
-                    const withChildren = Array.isArray(node?.subcategories)
-                      ? { subcategories: normalizeProductQuantities(node.subcategories) }
-                      : {}
-                    return { ...node, ...withProducts, ...withChildren }
-                  })
-                }
-                const filteredWithQuantities = normalizeProductQuantities(filtered)
-                // Remove duplicate products by id within each category tree
-                const dedupeProductsInTree = (nodes: any[]): any[] => {
-                  return nodes.map((node: any) => {
-                    let nextProducts = Array.isArray(node?.products) ? node.products : undefined
-                    if (Array.isArray(nextProducts)) {
-                      const seen = new Set<number>()
-                      nextProducts = nextProducts.filter((p: any) => {
-                        const id = Number(p?.id)
-                        if (!Number.isFinite(id)) return false
-                        if (seen.has(id)) return false
-                        seen.add(id)
-                        return true
-                      })
-                    }
-                    const nextChildren = Array.isArray(node?.subcategories) ? dedupeProductsInTree(node.subcategories) : undefined
-                    return { ...node, ...(nextProducts ? { products: nextProducts } : {}), ...(nextChildren ? { subcategories: nextChildren } : {}) }
-                  })
-                }
-                const deduped = dedupeProductsInTree(filteredWithQuantities)
-                try {
-                  sessionStorage.setItem('products_cache', JSON.stringify({ version: vers.Product, categories: deduped }))
-                  if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('products_cache_updated'))
-                  }
-                } catch {}
-              }
+            if (shouldFetchProductsFromServer(vers.Product)) {
+              await fetchProductsAndStoreCache(vers.Product)
             }
           } catch {}
         })()

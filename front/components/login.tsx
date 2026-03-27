@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { buildPath } from "@/lib/utils";
 import api from "@/lib/axios";
+import { refreshProductsCacheAfterLogin } from "@/lib/products-cache";
 import { useSettings } from "@/components/settings-provider";
 import FloatingInput from "@/components/ui/floating-input";
 import { useToast } from "@/hooks/use-toast";
@@ -62,7 +63,11 @@ export default function Login() {
             sessionStorage.setItem("customer_cache_version", String(ver));
           }
         } catch { }
-        
+
+        try {
+          await refreshProductsCacheAfterLogin(data?.versions);
+        } catch { }
+
         await refresh();
         try { await refreshSettings(); } catch { }
         

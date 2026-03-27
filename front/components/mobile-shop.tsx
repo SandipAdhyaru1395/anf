@@ -9,13 +9,18 @@ import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGauge, faShop, faWallet, faUser, faBars, faStar, faSearch, faChartSimple, faHeart } from "@fortawesome/free-solid-svg-icons";
 import api from "@/lib/axios";
-import { fetchProducts } from "@/lib/fetch-products";
 import { Thumbnail } from "@/components/thumbnail";
 import { useCurrency } from "@/components/currency-provider";
 import { useCustomer } from "@/components/customer-provider";
 import { useSettings } from "@/components/settings-provider";
 import { startLoading, stopLoading } from "@/lib/loading";
 import { resolveBackendAssetUrl } from "@/lib/utils";
+import {
+  fetchProductsAndStoreCache,
+  normalizeProductsCategoriesFromResponse,
+  shouldFetchProductsFromServer,
+  storeProductsCache,
+} from "@/lib/products-cache";
 
 interface MobileShopProps {
   onNavigate: (page: any, favorites?: boolean) => void;
@@ -89,7 +94,7 @@ export function MobileShop({
   totals = { units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 },
   showFavorites = false
 }: Partial<MobileShopProps>) {
-  const { settings } = useSettings();
+  const { settings, versions } = useSettings();
   const resolvedLogo =
     resolveBackendAssetUrl(settings?.company_logo_url) ?? settings?.company_logo_url ?? null;
   const resolvedThumb =
@@ -164,74 +169,55 @@ export function MobileShop({
     };
     loadCart();
     try {
-      const raw = sessionStorage.getItem("products_cache");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (!isMounted) return;
-        if (Array.isArray(parsed)) {
-          setCategories(parsed);
-        } else if (Array.isArray(parsed?.categories)) {
-          // Backward compatibility with older cache shape
-          setCategories(parsed.categories);
+      const readCategoriesFromStorage = () => {
+        try {
+          const raw = sessionStorage.getItem("products_cache");
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          if (!isMounted) return;
+          if (Array.isArray(parsed)) {
+            setCategories(parsed);
+          } else if (Array.isArray(parsed?.categories)) {
+            setCategories(parsed.categories);
+          }
+        } catch {
+          /* ignore */
         }
-      } else {
-        // No cache present: fetch settings for version, then products once and cache
-        const filterNodesWithProducts = (nodes: TreeNode[]): TreeNode[] => {
-          return nodes
-            .map((node) => {
-              const filteredChildren = node.subcategories ? filterNodesWithProducts(node.subcategories) : undefined;
-              const productsCount = Array.isArray(node.products) ? node.products.length : 0;
-              const hasProductsHere = productsCount > 0;
-              const hasProductsInChildren = Array.isArray(filteredChildren) && filteredChildren.length > 0;
-              if (!hasProductsHere && !hasProductsInChildren) {
-                return null as unknown as TreeNode;
-              }
-              return {
-                ...node,
-                ...(filteredChildren ? { subcategories: filteredChildren } : {}),
-              };
-            })
-            .filter((n): n is TreeNode => Boolean(n));
-        };
-        (async () => {
-          try {
-            let productVersion = 0;
+      };
+
+      const serverProductVersion =
+        typeof versions?.Product === "number" ? versions.Product : 0;
+
+      (async () => {
+        try {
+          const hasCache = !!sessionStorage.getItem("products_cache");
+          if (hasCache) {
+            if (serverProductVersion && shouldFetchProductsFromServer(serverProductVersion)) {
+              await fetchProductsAndStoreCache(serverProductVersion);
+            }
+            if (!isMounted) return;
+            readCategoriesFromStorage();
+            return;
+          }
+
+          let pv = serverProductVersion;
+          if (!pv) {
             try {
               const settingsRes = await api.get("/settings");
-              const vers = settingsRes?.data?.versions;
-              productVersion = Number(vers?.Product || 0) || 0;
+              pv = Number(settingsRes?.data?.versions?.Product || 0) || 0;
             } catch { }
-
-            const res = await fetchProducts();
-            const data = res.data;
-            if (!isMounted) return;
-            if (Array.isArray(data?.categories)) {
-              const filtered = filterNodesWithProducts(data.categories as TreeNode[]);
-              // Remove duplicate products by id within each category tree
-              const dedupeProductsInTree = (nodes: any[]): any[] => {
-                return nodes.map((node: any) => {
-                  let nextProducts = Array.isArray(node?.products) ? node.products : undefined;
-                  if (Array.isArray(nextProducts)) {
-                    const seen = new Set<number>();
-                    nextProducts = nextProducts.filter((p: any) => {
-                      const id = Number(p?.id);
-                      if (!Number.isFinite(id)) return false;
-                      if (seen.has(id)) return false;
-                      seen.add(id);
-                      return true;
-                    });
-                  }
-                  const nextChildren = Array.isArray(node?.subcategories) ? dedupeProductsInTree(node.subcategories) : undefined;
-                  return { ...node, ...(nextProducts ? { products: nextProducts } : {}), ...(nextChildren ? { subcategories: nextChildren } : {}) };
-                });
-              };
-              const deduped = dedupeProductsInTree(filtered);
-              setCategories(deduped);
-              try { sessionStorage.setItem("products_cache", JSON.stringify({ version: productVersion, categories: deduped })); } catch { }
-            }
-          } catch { }
-        })();
-      }
+          }
+          if (pv) {
+            await fetchProductsAndStoreCache(pv);
+          } else {
+            const res = await api.get("/products");
+            const deduped = normalizeProductsCategoriesFromResponse(res?.data);
+            if (deduped) storeProductsCache(0, deduped);
+          }
+          if (!isMounted) return;
+          readCategoriesFromStorage();
+        } catch { }
+      })();
     } catch { }
     // Listen for cache updates to re-render with latest data
     const onProductsCacheUpdated = () => {
@@ -257,7 +243,7 @@ export function MobileShop({
         window.removeEventListener("products_cache_updated", onProductsCacheUpdated);
       }
     };
-  }, []);
+  }, [versions?.Product]);
 
   // Derived categories filtered by search/favourites and top-level special stock logic.
   const displayedCategories = useMemo(() => {
