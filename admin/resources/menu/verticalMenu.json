@@ -194,12 +194,6 @@
           "icon": "menu-icon icon-base ti tabler-file-text",
           "name": "Application logs",
           "slug": "settings.applicationLogs"
-        },
-        {
-          "url": "settings/terms-and-conditions",
-          "icon": "menu-icon icon-base ti tabler-file-text",
-          "name": "Terms & Conditions",
-          "slug": "settings.termsAndConditions"
         }
       ]
     }
