@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Cache;
 use DNAPayments\DNAPayments;
 use App\Helpers\Helpers;
 use Illuminate\Support\Facades\Crypt;
+use App\Jobs\SendPlanufacOrderWebhookJob;
 
 class DnaCallbackController extends Controller
 {
@@ -89,6 +90,8 @@ class DnaCallbackController extends Controller
         // Map cached context into "inputs" equivalent to store()
         $deliveryMethodId = $context['delivery_method_id'] ?? null;
         $deliveryNote     = $context['delivery_note'] ?? null;
+        $customerPoNumber = trim((string) ($context['customer_po_number'] ?? ''));
+        $customerPoNumber = $customerPoNumber !== '' ? $customerPoNumber : null;
         $cachedWalletUsed = isset($context['wallet_credit_used']) ? (float)$context['wallet_credit_used'] : null;
 
         try {
@@ -113,6 +116,8 @@ class DnaCallbackController extends Controller
                 return response()->json(['ok' => true]);
             }
 
+            $planufacOrderWebhookId = null;
+
             DB::transaction(function () use (
                 $cart,
                 $cartItems,
@@ -120,6 +125,7 @@ class DnaCallbackController extends Controller
                 $branch,
                 $deliveryMethodId,
                 $deliveryNote,
+                $customerPoNumber,
                 $invoiceId,
                 $paidAmount,
                 $paidCurrency,
@@ -131,7 +137,9 @@ class DnaCallbackController extends Controller
                 $cardCountry,
                 $cardMaskedPan,
                 $cardExpiry,
-                $cardTokenId
+                $cardTokenId,
+                $payload,
+                &$planufacOrderWebhookId
             ) {
                 $subtotal = 0;
                 $units = 0;
@@ -292,6 +300,7 @@ class DnaCallbackController extends Controller
                     'delivery_time' => $deliveryMethod?->time,
                     'delivery_charge' => $deliveryCharge,
                     'delivery_note' => $deliveryNote,
+                    'customer_po_number' => $customerPoNumber,
                 ]);
 
                 // Payment record + basic card/DNA info (card or Pay by bank / ecospend)
@@ -371,7 +380,13 @@ class DnaCallbackController extends Controller
                         'balance_after' => $customer->credit_balance,
                     ]);
                 }
+
+                $planufacOrderWebhookId = $order->id;
             });
+
+            if ($planufacOrderWebhookId !== null) {
+                SendPlanufacOrderWebhookJob::dispatch($planufacOrderWebhookId);
+            }
 
             return;
         } catch (\Exception $e) {

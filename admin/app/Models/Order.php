@@ -41,6 +41,7 @@ class Order extends Model
         'delivery_time',
         'delivery_charge',
         'delivery_note',
+        'customer_po_number',
     ];
 
     public function customer()

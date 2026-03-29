@@ -182,6 +182,12 @@
           "icon": "menu-icon icon-base ti tabler-building-factory",
           "name": "Planufac ERP",
           "slug": "settings.planufacErp"
+        },
+        {
+          "url": "settings/application-logs",
+          "icon": "menu-icon icon-base ti tabler-file-text",
+          "name": "Application logs",
+          "slug": "settings.applicationLogs"
         }
       ]
     }

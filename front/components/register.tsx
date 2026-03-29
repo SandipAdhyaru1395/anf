@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildPath } from "@/lib/utils";
+import { buildPath, publicAssetUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
@@ -89,7 +89,7 @@ export default function Register() {
       <div 
         className="relative w-[402px] h-[874px] bg-[#FAFBFD] flex flex-col overflow-hidden shadow-sm"
         style={{
-          backgroundImage: "url('/background.svg')",
+          backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
           backgroundRepeat: "no-repeat",
           backgroundSize: "807.18px 652.86px", // Figma Dimensions
           backgroundPosition: "center 200px", // ઈમેજને થોડી નીચે સેટ કરી છે

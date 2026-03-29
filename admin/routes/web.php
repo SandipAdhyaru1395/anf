@@ -317,6 +317,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/settings/theme', [SettingController::class, 'viewThemeSettings'])->name('settings.theme');
         Route::get('/settings/payment-gateways', [SettingController::class, 'viewPaymentGateways'])->name('settings.paymentGateways');
         Route::get('/settings/planufac-erp', [SettingController::class, 'viewPlanufacErp'])->name('settings.planufacErp');
+        Route::get('/settings/application-logs', [SettingController::class, 'viewApplicationLogs'])->name('settings.applicationLogs');
         Route::get('/settings/delivery-method', [SettingController::class, 'viewDeliveryMethod'])->name('settings.deliveryMethod');
         Route::get('/settings/delivery-method/list/ajax', [SettingController::class, 'deliveryMethodListAjax'])->name('settings.deliveryMethod.list.ajax');
         Route::get('/settings/delivery-method/ajax/show', [SettingController::class, 'deliveryMethodShow'])->name('settings.deliveryMethod.ajax.show');

@@ -94,6 +94,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
+  const [poNumber, setPoNumber] = useState("");
   const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>([]);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<DeliveryMethod | null>(null);
   const { toast } = useToast();
@@ -301,6 +302,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         branch_id: selectedBranch?.id,
         delivery_instructions: deliveryInstructions,
         delivery_note: deliveryInstructions,
+        customer_po_number: poNumber.trim() || undefined,
         delivery_method_id: selectedDeliveryMethod?.id ?? null,
         delivery_method_name: selectedDeliveryMethod?.name ?? null,
         delivery_time: selectedDeliveryMethod?.time ?? null,
@@ -412,7 +414,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         <Banner />
       </div>
 
-      <main className="flex-1 overflow-y-auto px-[10px] py-[2px] space-y-2 pb-40">
+      <main className="flex-1 overflow-y-auto px-[10px] py-[2px] space-y-2 pb-10">
         {/* Dispatch To Section */}
         <div className="bg-white rounded-[4px] border border-[#DCE1EE] overflow-hidden">
           <button 
@@ -505,10 +507,20 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         <div className="bg-white rounded-[4px] border border-[#DCE1EE] px-3 py-2.5">
           <input
             type="text"
-            placeholder="Additional delivery instructions"
+            placeholder="Note"
             className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none focus:ring-0 p-0"
             value={deliveryInstructions}
             onChange={(e) => setDeliveryInstructions(e.target.value)}
+          />
+        </div>
+        <div className="bg-white rounded-[4px] border border-[#DCE1EE] px-3 py-2.5 mt-2">
+          <input
+            type="text"
+            placeholder="PO Number"
+            className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none focus:ring-0 p-0"
+            value={poNumber}
+            onChange={(e) => setPoNumber(e.target.value)}
+            autoComplete="off"
           />
         </div>
 

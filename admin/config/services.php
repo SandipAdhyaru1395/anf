@@ -41,10 +41,10 @@ return [
     |--------------------------------------------------------------------------
     */
     'planufac' => [
-        // Credentials are stored in DB (settings) and loaded by PlanufacClient.
-        // Keep only non-secret defaults here.
-        'base_url' => 'https://sandbox.planufac.com',
+        // API credentials + webhook client id/secret live in Settings → Planufac ERP.
+        'base_url' => env('PLANUFAC_BASE_URL', 'https://sandbox.planufac.com'),
         'timeout' => env('PLANUFAC_TIMEOUT', 20),
+        'order_webhook_tax_rate_id' => env('PLANUFAC_ORDER_LINE_TAX_RATE_ID'),
     ],
 
     'dna_payments' => [

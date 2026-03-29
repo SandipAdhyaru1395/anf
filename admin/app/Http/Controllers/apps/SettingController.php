@@ -21,6 +21,7 @@ use App\Models\VatMethod;
 use App\Models\Unit;
 use App\Models\Currency;
 use App\Models\Brand;
+use App\Services\ApplicationLogTailReader;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
@@ -1028,6 +1029,21 @@ class SettingController extends Controller
     return view('content.settings.planufac-erp', compact('setting'));
   }
 
+  public function viewApplicationLogs(Request $request)
+  {
+    $filter = $request->string('q')->trim()->toString();
+    if (mb_strlen($filter) > 200) {
+      $filter = mb_substr($filter, 0, 200);
+    }
+
+    $log = app(ApplicationLogTailReader::class)->tail($filter !== '' ? $filter : null);
+
+    return view('content.settings.application-logs', [
+      'log' => $log,
+      'filter' => $filter,
+    ]);
+  }
+
   public function updateThemeSettings(Request $request)
   {
     $validated = $request->validate([
@@ -1097,10 +1113,24 @@ class SettingController extends Controller
       'planufac_base_url' => ['required', 'url', 'max:255'],
       'planufac_email' => ['required', 'email', 'max:255'],
       'planufac_password' => ['nullable', 'string', 'max:512'],
+      'planufac_client_identifier' => ['nullable', 'string', 'max:128'],
+      'planufac_webhook_secret' => ['nullable', 'string', 'max:512'],
+      'planufac_webhook_header' => ['nullable', 'string', 'max:128'],
     ]);
 
     Setting::updateOrCreate(['key' => 'planufac_base_url'], ['value' => trim($validated['planufac_base_url'])]);
     Setting::updateOrCreate(['key' => 'planufac_email'], ['value' => trim($validated['planufac_email'])]);
+
+    Setting::updateOrCreate(
+      ['key' => 'planufac_client_identifier'],
+      ['value' => trim((string) ($validated['planufac_client_identifier'] ?? ''))]
+    );
+
+    $webhookHeader = trim((string) ($validated['planufac_webhook_header'] ?? ''));
+    if ($webhookHeader === '' || ! preg_match('/^[A-Za-z0-9\-]+$/', $webhookHeader)) {
+      $webhookHeader = 'X-CustomOrderApp-Signature';
+    }
+    Setting::updateOrCreate(['key' => 'planufac_webhook_header'], ['value' => $webhookHeader]);
 
     // Only overwrite password if user provided a new value
     $newPassword = trim((string) ($validated['planufac_password'] ?? ''));
@@ -1108,6 +1138,14 @@ class SettingController extends Controller
       Setting::updateOrCreate(
         ['key' => 'planufac_password'],
         ['value' => Crypt::encryptString($newPassword)]
+      );
+    }
+
+    $newWebhookSecret = trim((string) ($validated['planufac_webhook_secret'] ?? ''));
+    if ($newWebhookSecret !== '') {
+      Setting::updateOrCreate(
+        ['key' => 'planufac_webhook_secret'],
+        ['value' => Crypt::encryptString($newWebhookSecret)]
       );
     }
 

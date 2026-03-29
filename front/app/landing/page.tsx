@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSettings } from "@/components/settings-provider";
-import { buildPath } from "@/lib/utils";
+import { buildPath, publicAssetUrl } from "@/lib/utils";
 import Image from "next/image";
 
 export default function LandingPage() {
@@ -42,7 +42,7 @@ export default function LandingPage() {
           <div
             className="absolute inset-0 z-0 pointer-events-none"
             style={{
-              backgroundImage: "url('/background.svg')",
+              backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
               backgroundRepeat: "no-repeat",
               backgroundSize: "auto 90%",
               backgroundPosition: "top 60px right",

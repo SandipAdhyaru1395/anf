@@ -52,6 +52,54 @@
               @enderror
             </div>
 
+            <hr class="my-4">
+
+            <h6 class="mb-3">Custom order webhook</h6>
+            <p class="text-muted small mb-3">
+              Used when a mobile/API order is placed: a signed payload is queued to Planufac (<code>/webhooks/customorderapp/{identifier}</code>).
+            </p>
+
+            <div class="col-12 col-xxl-8 mb-3">
+              <label for="planufac_client_identifier" class="form-label">Client identifier</label>
+              <input type="text" class="form-control" id="planufac_client_identifier" name="planufac_client_identifier"
+                value="{{ old('planufac_client_identifier', $setting['planufac_client_identifier'] ?? '') }}"
+                placeholder="e.g. 87" autocomplete="off">
+              <div class="text-muted small mt-1">Path segment from your Planufac webhook URL (same as Postman <code>.../customorderapp/87</code>).</div>
+              @error('planufac_client_identifier')
+                <div class="text-danger small mt-1">{{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 col-xxl-8 mb-3">
+              <label for="planufac_webhook_secret" class="form-label">Webhook secret (HMAC)</label>
+              <div class="input-group">
+                <input type="password" class="form-control" id="planufac_webhook_secret" name="planufac_webhook_secret"
+                  value=""
+                  placeholder="{{ !empty($setting['planufac_webhook_secret']) ? 'Saved (leave blank to keep unchanged)' : 'Enter webhook secret' }}"
+                  autocomplete="new-password">
+                <button class="btn btn-outline-secondary" type="button" id="toggle-planufac-webhook-secret">
+                  <i class="menu-icon icon-base ti tabler-eye-off" id="planufac-webhook-secret-icon"></i>
+                </button>
+              </div>
+              <div class="text-muted small mt-1">
+                Same secret as Postman <code>webhook_secret</code> (HMAC of the raw JSON body). Leave blank to keep the current value.
+              </div>
+              @error('planufac_webhook_secret')
+                <div class="text-danger small mt-1">{{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 col-xxl-8 mb-3">
+              <label for="planufac_webhook_header" class="form-label">Webhook signature header</label>
+              <input type="text" class="form-control" id="planufac_webhook_header" name="planufac_webhook_header"
+                value="{{ old('planufac_webhook_header', $setting['planufac_webhook_header'] ?? 'X-CustomOrderApp-Signature') }}"
+                placeholder="X-CustomOrderApp-Signature" autocomplete="off">
+              <div class="text-muted small mt-1">HTTP header name for the Base64 HMAC signature (e.g. <code>X-CustomOrderApp-Signature</code>).</div>
+              @error('planufac_webhook_header')
+                <div class="text-danger small mt-1">{{ $message }}</div>
+              @enderror
+            </div>
+
             <div class="d-flex mt-4">
               <button type="submit" class="btn btn-primary me-2">Save</button>
             </div>
@@ -70,6 +118,20 @@
                   if (icon) {
                     icon.classList.toggle('tabler-eye-off');
                     icon.classList.toggle('tabler-eye');
+                  }
+                });
+              }
+
+              var whToggle = document.getElementById('toggle-planufac-webhook-secret');
+              var whInput = document.getElementById('planufac_webhook_secret');
+              var whIcon = document.getElementById('planufac-webhook-secret-icon');
+              if (whToggle && whInput) {
+                whToggle.addEventListener('click', function () {
+                  var isPwd = whInput.type === 'password';
+                  whInput.type = isPwd ? 'text' : 'password';
+                  if (whIcon) {
+                    whIcon.classList.toggle('tabler-eye-off');
+                    whIcon.classList.toggle('tabler-eye');
                   }
                 });
               }

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Services\WarehouseProductSyncService;
 use App\Services\DnaPaymentsService;
 use Illuminate\Support\Str;
+use App\Jobs\SendPlanufacOrderWebhookJob;
 
 class OrderController extends Controller
 {
@@ -144,6 +145,7 @@ class OrderController extends Controller
                 'branch_id' => 'required|integer|exists:branches,id',
                 'delivery_method_id' => 'nullable|integer',
                 'delivery_note' => 'nullable|string',
+                'customer_po_number' => 'nullable|string|max:191',
             ];
             $request->validate($rules);
 
@@ -343,6 +345,7 @@ class OrderController extends Controller
                     'cart_id'            => $cart->id,
                     'delivery_method_id' => $deliveryMethod?->id,
                     'delivery_note'      => $request->input('delivery_note'),
+                    'customer_po_number' => $request->input('customer_po_number'),
                     // Freeze wallet usage so callback doesn't recalculate later
                     'wallet_credit_used' => (float) $walletCreditUsed,
                 ];
@@ -384,6 +387,7 @@ class OrderController extends Controller
                     'cart_id'            => $cart->id,
                     'delivery_method_id' => $deliveryMethod?->id,
                     'delivery_note'      => $request->input('delivery_note'),
+                    'customer_po_number' => $request->input('customer_po_number'),
                     // Freeze wallet usage so callback doesn't recalculate later
                     'wallet_credit_used' => (float) $walletCreditUsed,
                 ];
@@ -431,7 +435,10 @@ class OrderController extends Controller
             if ($paymentMode === 'pay_later') {
                 $paymentStatus = 'Due';
             }
-                
+
+            $customerPoForOrder = trim((string) $request->input('customer_po_number', ''));
+            $customerPoForOrder = $customerPoForOrder !== '' ? $customerPoForOrder : null;
+
             $order = Order::create([
                 'order_number' => $orderNumber,
                 'type' => 'SO',
@@ -464,6 +471,7 @@ class OrderController extends Controller
                 'delivery_time' => $deliveryMethod?->time,
                 'delivery_charge' => $deliveryCharge,
                 'delivery_note' => $request->input('delivery_note'),
+                'customer_po_number' => $customerPoForOrder,
             ]);
             
             if ($adjusted) {
@@ -525,6 +533,8 @@ class OrderController extends Controller
 					'balance_after' => $customer->credit_balance,
 				]);
 			}
+
+			SendPlanufacOrderWebhookJob::dispatch($order->id);
 
 			return response()->json([
                 'success' => true,

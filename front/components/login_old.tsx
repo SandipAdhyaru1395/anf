@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import { buildPath } from "@/lib/utils";
+import { buildPath, publicAssetUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { useSettings } from "@/components/settings-provider";
 import FloatingInput from "@/components/ui/floating-input";
@@ -90,7 +90,7 @@ export default function Login() {
         className="relative w-[402px] h-[750px] bg-[#FAFBFD] pr-[16px] pl-4 flex flex-col gap-8 overflow-hidden shadow-sm"
         style={{
           backgroundColor: "#FAFBFD",
-          backgroundImage: "url('./background.svg')",
+          backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
           backgroundRepeat: "no-repeat",
           backgroundSize: "807px 652px", 
           backgroundPosition: "center 180px",

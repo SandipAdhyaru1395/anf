@@ -37,6 +37,12 @@ export function buildPath(relativePath: string): string {
   return joined.replace(/\/+/g, '/')
 }
 
+/** URL path for static files in `/public` (e.g. `/background.svg` vs `/anf/front/background.svg`). */
+export function publicAssetUrl(assetPath: string): string {
+  const p = (assetPath || "").replace(/^\/+/, "")
+  return buildPath(`/${p}`)
+}
+
 /**
  * Laravel `asset('storage/...')` often returns `http://localhost/storage/...` while the app
  * actually lives under a subpath (e.g. XAMPP `/anf/admin/public`). The browser then 404s images.
