@@ -31,7 +31,7 @@ class PlanufacOrderWebhookPayloadBuilder
      */
     public function buildOrderPayload(Order $order): array
     {
-        $order->loadMissing(['items.product', 'customer.salesPerson']);
+        $order->loadMissing(['items.product', 'customer.salesPerson', 'shippingBranch', 'billingBranch']);
 
         $customer = $order->customer;
         $email = $customer?->email ?? '';
@@ -150,6 +150,20 @@ class PlanufacOrderWebhookPayloadBuilder
                 'postal_code' => (string) ($customer->company_zip_code ?? ''),
                 'state' => null,
                 'country' => (string) ($customer->company_country ?? $order->country ?? 'GB'),
+            ];
+        }
+
+        $billing = $order->billingBranch;
+        if ($billing) {
+            return [
+                'company_name' => (string) ($billing->name ?? ''),
+                'contact_name' => (string) ($billing->name ?? ''),
+                'line1' => (string) ($billing->address_line1 ?? ''),
+                'line2' => $billing->address_line2 ? (string) $billing->address_line2 : null,
+                'city' => (string) ($billing->city ?? ''),
+                'postal_code' => (string) ($billing->zip_code ?? ''),
+                'state' => null,
+                'country' => (string) ($billing->country ?? 'GB'),
             ];
         }
 

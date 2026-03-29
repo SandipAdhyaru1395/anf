@@ -206,14 +206,14 @@ export function MobileShop({
     };
   }, []);
 
-  // Derived categories filtered by search/favourites and top-level special stock logic.
+  // Derived categories filtered by search/favourites.
   const displayedCategories = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    const filterForDisplay = (nodes: TreeNode[], topAncestorIsSpecial: boolean): TreeNode[] => {
+    const filterForDisplay = (nodes: TreeNode[]): TreeNode[] => {
       return nodes
         .map((node) => {
-          const filteredChildren = node.subcategories ? filterForDisplay(node.subcategories, topAncestorIsSpecial) : undefined;
+          const filteredChildren = node.subcategories ? filterForDisplay(node.subcategories) : undefined;
           let filteredProducts = node.products;
 
           if (filteredProducts) {
@@ -222,17 +222,6 @@ export function MobileShop({
             }
             if (showFavorites) {
               filteredProducts = filteredProducts.filter((p) => isFavorite(p.id));
-            }
-            if (topAncestorIsSpecial) {
-              filteredProducts = filteredProducts.filter((p) => {
-                const stock = Number((p as any)?.quantity ?? (p as any)?.available_qty ?? 0);
-                const rawPrice: any = (p as any)?.price;
-                const numericPrice = typeof rawPrice === 'number'
-                  ? rawPrice
-                  : Number(String(rawPrice ?? '').replace(/[^0-9.]/g, ''));
-                const priceOk = !isNaN(numericPrice) && numericPrice > 0;
-                return stock > 0 && priceOk;
-              });
             }
           }
 
@@ -255,8 +244,7 @@ export function MobileShop({
 
     return categories
       .map((root) => {
-        const topIsSpecial = root.is_special === 1;
-        const res = filterForDisplay([root], topIsSpecial);
+        const res = filterForDisplay([root]);
         return res[0];
       })
       .filter((n): n is TreeNode => Boolean(n));
@@ -789,8 +777,10 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
     "",
   ];
 
-  if (node.is_special == 1) {
+  if (depth === 0 && node.is_special === 1) {
     var bgClass = "bg-[#ED008C]";
+  } else if (depth === 0) {
+    var bgClass = "bg-[#4A90E5]";
   } else {
     var bgClass = depthColors[Math.min(depth, depthColors.length - 1)];
   }

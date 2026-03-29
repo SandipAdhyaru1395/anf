@@ -25,18 +25,7 @@ trait RecordsSyncUpdate
 
     protected static function recordSyncUpdate(): void
     {
-        $entity = class_basename(static::class);
-
-        $updated = SyncUpdate::query()
-            ->where('entity', $entity)
-            ->increment('version');
-
-        if ($updated === 0) {
-            SyncUpdate::create([
-                'entity' => $entity,
-                'version' => 1,
-            ]);
-        }
+        SyncUpdate::bumpEntity(class_basename(static::class));
     }
 }
 

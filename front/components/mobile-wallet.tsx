@@ -8,6 +8,7 @@ import { resolveBackendAssetUrl } from "@/lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChartSimple, faShop, faUser, faWallet, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { Banner } from "@/components/banner";
+import api from "@/lib/axios";
 
 import { useEffect, useState } from "react";
 import { MobilePageHeader } from "@/components/mobile-page-header";
@@ -76,6 +77,16 @@ const TransactionItem = ({ type, amount, order, total, date, symbol }: { type: "
   );
 };
 
+type WalletTransactionRow = {
+  id: number;
+  order_id: number | null;
+  order_number: string | null;
+  order_total_amount: number | null;
+  amount: number;
+  type: string;
+  created_at?: string | null;
+};
+
 export function MobileWallet({ onNavigate }: MobileWalletProps) {
   const { symbol } = useCurrency();
   const { customer } = useCustomer();
@@ -85,6 +96,50 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
   const wallet = Number(customer?.wallet_balance || 0);
   /** Show wallet explainer only when user taps info icon. */
   const [showIntro, setShowIntro] = useState(false);
+  const [transactions, setTransactions] = useState<WalletTransactionRow[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const loadTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const res = await api.get("/wallet-transactions");
+        const rows = Array.isArray(res?.data?.transactions) ? res.data.transactions : [];
+        if (!active) return;
+        setTransactions(rows);
+      } catch {
+        if (!active) return;
+        setTransactions([]);
+      } finally {
+        if (active) setLoadingTransactions(false);
+      }
+    };
+    loadTransactions();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const groupedTransactions = (() => {
+    const monthFmt = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
+    const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const groups: Record<string, WalletTransactionRow[]> = {};
+    const orderedKeys: string[] = [];
+
+    for (const tx of transactions) {
+      const dt = tx.created_at ? new Date(tx.created_at) : null;
+      const safeDate = dt && !isNaN(dt.getTime()) ? dt : new Date();
+      const key = monthFmt.format(safeDate);
+      if (!groups[key]) {
+        groups[key] = [];
+        orderedKeys.push(key);
+      }
+      groups[key].push(tx);
+    }
+
+    return { groups, orderedKeys, dateFmt };
+  })();
 
   if (showIntro) {
     return (
@@ -178,22 +233,42 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
 
           {/* Figma: month block gap 8 (title→list); 16px between month groups */}
           <div className="flex w-full flex-col gap-4">
-            <section className="flex w-full flex-col gap-2">
-              <h3 className="text-left text-[15px] font-semibold capitalize leading-none tracking-[0.03em] text-[#3D495E]">March</h3>
-              <div className="w-full overflow-hidden rounded-[5px] bg-white divide-y divide-[#E2E2E2] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <TransactionItem type="used" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
-                <TransactionItem type="earned" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
-                <TransactionItem type="earned" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
+            {loadingTransactions ? (
+              <div className="rounded-[5px] bg-white px-4 py-5 text-center text-[13px] text-[#6B7280] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                Loading transactions...
               </div>
-            </section>
-
-            <section className="flex w-full flex-col gap-2">
-              <h3 className="text-left text-[15px] font-semibold capitalize leading-none tracking-[0.03em] text-[#3D495E]">February</h3>
-              <div className="w-full overflow-hidden rounded-[5px] bg-white divide-y divide-[#E2E2E2] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <TransactionItem type="used" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
-                <TransactionItem type="earned" amount="18.60" order="4789403" total="112.20" date="01/02/2026" symbol={symbol} />
+            ) : groupedTransactions.orderedKeys.length === 0 ? (
+              <div className="rounded-[5px] bg-white px-4 py-5 text-center text-[13px] text-[#6B7280] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                No wallet transactions yet.
               </div>
-            </section>
+            ) : (
+              groupedTransactions.orderedKeys.map((monthKey) => (
+                <section key={monthKey} className="flex w-full flex-col gap-2">
+                  <h3 className="text-left text-[15px] font-semibold capitalize leading-none tracking-[0.03em] text-[#3D495E]">
+                    {monthKey}
+                  </h3>
+                  <div className="w-full overflow-hidden rounded-[5px] bg-white divide-y divide-[#E2E2E2] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                    {groupedTransactions.groups[monthKey].map((tx) => {
+                      const type: "used" | "earned" = String(tx.type).toLowerCase() === "debit" ? "used" : "earned";
+                      const dt = tx.created_at ? new Date(tx.created_at) : null;
+                      const dateText =
+                        dt && !isNaN(dt.getTime()) ? groupedTransactions.dateFmt.format(dt) : "—";
+                      return (
+                        <TransactionItem
+                          key={tx.id}
+                          type={type}
+                          amount={Math.abs(Number(tx.amount || 0)).toFixed(2)}
+                          order={tx.order_number || "—"}
+                          total={Number(tx.order_total_amount || 0).toFixed(2)}
+                          date={dateText}
+                          symbol={symbol}
+                        />
+                      );
+                    })}
+                  </div>
+                </section>
+              ))
+            )}
           </div>
         </div>
       </main>

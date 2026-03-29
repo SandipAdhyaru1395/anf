@@ -31,12 +31,15 @@ Route::middleware(['store.maintenance','auth:sanctum'])->group(function () {
     // Authenticated customer profile
     Route::get('/customer', [CustomerController::class, 'me']);
     Route::put('/customer', [CustomerController::class, 'updateCompanyDetails']);
+    Route::get('/wallet-transactions', [CustomerController::class, 'walletTransactions']);
 
     // DNA Pay by Bank: list of banks for checkout
     Route::get('/banks', [OrderController::class, 'banks']);
 
     // Checkout API endpoint
     Route::post('/checkout',[OrderController::class, 'store']);
+    Route::get('/checkout/dna-invoice/{invoiceId}/order-number', [OrderController::class, 'orderNumberForDnaInvoice'])
+        ->where('invoiceId', '[a-zA-Z0-9_-]{1,120}');
 
     // Recent Orders API endpoint
     Route::get('/orders',[OrderController::class, 'index']);

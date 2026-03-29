@@ -977,6 +977,27 @@ class SettingController extends Controller
     return view('content.settings.maintenance', compact('setting'));
   }
 
+  public function viewTermsAndConditions()
+  {
+    $setting = Setting::all()->pluck('value', 'key');
+    return view('content.settings.terms_and_conditions', compact('setting'));
+  }
+
+  public function updateTermsAndConditions(Request $request)
+  {
+    $validated = $request->validate([
+      'terms_and_conditions' => 'nullable|string|max:16777215',
+    ]);
+
+    Setting::updateOrCreate(
+      ['key' => 'terms_and_conditions'],
+      ['value' => $validated['terms_and_conditions'] ?? '']
+    );
+
+    Toastr::success('Terms and conditions saved successfully');
+    return redirect()->route('settings.termsAndConditions');
+  }
+
   public function updateMaintenanceSettings(Request $request)
   {
     $validated = $request->validate([

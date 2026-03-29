@@ -81,18 +81,22 @@ interface MobileCheckoutProps {
   cart: Record<number, { product: ProductItem; quantity: number }>;
   totals: { units: number; skus: number; subtotal: number; totalDiscount: number; total: number };
   clearCart: () => void;
+  /** Called after a successful non-redirect checkout (e.g. pay later) with the new order number. */
+  onCheckoutSuccess?: (orderNumber: string) => void;
 }
 
-export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: MobileCheckoutProps) {
+export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, onCheckoutSuccess }: MobileCheckoutProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMode, setPaymentMode] = useState<"gateway" | "gateway_bank" | "pay_later" | null>("gateway");
   const [banks, setBanks] = useState<BankOption[]>([]);
   const [selectedBankId, setSelectedBankId] = useState<string>("");
   const [banksLoading, setBanksLoading] = useState(false);
   const [isDispatchExpanded, setIsDispatchExpanded] = useState(false);
+  const [isBillingExpanded, setIsBillingExpanded] = useState(false);
   const [isDeliveryExpanded, setIsDeliveryExpanded] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+  const [selectedShippingBranch, setSelectedShippingBranch] = useState<Branch | null>(null);
+  const [selectedBillingBranch, setSelectedBillingBranch] = useState<Branch | null>(null);
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [poNumber, setPoNumber] = useState("");
   const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>([]);
@@ -116,9 +120,11 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         setBranches(response.data.branches);
         // Select the first branch (ignore is_default for checkout selection)
         if (Array.isArray(response.data.branches) && response.data.branches.length > 0) {
-          setSelectedBranch(response.data.branches[0]);
+          setSelectedShippingBranch(response.data.branches[0]);
+          setSelectedBillingBranch(response.data.branches[0]);
         } else {
-          setSelectedBranch(null);
+          setSelectedShippingBranch(null);
+          setSelectedBillingBranch(null);
         }
       }
     } catch (error) {
@@ -270,8 +276,12 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
       });
       return;
     }
-    if (!selectedBranch) {
-      toast({ title: "Select an branch", description: "Please choose a branch before continuing.", variant: "destructive" });
+    if (!selectedShippingBranch) {
+      toast({ title: "Select dispatch branch", description: "Please choose Dispatch To before continuing.", variant: "destructive" });
+      return;
+    }
+    if (!selectedBillingBranch) {
+      toast({ title: "Select billing branch", description: "Please choose Bill To before continuing.", variant: "destructive" });
       return;
     }
 
@@ -299,7 +309,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         total: cartTotals.total,
         units: cartTotals.units,
         skus: cartTotals.skus,
-        branch_id: selectedBranch?.id,
+        shipping_branch_id: selectedShippingBranch?.id,
+        billing_branch_id: selectedBillingBranch?.id,
         delivery_instructions: deliveryInstructions,
         delivery_note: deliveryInstructions,
         customer_po_number: poNumber.trim() || undefined,
@@ -315,6 +326,17 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
       const { data: result } = await api.post("/checkout", payload);
 
         if (result.success && result.requires_redirect && result.redirect_url) {
+        const inv =
+          typeof result.dna_invoice_id === "string" && result.dna_invoice_id
+            ? result.dna_invoice_id
+            : typeof result.payment_id === "string" && result.payment_id
+              ? result.payment_id
+              : "";
+        if (inv && typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("dna_pending_invoice_id", inv);
+          } catch { }
+        }
         // DNA payment gateway flow: redirect to hosted checkout
         if (typeof window !== "undefined") {
           window.location.href = result.redirect_url;
@@ -323,9 +345,13 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
       }
 
       if (result.success) {
+        const orderNum =
+          result.order_number != null && result.order_number !== ""
+            ? String(result.order_number)
+            : "";
         toast({
           title: "Order Placed Successfully! 🎉",
-          description: `Order Number: ${result.order_number}`,
+          description: orderNum ? `Order Number: ${orderNum}` : "Your order was placed.",
           variant: "default",
         });
         try {
@@ -340,7 +366,11 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
           await refresh();
         } catch { }
         clearCart();
-        onNavigate("dashboard");
+        if (orderNum && onCheckoutSuccess) {
+          onCheckoutSuccess(orderNum);
+        } else {
+          onNavigate("dashboard");
+        }
       } else {
         if (result?.code === 'stock_adjusted' && Array.isArray(result?.adjustments)) {
           try { sessionStorage.setItem('cart_adjustments', JSON.stringify(result.adjustments)); } catch {}
@@ -427,9 +457,9 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
             <div className="flex-1 text-left">
               <span className="block text-[13px] font-bold text-[#4E5667] leading-none">Dispatch To:</span>
               <div className="text-[12px] text-[#4E5667] font-semibold line-clamp-2 mt-1 leading-[1.2]">
-                {selectedBranch ? (
+                {selectedShippingBranch ? (
                   <>
-                    <span className="font-bold">{selectedBranch.name}</span>, {selectedBranch.address_line1} {selectedBranch.address_line2}
+                    <span className="font-bold">{selectedShippingBranch.name}</span>, {selectedShippingBranch.address_line1} {selectedShippingBranch.address_line2}
                   </>
                 ) : "Select a branch"}
               </div>
@@ -445,8 +475,51 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
                   <input
                     type="radio"
                     name="selectedBranch"
-                    checked={selectedBranch?.id === branch.id}
-                    onChange={() => setSelectedBranch(branch)}
+                    checked={selectedShippingBranch?.id === branch.id}
+                    onChange={() => setSelectedShippingBranch(branch)}
+                    className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
+                  />
+                  <div className="ml-3 text-[13px] text-[#131A44]">
+                    <span className="font-bold">{branch.name}</span>, {branch.address_line1}
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bill To Section */}
+        <div className="bg-white rounded-[4px] border border-[#DCE1EE] overflow-hidden">
+          <button
+            onClick={() => setIsBillingExpanded(!isBillingExpanded)}
+            className="w-full flex items-center px-3 py-2.5 gap-3"
+          >
+            <div className="w-[22px] h-[22px] rounded-full border border-[#DCE1EE] bg-[#F7FAFF] flex items-center justify-center flex-shrink-0">
+              <HomeIcon className="w-3.5 h-3.5 text-[#6EA2E8]" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="block text-[13px] font-bold text-[#4E5667] leading-none">Bill To:</span>
+              <div className="text-[12px] text-[#4E5667] font-semibold line-clamp-2 mt-1 leading-[1.2]">
+                {selectedBillingBranch ? (
+                  <>
+                    <span className="font-bold">{selectedBillingBranch.name}</span>, {selectedBillingBranch.address_line1} {selectedBillingBranch.address_line2}
+                  </>
+                ) : "Select a branch"}
+              </div>
+            </div>
+            <div className="h-8 w-px bg-[#E4E7F0]" />
+            <ChevronDown className={`w-5 h-5 text-[#5A9AEC] transition-transform ${isBillingExpanded ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isBillingExpanded && (
+            <div className="px-4 pb-4 space-y-2 border-t border-gray-50 pt-3">
+              {branches.map((branch) => (
+                <label key={`billing-${branch.id}`} className="flex items-center p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="selectedBillingBranch"
+                    checked={selectedBillingBranch?.id === branch.id}
+                    onChange={() => setSelectedBillingBranch(branch)}
                     className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
                   />
                   <div className="ml-3 text-[13px] text-[#131A44]">
@@ -516,7 +589,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         <div className="bg-white rounded-[4px] border border-[#DCE1EE] px-3 py-2.5 mt-2">
           <input
             type="text"
-            placeholder="PO Number"
+            placeholder="P.O. Number (if applicable)"
             className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none focus:ring-0 p-0"
             value={poNumber}
             onChange={(e) => setPoNumber(e.target.value)}
@@ -550,13 +623,13 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
               <span className="font-bold text-[#3F4B63] text-[13px] leading-none">{selectedDeliveryMethod?.name} - {format(deliveryRate)}</span>
             </div>
             <div className="text-[#3F4B63] leading-[1.25] text-[13px] text-right">
-              {selectedBranch ? (
+              {selectedShippingBranch ? (
                 <>
-                  <div className="font-[500] text-[#4E5667]">{selectedBranch.name}</div>
-                  <div>{selectedBranch.address_line1}</div>
-                  {selectedBranch.address_line2 && <div>{selectedBranch.address_line2}</div>}
-                  <div>{selectedBranch.city}</div>
-                  <div>{selectedBranch.zip_code}</div>
+                  <div className="font-[500] text-[#4E5667]">{selectedShippingBranch.name}</div>
+                  <div>{selectedShippingBranch.address_line1}</div>
+                  {selectedShippingBranch.address_line2 && <div>{selectedShippingBranch.address_line2}</div>}
+                  <div>{selectedShippingBranch.city}</div>
+                  <div>{selectedShippingBranch.zip_code}</div>
                 </>
               ) : "No address selected"}
             </div>
@@ -655,7 +728,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart }: 
         <div className="pt-4 pb-12">
           <button
             onClick={handleContinueToPayment}
-            disabled={isProcessing || !selectedBranch}
+            disabled={isProcessing || !selectedShippingBranch || !selectedBillingBranch}
             className="w-full bg-[#4A90E5] disabled:bg-[#BDC7DE] text-white py-4 rounded-xl 
             font-bold text-[18px] hover:bg-[#3B7DCF] transition-colors shadow-lg shadow-[#4A90E53D] active:scale-[0.98] transform transition-transform"
           >

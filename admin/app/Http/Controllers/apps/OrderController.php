@@ -323,20 +323,13 @@ class OrderController extends Controller
     }
 
     // Get branch/address if address_id is provided
-    $branch = null;
     $addressData = [];
     if (!empty($validated['address_id'])) {
-      $branch = Branch::find($validated['address_id']);
-      if ($branch) {
-        $addressData = [
-          'branch_name' => $branch->name,
-          'address_line1' => $branch->address_line1,
-          'address_line2' => $branch->address_line2,
-          'city' => $branch->city,
-          'zip_code' => $branch->zip_code,
-          'country' => $branch->country,
-        ];
-      }
+      $branchId = (int) $validated['address_id'];
+      $addressData = [
+        'shipping_branch_id' => $branchId,
+        'billing_branch_id' => $branchId,
+      ];
     }
 
     // Get customer for wallet credit calculations
@@ -709,20 +702,13 @@ class OrderController extends Controller
     }
 
     // Get branch/address if address_id is provided
-    $branch = null;
     $addressData = [];
     if (!empty($validated['address_id'])) {
-      $branch = Branch::find($validated['address_id']);
-      if ($branch) {
-        $addressData = [
-          'branch_name' => $branch->name,
-          'address_line1' => $branch->address_line1,
-          'address_line2' => $branch->address_line2,
-          'city' => $branch->city,
-          'zip_code' => $branch->zip_code,
-          'country' => $branch->country,
-        ];
-      }
+      $branchId = (int) $validated['address_id'];
+      $addressData = [
+        'shipping_branch_id' => $branchId,
+        'billing_branch_id' => $branchId,
+      ];
     }
 
     $newStatus = $validated['status'] ?? $oldStatus;
@@ -2389,12 +2375,8 @@ class OrderController extends Controller
         'units_count' => 0,
         'skus_count' => 0,
         'wallet_credit_used' => 0,
-        'branch_name' => $order->branch_name,
-        'country' => $order->country,
-        'address_line1' => $order->address_line1,
-        'address_line2' => $order->address_line2,
-        'city' => $order->city,
-        'zip_code' => $order->zip_code,
+        'shipping_branch_id' => $order->shipping_branch_id,
+        'billing_branch_id' => $order->billing_branch_id ?? $order->shipping_branch_id,
       ];
 
       $creditNote = Order::create($creditNoteData);

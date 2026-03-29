@@ -76,9 +76,10 @@ class DnaCallbackController extends Controller
         // Load checkout context created on /checkout gateway request
         $context = Cache::pull('dna_invoice_'.$invoiceId) ?? [];
         $customerId = $context['customer_id'] ?? null;
-        $branchId   = $context['branch_id'] ?? null;
+        $shippingBranchId = $context['shipping_branch_id'] ?? null;
+        $billingBranchId  = $context['billing_branch_id'] ?? null;
 
-        if (!$customerId || !$branchId) {
+        if (!$customerId || !$shippingBranchId || !$billingBranchId) {
             return response()->json(['ok' => true]);
         }
 
@@ -95,12 +96,15 @@ class DnaCallbackController extends Controller
         $cachedWalletUsed = isset($context['wallet_credit_used']) ? (float)$context['wallet_credit_used'] : null;
 
         try {
-            // Validate that the address belongs to the customer
-            $branch = Branch::where('id', (int)$branchId)
+            // Validate that the selected branches belong to the customer
+            $shippingBranch = Branch::where('id', (int)$shippingBranchId)
+                ->where('customer_id', (int)$customer->id)
+                ->first();
+            $billingBranch = Branch::where('id', (int)$billingBranchId)
                 ->where('customer_id', (int)$customer->id)
                 ->first();
 
-            if (!$branch) {
+            if (!$shippingBranch || !$billingBranch) {
                 return response()->json(['ok' => true]);
             }
 
@@ -122,7 +126,8 @@ class DnaCallbackController extends Controller
                 $cart,
                 $cartItems,
                 $customer,
-                $branch,
+                $shippingBranch,
+                $billingBranch,
                 $deliveryMethodId,
                 $deliveryNote,
                 $customerPoNumber,
@@ -289,12 +294,8 @@ class DnaCallbackController extends Controller
                     'outstanding_amount' => $outstandingAmount,
                     'estimated_delivery_date' => now()->addDays(7),
                     'status' => 'New',
-                    'branch_name' => (string) $branch->name,
-                    'country' => (string) $branch->country,
-                    'address_line1' => (string) $branch->address_line1,
-                    'address_line2' => (string) ($branch->address_line2 ?? ''),
-                    'city' => (string) $branch->city,
-                    'zip_code' => (string) $branch->zip_code,
+                    'shipping_branch_id' => $shippingBranch->id,
+                    'billing_branch_id' => $billingBranch->id,
                     'delivery_method_id' => $deliveryMethod?->id,
                     'delivery_method_name' => $deliveryMethod?->name,
                     'delivery_time' => $deliveryMethod?->time,
@@ -302,6 +303,12 @@ class DnaCallbackController extends Controller
                     'delivery_note' => $deliveryNote,
                     'customer_po_number' => $customerPoNumber,
                 ]);
+
+                Cache::put(
+                    'dna_invoice_order_'.$invoiceId,
+                    (string) $order->order_number,
+                    now()->addHours(24)
+                );
 
                 // Payment record + basic card/DNA info (card or Pay by bank / ecospend)
                 $reference = $dnaId ?: $dnaRrn ?: $dnaScheme ?: ('DNA-' . $invoiceId);

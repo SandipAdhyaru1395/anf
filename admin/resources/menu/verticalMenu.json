@@ -136,6 +136,12 @@
           "slug": "settings.maintenance"
         },
         {
+          "url": "settings/terms-and-conditions",
+          "icon": "menu-icon icon-base ti tabler-file-text",
+          "name": "Terms & Conditions",
+          "slug": "settings.termsAndConditions"
+        },
+        {
           "url": "settings/delivery-method",
           "icon": "menu-icon icon-base ti tabler-truck-delivery",
           "name": "Delivery Methods",

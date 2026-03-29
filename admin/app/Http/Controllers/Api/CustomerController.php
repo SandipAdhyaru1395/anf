@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -77,6 +78,45 @@ class CustomerController extends Controller
                 'country' => $user->company_country ?? null,
                 'postcode' => $user->company_zip_code ?? null,
             ],
+        ]);
+    }
+
+    public function walletTransactions(Request $request)
+    {
+        $user = $request->user();
+
+        $rows = WalletTransaction::query()
+            ->leftJoin('orders', 'orders.id', '=', 'wallet_transactions.order_id')
+            ->where('wallet_transactions.customer_id', $user->id)
+            ->orderByDesc('wallet_transactions.created_at')
+            ->select([
+                'wallet_transactions.id',
+                'wallet_transactions.order_id',
+                'wallet_transactions.amount',
+                'wallet_transactions.type',
+                'wallet_transactions.description',
+                'wallet_transactions.balance_after',
+                'wallet_transactions.created_at',
+                'orders.order_number',
+                'orders.total_amount as order_total_amount',
+            ])
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'transactions' => $rows->map(function ($row) {
+                return [
+                    'id' => (int) $row->id,
+                    'order_id' => $row->order_id ? (int) $row->order_id : null,
+                    'order_number' => $row->order_number !== null ? (string) $row->order_number : null,
+                    'order_total_amount' => $row->order_total_amount !== null ? (float) $row->order_total_amount : null,
+                    'amount' => (float) ($row->amount ?? 0),
+                    'type' => (string) ($row->type ?? ''),
+                    'description' => $row->description !== null ? (string) $row->description : null,
+                    'balance_after' => $row->balance_after !== null ? (float) $row->balance_after : null,
+                    'created_at' => optional($row->created_at)?->toISOString(),
+                ];
+            })->values(),
         ]);
     }
 }

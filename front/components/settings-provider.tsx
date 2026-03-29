@@ -28,6 +28,7 @@ type Settings = {
   banner?: string | null
   thumbnail?: string | null
   maintenance_mode?: boolean | null
+  terms_and_conditions?: string | null
   payment_gateway_available?: boolean | null
   theme?: Theme | null
   leading_brands?: Array<{ id: number; name: string; image_url?: string | null }> | null
@@ -110,6 +111,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         thumbnail: s?.thumbnail ?? null,
         leading_brands: Array.isArray(s?.leading_brands) ? s.leading_brands : null,
         maintenance_mode: typeof s?.maintenance_mode === 'boolean' ? s.maintenance_mode : null,
+        terms_and_conditions:
+          typeof s?.terms_and_conditions === 'string' ? s.terms_and_conditions : s?.terms_and_conditions != null ? String(s.terms_and_conditions) : null,
         payment_gateway_available: typeof s?.payment_gateway_available === 'boolean' ? s.payment_gateway_available : null,
         theme: s?.theme ? {
           use_default: typeof s.theme.use_default === 'boolean' ? s.theme.use_default : null,
@@ -281,6 +284,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           }
           if (!cachedSettings.hasOwnProperty('payment_gateway_available')) {
             cachedSettings.payment_gateway_available = null
+          }
+          if (!cachedSettings.hasOwnProperty('terms_and_conditions')) {
+            cachedSettings.terms_and_conditions = null
           }
           const fixed = normalizeSettingsMediaUrls(cachedSettings as Settings)
           try { sessionStorage.setItem('settings_cache', JSON.stringify(fixed)) } catch {}

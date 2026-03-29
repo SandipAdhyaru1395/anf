@@ -20,7 +20,7 @@ class SyncPlanufacProductsJob implements ShouldQueue
     {
         $client = new PlanufacClient();
         $service = new PlanufacProductSyncService($client);
-        $service->syncAll(200);
+        $service->syncAll(20);
     }
 }
 

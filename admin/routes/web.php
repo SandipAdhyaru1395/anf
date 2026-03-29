@@ -314,6 +314,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/settings', [SettingController::class, 'viewGeneralSettings'])->name('settings.general');
         Route::get('/settings/banner', [SettingController::class, 'viewBannerSettings'])->name('settings.banner');
         Route::get('/settings/maintenance', [SettingController::class, 'viewMaintenanceSettings'])->name('settings.maintenance');
+        Route::get('/settings/terms-and-conditions', [SettingController::class, 'viewTermsAndConditions'])->name('settings.termsAndConditions');
         Route::get('/settings/theme', [SettingController::class, 'viewThemeSettings'])->name('settings.theme');
         Route::get('/settings/payment-gateways', [SettingController::class, 'viewPaymentGateways'])->name('settings.paymentGateways');
         Route::get('/settings/planufac-erp', [SettingController::class, 'viewPlanufacErp'])->name('settings.planufacErp');
@@ -352,6 +353,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/settings/general/update', [SettingController::class, 'updateGeneralSettings'])->name('settings.general.update');
         Route::post('/settings/banner/update', [SettingController::class, 'updateBannerSettings'])->name('settings.banner.update');
         Route::post('/settings/maintenance/update', [SettingController::class, 'updateMaintenanceSettings'])->name('settings.maintenance.update');
+        Route::post('/settings/terms-and-conditions/update', [SettingController::class, 'updateTermsAndConditions'])->name('settings.termsAndConditions.update');
         Route::post('/settings/truncate', [SettingController::class, 'truncateData'])->name('settings.truncate');
         Route::post('/settings/theme/update', [SettingController::class, 'updateThemeSettings'])->name('settings.theme.update');
         Route::post('/settings/payment-gateways/update', [SettingController::class, 'updatePaymentGateways'])->name('settings.paymentGateways.update');

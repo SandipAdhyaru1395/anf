@@ -22,7 +22,7 @@ class PlanufacProductSyncService
      *
      * @return array{inserted:int,updated:int,processed:int,started_at:string,finished_at:string}
      */
-    public function syncAll(int $pageSize = 200): array
+    public function syncAll(int $pageSize = 20): array
     {
         $startedAt = Carbon::now();
 

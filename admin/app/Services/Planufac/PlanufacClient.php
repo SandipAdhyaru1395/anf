@@ -148,7 +148,7 @@ class PlanufacClient
      *
      * Returns ['items' => array, 'total' => int|null]
      */
-    public function listProducts(int $length = 200, int $start = 0, string $orderBy = 'products.name', string $direction = 'asc', string $q = ''): array
+    public function listProducts(int $length = 20, int $start = 0, string $orderBy = 'products.name', string $direction = 'asc', string $q = ''): array
     {
         $token = $this->getAccessToken();
 

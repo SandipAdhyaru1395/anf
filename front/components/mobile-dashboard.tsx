@@ -333,7 +333,7 @@ export function MobileDashboard({
   return (
     <div className="relative mx-auto flex h-[100dvh] max-h-[874px] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD] shadow-sm">
       {/* HEADER — 16px horizontal → 370px content */}
-      <header className="z-50 flex w-full shrink-0 flex-col bg-[#F8F7FC] px-4 pb-4 pt-[65px] shadow-[0_5px_15px_0_rgba(85,94,88,0.09)]">
+      <header className="z-50 flex w-full shrink-0 flex-col bg-[#F8F7FC] px-4 py-4 shadow-[0_5px_15px_0_rgba(85,94,88,0.09)]">
         <div className="flex min-h-[22.51px] w-full items-center justify-center pt-1 pr-[15px]">
           <Thumbnail
             height={22.51}

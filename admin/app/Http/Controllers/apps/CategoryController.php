@@ -7,6 +7,7 @@ use App\traits\BulkDeletes;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Models\SyncUpdate;
 use Yajra\DataTables\Facades\DataTables;
 
 class CategoryController extends Controller
@@ -144,6 +145,7 @@ class CategoryController extends Controller
       ]
     );
 
+    SyncUpdate::bumpEntity('Product');
 
     Toastr::success('Category created successfully!');
 
@@ -195,6 +197,8 @@ class CategoryController extends Controller
     }
 
     Category::find($request->id)->update($data);
+
+    SyncUpdate::bumpEntity('Product');
 
     Toastr::success('Category updated successfully!');
 

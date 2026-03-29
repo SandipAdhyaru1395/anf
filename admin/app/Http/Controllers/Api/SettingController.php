@@ -93,6 +93,7 @@ class SettingController extends Controller
                 'thumbnail' => $thumbnailUrl,
                 'leading_brands' => $leadingBrands,
                 'maintenance_mode_store' => $settings->get('maintenance_mode_store') === '1',
+                'terms_and_conditions' => $settings->get('terms_and_conditions') ?? '',
                 'payment_gateway_available' => $dnaGatewayAvailable,
                 'theme' => [
                     'use_default' => $settings->get('default_theme') === '1',

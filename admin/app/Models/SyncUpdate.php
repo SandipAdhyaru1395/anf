@@ -12,6 +12,21 @@ class SyncUpdate extends Model
         'entity',
         'version',
     ];
+
+    /** Increment version for an entity (e.g. Product), or insert row at 1 if missing. */
+    public static function bumpEntity(string $entity): void
+    {
+        $updated = self::query()
+            ->where('entity', $entity)
+            ->increment('version');
+
+        if ($updated === 0) {
+            self::create([
+                'entity' => $entity,
+                'version' => 1,
+            ]);
+        }
+    }
 }
 
 

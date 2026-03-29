@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Concerns\RecordsSyncUpdate;
 
 class Order extends Model
@@ -30,12 +31,8 @@ class Order extends Model
         'outstanding_amount',
         'estimated_delivery_date',
         'status',
-        'branch_name',
-        'country',
-        'address_line1',
-        'address_line2',
-        'city',
-        'zip_code',
+        'shipping_branch_id',
+        'billing_branch_id',
         'delivery_method_id',
         'delivery_method_name',
         'delivery_time',
@@ -47,6 +44,16 @@ class Order extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    public function shippingBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'shipping_branch_id');
+    }
+
+    public function billingBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'billing_branch_id');
     }
 
     public function items()
@@ -78,5 +85,36 @@ class Order extends Model
     public function creditNotes()
     {
         return $this->hasMany(Order::class, 'parent_order_id')->where('type', 'CN');
+    }
+
+    // Compatibility accessors for legacy order address fields.
+    public function getBranchNameAttribute(): ?string
+    {
+        return $this->shippingBranch?->name;
+    }
+
+    public function getCountryAttribute(): ?string
+    {
+        return $this->shippingBranch?->country;
+    }
+
+    public function getAddressLine1Attribute(): ?string
+    {
+        return $this->shippingBranch?->address_line1;
+    }
+
+    public function getAddressLine2Attribute(): ?string
+    {
+        return $this->shippingBranch?->address_line2;
+    }
+
+    public function getCityAttribute(): ?string
+    {
+        return $this->shippingBranch?->city;
+    }
+
+    public function getZipCodeAttribute(): ?string
+    {
+        return $this->shippingBranch?->zip_code;
     }
 }

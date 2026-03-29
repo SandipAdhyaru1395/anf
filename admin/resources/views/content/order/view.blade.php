@@ -22,6 +22,8 @@
             $order->status === 'Completed'
                 ? optional($order->order_date)->format('d M Y') ?? optional($order->updated_at)->format('d M Y')
                 : null;
+        $shippingBranch = $order->shippingBranch;
+        $billingBranch = $order->billingBranch ?: $shippingBranch;
     @endphp
 
     <div class="card order-view-page">
@@ -77,20 +79,20 @@
                             <div class="ov-address-title">DELIVER TO</div>
                             <div class="ov-address-line">{{ $contactName ?? '—' }}</div>
                             <div class="ov-address-line">{{ $customerLabel }}</div>
-                            @if ($order->address_line1)
-                                <div class="ov-address-line">{{ $order->address_line1 }}</div>
+                            @if ($shippingBranch?->address_line1)
+                                <div class="ov-address-line">{{ $shippingBranch->address_line1 }}</div>
                             @endif
-                            @if ($order->address_line2)
-                                <div class="ov-address-line">{{ $order->address_line2 }}</div>
+                            @if ($shippingBranch?->address_line2)
+                                <div class="ov-address-line">{{ $shippingBranch->address_line2 }}</div>
                             @endif
-                            @if ($order->city)
-                                <div class="ov-address-line text-uppercase">{{ $order->city }}</div>
+                            @if ($shippingBranch?->city)
+                                <div class="ov-address-line text-uppercase">{{ $shippingBranch->city }}</div>
                             @endif
-                            @if ($order->zip_code)
-                                <div class="ov-address-line">{{ $order->zip_code }}</div>
+                            @if ($shippingBranch?->zip_code)
+                                <div class="ov-address-line">{{ $shippingBranch->zip_code }}</div>
                             @endif
-                            @if ($order->country)
-                                <div class="ov-address-line text-uppercase">{{ $order->country }}</div>
+                            @if ($shippingBranch?->country)
+                                <div class="ov-address-line text-uppercase">{{ $shippingBranch->country }}</div>
                             @endif
                             @if (optional($order->customer)->phone)
                                 <div class="ov-address-line">Phone: {{ $order->customer->phone }}</div>
@@ -103,20 +105,20 @@
                             <div class="ov-address-title">INVOICE TO</div>
                             <div class="ov-address-line">{{ $contactName ?? '—' }}</div>
                             <div class="ov-address-line">{{ $customerLabel }}</div>
-                            @if ($order->address_line1)
-                                <div class="ov-address-line">{{ $order->address_line1 }}</div>
+                            @if ($billingBranch?->address_line1)
+                                <div class="ov-address-line">{{ $billingBranch->address_line1 }}</div>
                             @endif
-                            @if ($order->address_line2)
-                                <div class="ov-address-line">{{ $order->address_line2 }}</div>
+                            @if ($billingBranch?->address_line2)
+                                <div class="ov-address-line">{{ $billingBranch->address_line2 }}</div>
                             @endif
-                            @if ($order->city)
-                                <div class="ov-address-line text-uppercase">{{ $order->city }}</div>
+                            @if ($billingBranch?->city)
+                                <div class="ov-address-line text-uppercase">{{ $billingBranch->city }}</div>
                             @endif
-                            @if ($order->zip_code)
-                                <div class="ov-address-line">{{ $order->zip_code }}</div>
+                            @if ($billingBranch?->zip_code)
+                                <div class="ov-address-line">{{ $billingBranch->zip_code }}</div>
                             @endif
-                            @if ($order->country)
-                                <div class="ov-address-line text-uppercase">{{ $order->country }}</div>
+                            @if ($billingBranch?->country)
+                                <div class="ov-address-line text-uppercase">{{ $billingBranch->country }}</div>
                             @endif
                             <a class="ov-link mt-1 d-inline-block"
                                 href="{{ $order->customer ? route('customer.branches', $order->customer->id) : '#' }}">Edit</a>

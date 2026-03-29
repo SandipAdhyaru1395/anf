@@ -142,27 +142,41 @@ class OrderController extends Controller
         try {
             // Validate the request (server will derive items/totals from cart)
             $rules = [
-                'branch_id' => 'required|integer|exists:branches,id',
+                'shipping_branch_id' => 'required|integer|exists:branches,id',
+                'billing_branch_id' => 'required|integer|exists:branches,id',
                 'delivery_method_id' => 'nullable|integer',
                 'delivery_note' => 'nullable|string',
                 'customer_po_number' => 'nullable|string|max:191',
             ];
             $request->validate($rules);
 
-            $branchId = (int) $request->input('branch_id');
+            $shippingBranchId = (int) $request->input('shipping_branch_id');
+            $billingBranchId = (int) $request->input('billing_branch_id');
             $customer = $request->user();
 
-            // Validate that the address belongs to the authenticated user
-            $branch = Branch::where('id', $branchId)
+            // Validate that selected branches belong to the authenticated user
+            $shippingBranch = Branch::where('id', $shippingBranchId)
+                ->where('customer_id', optional($customer)->id)
+                ->first();
+            $billingBranch = Branch::where('id', $billingBranchId)
                 ->where('customer_id', optional($customer)->id)
                 ->first();
 
-            if (!$branch) {
+            if (!$shippingBranch) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid branch selected.',
+                    'message' => 'Invalid dispatch branch selected.',
                     'errors' => [
-                        'branch_id' => ['The selected branch is invalid.']
+                        'shipping_branch_id' => ['The selected dispatch branch is invalid.']
+                    ]
+                ], 200);
+            }
+            if (!$billingBranch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid billing branch selected.',
+                    'errors' => [
+                        'billing_branch_id' => ['The selected billing branch is invalid.']
                     ]
                 ], 200);
             }
@@ -341,7 +355,8 @@ class OrderController extends Controller
                 // Persist payment context in cache so callback can reconstruct order safely
                 $context = [
                     'customer_id'        => optional($customer)->id,
-                    'branch_id'          => $branch->id,
+                    'shipping_branch_id' => $shippingBranch->id,
+                    'billing_branch_id'  => $billingBranch->id,
                     'cart_id'            => $cart->id,
                     'delivery_method_id' => $deliveryMethod?->id,
                     'delivery_note'      => $request->input('delivery_note'),
@@ -373,6 +388,7 @@ class OrderController extends Controller
                     'requires_redirect' => true,
                     'redirect_url' => $dna['checkoutUrl'],
                     'payment_id' => $dna['paymentId'],
+                    'dna_invoice_id' => $invoiceId,
                 ]);
             }
 
@@ -383,7 +399,8 @@ class OrderController extends Controller
 
                 $context = [
                     'customer_id'        => optional($customer)->id,
-                    'branch_id'          => $branch->id,
+                    'shipping_branch_id' => $shippingBranch->id,
+                    'billing_branch_id'  => $billingBranch->id,
                     'cart_id'            => $cart->id,
                     'delivery_method_id' => $deliveryMethod?->id,
                     'delivery_note'      => $request->input('delivery_note'),
@@ -398,10 +415,10 @@ class OrderController extends Controller
                 $billingAddress = [
                     'firstName'      => $nameParts[0] ?? 'Customer',
                     'lastName'       => $nameParts[1] ?? '',
-                    'streetAddress1' => $branch->address_line1 ?? 'N/A',
-                    'postalCode'     => $branch->zip_code ?? '',
-                    'city'           => $branch->city ?? 'N/A',
-                    'country'        => $branch->country ?? 'GB',
+                    'streetAddress1' => $billingBranch->address_line1 ?? 'N/A',
+                    'postalCode'     => $billingBranch->zip_code ?? '',
+                    'city'           => $billingBranch->city ?? 'N/A',
+                    'country'        => $billingBranch->country ?? 'GB',
                 ];
 
                 try {
@@ -428,6 +445,7 @@ class OrderController extends Controller
                     'requires_redirect' => true,
                     'redirect_url' => $dna['checkoutUrl'],
                     'payment_id' => $dna['paymentId'],
+                    'dna_invoice_id' => $invoiceId,
                 ]);
             }
 
@@ -459,13 +477,8 @@ class OrderController extends Controller
 				'outstanding_amount' => $outstandingAmount,
                 'estimated_delivery_date' => now()->addDays(7),
                 'status' => 'New',
-                // Persist delivery address snapshot on the order
-                'branch_name' => (string) $branch->name,
-                'country' => (string) $branch->country,
-                'address_line1' => (string) $branch->address_line1,
-                'address_line2' => (string) ($branch->address_line2 ?? ''),
-                'city' => (string) $branch->city,
-                'zip_code' => (string) $branch->zip_code,
+                'shipping_branch_id' => $shippingBranch->id,
+                'billing_branch_id' => $billingBranch->id,
                 'delivery_method_id' => $deliveryMethod?->id,
                 'delivery_method_name' => $deliveryMethod?->name,
                 'delivery_time' => $deliveryMethod?->time,
@@ -564,6 +577,35 @@ class OrderController extends Controller
                 'message' => 'Checkout failed. ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * After DNA hosted / open-banking checkout, resolve the created order number (callback may lag behind the return URL).
+     */
+    public function orderNumberForDnaInvoice(Request $request, string $invoiceId)
+    {
+        if (strlen($invoiceId) > 120 || ! preg_match('/^[a-zA-Z0-9_-]+$/', $invoiceId)) {
+            return response()->json(['success' => false], 404);
+        }
+
+        $orderNumber = Cache::get('dna_invoice_order_'.$invoiceId);
+        if ($orderNumber === null || $orderNumber === '') {
+            return response()->json(['success' => false], 404);
+        }
+
+        $owns = Order::query()
+            ->where('order_number', $orderNumber)
+            ->where('customer_id', (int) $request->user()->id)
+            ->exists();
+
+        if (! $owns) {
+            return response()->json(['success' => false], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'order_number' => (string) $orderNumber,
+        ]);
     }
 
     /**

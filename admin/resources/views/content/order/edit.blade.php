@@ -207,9 +207,7 @@
                                                     if ($branch->country) {
                                                         $addressText .= ', ' . $branch->country;
                                                     }
-                                                    $isSelected = old('address_id', ($order->branch_name == $branch->name) || 
-                                                                  ($order->address_line1 == $branch->address_line1 && 
-                                                                   $order->city == $branch->city) ? $branch->id : '') == $branch->id;
+                                                    $isSelected = (string) old('address_id', (string) ($order->shipping_branch_id ?? '')) === (string) $branch->id;
                                                 @endphp
                                                 <option value="{{ $branch->id }}" {{ $isSelected ? 'selected' : '' }}>
                                                     {{ $addressText }}

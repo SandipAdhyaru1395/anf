@@ -13,6 +13,7 @@ import { MobileOrders } from "@/components/mobile-orders"
 import { MobileOrderDetails } from "@/components/mobile-order-details"
 import { MobileBranches } from "@/components/mobile-branches"
 import { MobileContactUs } from "@/components/mobile-contact-us"
+import { MobileTermsAndConditions } from "@/components/mobile-terms-and-conditions"
 import SplashScreen from "./welcome-screen"
 
 type PageKey =
@@ -28,6 +29,7 @@ type PageKey =
   | "order-details"
   | "branches"
   | "contact-us"
+  | "terms-and-conditions"
 
 export default function Home() {
   const [hasToken, setHasToken] = useState<boolean | null>(null)
@@ -116,6 +118,17 @@ export default function Home() {
         sessionStorage.removeItem("post_payment_clear_cart")
       }
 
+      if (target === "order-details") {
+        const orderNum = sessionStorage.getItem("post_payment_order_number")
+        sessionStorage.removeItem("post_payment_page")
+        if (orderNum) {
+          sessionStorage.removeItem("post_payment_order_number")
+          setSelectedOrderNumber(orderNum)
+          handleNavigate("order-details")
+        }
+        return
+      }
+
       if (target === "checkout" || target === "dashboard") {
         handleNavigate(target as PageKey)
         sessionStorage.removeItem("post_payment_page")
@@ -178,6 +191,10 @@ export default function Home() {
         cart={cart}
         totals={totals}
         clearCart={clearCart}
+        onCheckoutSuccess={(orderNumber) => {
+          setSelectedOrderNumber(orderNumber)
+          handleNavigate("order-details")
+        }}
       />
     )
   }
@@ -242,6 +259,12 @@ export default function Home() {
       <MobileContactUs
         onNavigate={handleNavigate}
       />
+    )
+  }
+
+  if (currentPage === "terms-and-conditions") {
+    return (
+      <MobileTermsAndConditions onNavigate={handleNavigate} />
     )
   }
 
