@@ -24,9 +24,17 @@ export function setFavicon(url: string) {
 // Local dev: '/'
 // Production (aidemo): '/anf/front'
 export function getBasePath(): string {
+  const configured = (process.env.BASE_PATH || '').trim()
+  if (configured !== '') {
+    return `/${configured.replace(/^\/+|\/+$/g, '')}`
+  }
+
   if (typeof window === 'undefined') return '/'
   const pathname = window.location?.pathname || '/'
-  return pathname.startsWith('/anf/front') ? '/anf/front' : '/'
+  if (pathname === '/anf/front' || pathname.startsWith('/anf/front/')) {
+    return '/anf/front'
+  }
+  return '/'
 }
 
 // Joins the base path with a relative path segment safely.
@@ -40,8 +48,7 @@ export function buildPath(relativePath: string): string {
 /** URL path for static files in `/public` (e.g. `/background.svg` vs `/anf/front/background.svg`). */
 export function publicAssetUrl(assetPath: string): string {
   const p = (assetPath || "").replace(/^\/+/, "")
-  console.log(getBasePath() + `/${p}`)
-  return getBasePath() + `/${p}`
+  return buildPath(`/${p}`)
 }
 
 /**
