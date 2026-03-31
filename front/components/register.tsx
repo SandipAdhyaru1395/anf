@@ -339,7 +339,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading || isSubmitting}
-                className="w-full h-[48px] rounded-[25px] text-white font-[700px] text-[18px] transition-all active:scale-[0.98] disabled:opacity-70"
+                className="w-full h-[48px] rounded-[25px] text-white text-[18px] font-bold [font-family:Roboto] transition-all active:scale-[0.98] disabled:opacity-70"
                 style={{ background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)" }}
               >
                 {loading ? "Registering..." : "Agree & Sign Up"}
@@ -348,7 +348,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => router.replace(buildPath("/landing"))}
-                className="w-full h-[48px] rounded-[25px] border border-[#4A90E5] bg-white text-[#4A90E5] font-[700px] text-[17px] transition-all active:scale-[0.98]"
+                className="w-full h-[48px] rounded-[25px] border border-[#4A90E5] bg-white text-[#4A90E5] text-[17px] font-bold [font-family:Roboto] transition-all active:scale-[0.98]"
               >
                 Back
               </button>
