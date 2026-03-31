@@ -116,6 +116,28 @@
             message: 'Please enter postcode'
           }
         }
+      },
+      averageMonthlySpendExVat: {
+        validators: {
+          stringLength: {
+            max: 255,
+            message: 'Maximum 255 characters allowed'
+          }
+        }
+      },
+      storesServicedCount: {
+        validators: {
+          callback: {
+            message: 'Please enter a valid whole number',
+            callback: function(input) {
+              if (input.value === '' || input.value == null) return { valid: true };
+              return { valid: /^\d+$/.test(String(input.value)) };
+            }
+          },
+          integer: {
+            message: 'Please enter a valid whole number'
+          }
+        }
       }
     },
     plugins: {

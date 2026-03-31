@@ -325,6 +325,13 @@ class CustomerController extends Controller
       'addressLine1' => ['required', 'string', 'max:255'],
       'city' => ['required', 'string', 'max:255'],
       'zip_code' => ['required', 'string', 'max:255'],
+      'vatNumber' => ['nullable', 'string', 'max:100'],
+      'eoriNumber' => ['nullable', 'string', 'max:100'],
+      'isPartOfGroup' => ['nullable', Rule::in(['yes', 'no'])],
+      'businessType' => ['nullable', Rule::in(['Wholesaler', 'Distributor', 'Retailer', 'Online retailer', 'Vape shop'])],
+      'averageMonthlySpendExVat' => ['nullable', 'string', 'max:255'],
+      'storesServicedCount' => ['nullable', 'integer', 'min:0'],
+      'yourName' => ['nullable', 'string', 'max:255'],
     ], [
       'companyName.required' => 'Please enter company name',
       'email.required' => 'Please enter email',
@@ -338,7 +345,10 @@ class CustomerController extends Controller
       'mobile.unique' => 'Mobile number already exists',
       'addressLine1.required' => 'Please enter address line 1',
       'city.required' => 'Please enter city',
-      'zip_code.required' => 'Please enter postcode'
+      'zip_code.required' => 'Please enter postcode',
+      'isPartOfGroup.required' => 'Please select if customer is part of a group',
+      'businessType.required' => 'Please select type of business',
+      'yourName.required' => 'Please enter contact name',
     ]);
 
     if ($validator->fails()) {
@@ -361,6 +371,13 @@ class CustomerController extends Controller
         'company_city' => $request->city,
         'company_country' => $request->country,
         'company_zip_code' => $request->zip_code,
+        'vat_number' => $request->vatNumber,
+        'eori_number' => $request->eoriNumber,
+        'is_part_of_group' => $request->isPartOfGroup === 'yes' ? 1 : 0,
+        'business_type' => $request->businessType,
+        'average_monthly_spend_ex_vat' => $request->averageMonthlySpendExVat,
+        'stores_serviced_count' => $request->storesServicedCount,
+        'contact_person_name' => $request->yourName,
         'rep_id' => $request->rep_id ?? null,
         'customer_group_id' => $request->customer_group_id ?? null,
         'price_list_id' => $request->price_list_id ?? null
@@ -394,6 +411,13 @@ class CustomerController extends Controller
       'addressLine1' => ['required', 'string', 'max:255'],
       'city' => ['required', 'string', 'max:255'],
       'zip_code' => ['required', 'string', 'max:255'],
+      'vatNumber' => ['nullable', 'string', 'max:100'],
+      'eoriNumber' => ['nullable', 'string', 'max:100'],
+      'isPartOfGroup' => ['nullable', Rule::in(['yes', 'no'])],
+      'businessType' => ['nullable', Rule::in(['Wholesaler', 'Distributor', 'Retailer', 'Online retailer', 'Vape shop'])],
+      'averageMonthlySpendExVat' => ['nullable', 'string', 'max:255'],
+      'storesServicedCount' => ['nullable', 'integer', 'min:0'],
+      'yourName' => ['nullable', 'string', 'max:255'],
     ], [
       'companyName.required' => 'Please enter company name',
       'email.required' => 'Please enter email',
@@ -406,7 +430,10 @@ class CustomerController extends Controller
       'mobile.unique' => 'Mobile number already exists',
       'addressLine1.required' => 'Please enter address line 1',
       'city.required' => 'Please enter city',
-      'zip_code.required' => 'Please enter postcode'
+      'zip_code.required' => 'Please enter postcode',
+      'isPartOfGroup.required' => 'Please select if customer is part of a group',
+      'businessType.required' => 'Please select type of business',
+      'yourName.required' => 'Please enter contact name',
     ]);
 
     if ($validator->fails()) {
@@ -425,6 +452,13 @@ class CustomerController extends Controller
       'company_city' => $request->city,
       'company_country' => $request->country,
       'company_zip_code' => $request->zip_code,
+      'vat_number' => $request->vatNumber,
+      'eori_number' => $request->eoriNumber,
+      'is_part_of_group' => $request->isPartOfGroup === 'yes' ? 1 : 0,
+      'business_type' => $request->businessType,
+      'average_monthly_spend_ex_vat' => $request->averageMonthlySpendExVat,
+      'stores_serviced_count' => $request->storesServicedCount,
+      'contact_person_name' => $request->yourName,
       'rep_id' => $request->rep_id ?? null,
       'customer_group_id' => $request->customer_group_id ?? null,
       'price_list_id' => $request->price_list_id ?? null
@@ -440,3 +474,4 @@ class CustomerController extends Controller
     return redirect()->back();
   }
 }
+

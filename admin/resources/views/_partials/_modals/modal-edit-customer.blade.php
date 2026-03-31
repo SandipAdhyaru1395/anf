@@ -12,10 +12,12 @@
                     @csrf
                     <input type="hidden" name="id" value="{{ $customer->id }}">
                     <div class="row mb-5">
+                        <div class="col-12 mb-2">
+                            <h5 class="mb-2">1. Business Address</h5>
+                        </div>
                         <div class="col-md-6">
                             <div class="mb-6 form-control-validation">
-                                <label class="form-label" for="company-name">Company Name <span
-                                        class="text-danger">*</span></label>
+                                <label class="form-label" for="company-name">Company Name <span class="text-danger">*</span></label>
                                 <input type="text" autocomplete="off" id="company-name" class="form-control"
                                     placeholder="Enter company name" aria-label="Enter company name" name="companyName"
                                     value="{{ old('companyName') ?? $customer->company_name }}" />
@@ -24,18 +26,54 @@
                                 @enderror
                             </div>
                             <div class="mb-6 form-control-validation">
-                                <label class="form-label" for="email">Email <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" autocomplete="off" id="email" class="form-control"
-                                    placeholder="Enter email" aria-label="Enter email" name="email"
-                                    value="{{ old('email') ?? $customer->email }}" />
-                                @error('email', 'editCustomer')
+                                <label class="form-label" for="address-line1">Address Line 1 <span class="text-danger">*</span></label>
+                                <input type="text" autocomplete="off" id="address-line1" class="form-control"
+                                    placeholder="Enter address" aria-label="Enter address" name="addressLine1"
+                                    value="{{ old('addressLine1') ?? $customer->company_address_line1 }}" />
+                                @error('addressLine1', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="address-line2">Address Line 2</label>
+                                <input type="text" autocomplete="off" id="address-line2" class="form-control"
+                                    placeholder="Enter address" aria-label="Enter address" name="addressLine2"
+                                    value="{{ old('addressLine2') ?? $customer->company_address_line2 }}" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="city">City <span class="text-danger">*</span></label>
+                                <input type="text" autocomplete="off" id="city" class="form-control"
+                                    placeholder="Enter city" aria-label="Enter city" name="city"
+                                    value="{{ old('city') ?? $customer->company_city }}" />
+                                @error('city', 'editCustomer')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="mb-6 form-control-validation">
-                                <label class="form-label" for="mobile">Mobile <span
-                                        class="text-danger">*</span></label>
+                                <label class="form-label" for="zip_code">Postcode <span class="text-danger">*</span></label>
+                                <input type="text" autocomplete="off" id="zip_code" class="form-control"
+                                    placeholder="Enter postcode" aria-label="Enter postcode" name="zip_code"
+                                    value="{{ old('zip_code') ?? $customer->company_zip_code }}" />
+                                @error('zip_code', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="country">Country</label>
+                                <input type="text" autocomplete="off" id="country" class="form-control"
+                                    placeholder="Enter country" aria-label="Enter country" name="country"
+                                    value="{{ old('country') ?? $customer->company_country }}" />
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-2 mb-2">
+                            <h5 class="mb-2">2. Company Details</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="mobile">Mobile <span class="text-danger">*</span></label>
                                 <input type="text" maxlength="40" autocomplete="off" id="mobile" class="form-control"
                                     placeholder="10–20 letters or numbers" aria-label="Enter mobile no" name="mobile"
                                     value="{{ old('mobile') ?? $customer->phone }}"
@@ -44,14 +82,95 @@
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="vatNumber">VAT Number (if applicable)</label>
+                                <input type="text" autocomplete="off" id="vatNumber" class="form-control"
+                                    placeholder="Enter VAT number" name="vatNumber"
+                                    value="{{ old('vatNumber') ?? $customer->vat_number }}" />
+                                @error('vatNumber', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="eoriNumber">EORI Number (if applicable)</label>
+                                <input type="text" autocomplete="off" id="eoriNumber" class="form-control"
+                                    placeholder="Enter EORI number" name="eoriNumber"
+                                    value="{{ old('eoriNumber') ?? $customer->eori_number }}" />
+                                @error('eoriNumber', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="isPartOfGroup">Are you part of a group? i.e. A symbol group or Industry Body, The FED etc.</label>
+                                <select class="form-select" id="isPartOfGroup" name="isPartOfGroup">
+                                    <option value="yes" @selected(old('isPartOfGroup') == 'yes') @selected(is_null(old('isPartOfGroup')) && (int) $customer->is_part_of_group === 1)>Yes</option>
+                                    <option value="no" @selected(old('isPartOfGroup') == 'no') @selected(is_null(old('isPartOfGroup')) && (int) $customer->is_part_of_group === 0)>No</option>
+                                </select>
+                                @error('isPartOfGroup', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="businessType">Type of business</label>
+                                <select class="form-select" id="businessType" name="businessType">
+                                    @foreach (['Wholesaler', 'Distributor', 'Retailer', 'Online retailer', 'Vape shop'] as $type)
+                                        <option value="{{ $type }}" @selected(old('businessType') == $type) @selected(is_null(old('businessType')) && $customer->business_type === $type)>{{ $type }}</option>
+                                    @endforeach
+                                </select>
+                                @error('businessType', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="averageMonthlySpendExVat">Average monthly spend excluding VAT</label>
+                                <input type="text" autocomplete="off" id="averageMonthlySpendExVat"
+                                    class="form-control" placeholder="Enter amount" name="averageMonthlySpendExVat"
+                                    value="{{ old('averageMonthlySpendExVat') ?? $customer->average_monthly_spend_ex_vat }}" />
+                                @error('averageMonthlySpendExVat', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="storesServicedCount">How many stores do you have/service</label>
+                                <input type="number" min="0" step="1" autocomplete="off" id="storesServicedCount"
+                                    class="form-control" placeholder="Enter number of stores" name="storesServicedCount"
+                                    value="{{ old('storesServicedCount') ?? $customer->stores_serviced_count }}" />
+                                @error('storesServicedCount', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
 
+                        <div class="col-12 mt-2 mb-2">
+                            <h5 class="mb-2">3. User Details</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="yourName">Your name</label>
+                                <input type="text" autocomplete="off" id="yourName" class="form-control"
+                                    placeholder="Enter your name" name="yourName"
+                                    value="{{ old('yourName') ?? $customer->contact_person_name }}" />
+                                @error('yourName', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6 form-control-validation">
+                                <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
+                                <input type="text" autocomplete="off" id="email" class="form-control"
+                                    placeholder="Enter email" aria-label="Enter email" name="email"
+                                    value="{{ old('email') ?? $customer->email }}" />
+                                @error('email', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
                             <div class="mb-6 form-control-validation form-password-toggle">
                                 <label class="form-label" for="password">Password </label>
                                 <div class="input-group input-group-merge">
                                     <input type="password" autocomplete="off" class="form-control" id="password"
                                         placeholder="Enter password" name="password" aria-label="Enter password" />
-                                    <span class="input-group-text cursor-pointer"><i
-                                            class="icon-base ti tabler-eye-off"></i></span>
+                                    <span class="input-group-text cursor-pointer"><i class="icon-base ti tabler-eye-off"></i></span>
                                 </div>
                                 @error('password', 'editCustomer')
                                     <span class="text-danger">{{ $message }}</span>
@@ -63,19 +182,36 @@
                                     <input type="password" autocomplete="off" id="confirmPassword" class="form-control"
                                         placeholder="Enter confirm password" aria-label="Enter confirm password"
                                         name="confirmPassword" />
-                                    <span class="input-group-text cursor-pointer"><i
-                                            class="icon-base ti tabler-eye-off"></i></span>
+                                    <span class="input-group-text cursor-pointer"><i class="icon-base ti tabler-eye-off"></i></span>
                                 </div>
                             </div>
+                        </div>
+                        <div class="col-md-6">
                             <div class="mb-6 form-control-validation">
-                                <label class="form-label" for="status">Status <span
-                                        class="text-danger">*</span></label>
+                                <label class="form-label" for="status">Status <span class="text-danger">*</span></label>
                                 <select class="form-select select2" id="status" name="status">
-                                    <option value="active" @selected(old('status') == 'active') @selected(old('status') == '') @selected($customer->is_active == '1')>
-                                        Active</option>
+                                    <option value="active" @selected(old('status') == 'active') @selected(old('status') == '') @selected($customer->is_active == '1')>Active</option>
                                     <option value="inactive" @selected(old('status') == 'inactive') @selected($customer->is_active == '0')>Inactive</option>
                                 </select>
                                 @error('status', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="rep_id">Sales Person</label>
+                                <select id="rep_id" name="rep_id" class="form-control select2">
+                                    @if($sales_persons->isNotEmpty())
+                                        <option value="">Select sales person</option>
+                                        @foreach ($sales_persons as $sales_person)
+                                            <option value="{{ $sales_person->id }}" @selected($sales_person->id == $customer->rep_id)>
+                                                {{ $sales_person->name }} ({{ $sales_person->email }} )
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option value="">No sales person found</option>
+                                    @endforelse
+                                </select>
+                                @error('rep_id', 'editCustomer')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
@@ -91,71 +227,6 @@
                                         <option value="">No customer group found</option>
                                     @endforelse
                                 </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6 border-start">
-                            <div class="mb-6 form-control-validation">
-                                <label class="form-label" for="address-line1">Address Line 1 <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" autocomplete="off" id="address-line1" class="form-control"
-                                    placeholder="Enter address" aria-label="Enter address" name="addressLine1"
-                                    value="{{ old('addressLine1') ?? $customer->company_address_line1 }}" />
-                                @error('addressLine1', 'editCustomer')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <div class="mb-6">
-                                <label class="form-label" for="address-line2">Address Line 2</label>
-                                <input type="text" autocomplete="off" id="address-line2" class="form-control"
-                                    placeholder="Enter address" aria-label="Enter address" name="addressLine2"
-                                    value="{{ old('addressLine2') ?? $customer->company_address_line2 }}" />
-                            </div>
-                            <div class="mb-6 form-control-validation">
-                                <label class="form-label" for="city">City <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" autocomplete="off" id="city" class="form-control"
-                                    placeholder="Enter city" aria-label="Enter city" name="city"
-                                    value="{{ old('city') ?? $customer->company_city }}" />
-                                @error('city', 'editCustomer')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <div class="mb-6">
-                                <label class="form-label" for="country">Country</label>
-                                <input type="text" autocomplete="off" id="country" class="form-control"
-                                    placeholder="Enter country" aria-label="Enter country" name="country"
-                                    value="{{ old('country') ?? $customer->company_country }}" />
-                            </div>
-                            <div class="mb-6 form-control-validation">
-                                <label class="form-label" for="zip_code">Postcode <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" autocomplete="off" id="zip_code" class="form-control"
-                                    placeholder="Enter postcode" aria-label="Enter postcode" name="zip_code"
-                                    value="{{ old('zip_code') ?? $customer->company_zip_code }}" />
-                                @error('zip_code', 'editCustomer')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <div class="mb-6">
-                                <label class="form-label" for="rep_id">Sales Person</label>
-                                <select id="rep_id" name="rep_id" class="form-control select2">
-                                    @if($sales_persons->isNotEmpty())
-                                        <option value="">Select sales person</option>
-                                        @foreach ($sales_persons as $sales_person)
-                                            <option value="{{ $sales_person->id }}" 
-                                            @selected( $sales_person->id == $customer->rep_id)    
-                                            >
-                                                {{ $sales_person->name }} (
-                                                {{ $sales_person->email }} )
-                                            </option>
-                                        @endforeach
-                                    @else
-                                        <option value="">No sales person found</option>
-                                    @endforelse
-                                </select>
-                                @error('rep_id', 'editCustomer')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
                             </div>
                             <div class="mb-6">
                                 <label class="form-label" for="price_list_id">Price List</label>
@@ -186,3 +257,4 @@
     </div>
 </div>
 <!--/ Add New Address Modal -->
+

@@ -114,6 +114,13 @@ class AuthController extends Controller
             'state' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
             'zip_code' => ['required', 'string', 'max:255'],
+            'vatNumber' => ['nullable', 'string', 'max:100'],
+            'eoriNumber' => ['nullable', 'string', 'max:100'],
+            'isPartOfGroup' => ['nullable', Rule::in(['yes', 'no'])],
+            'businessType' => ['nullable', Rule::in(['Wholesaler', 'Distributor', 'Retailer', 'Online retailer', 'Vape shop'])],
+            'averageMonthlySpendExVat' => ['nullable', 'string', 'max:255'],
+            'storesServicedCount' => ['nullable', 'integer', 'min:0'],
+            'yourName' => ['nullable', 'string', 'max:255'],
         ], [
             'email.required' => 'Please enter email',
             'email.unique' => 'Email already exists',
@@ -128,6 +135,9 @@ class AuthController extends Controller
             'addressLine1.required' => 'Please enter address line 1',
             'city.required' => 'Please enter city',
             'zip_code.required' => 'Please enter postcode',
+            'isPartOfGroup.required' => 'Please select if you are part of a group',
+            'businessType.required' => 'Please select type of business',
+            'yourName.required' => 'Please enter your name',
         ]);
 
         if ($validator->fails()) {
@@ -154,6 +164,13 @@ class AuthController extends Controller
             'company_city' => $data['city'],
             'company_country' => $data['country'] ?? null,
             'company_zip_code' => $data['zip_code'],
+            'vat_number' => $data['vatNumber'] ?? null,
+            'eori_number' => $data['eoriNumber'] ?? null,
+            'is_part_of_group' => $data['isPartOfGroup'] === 'yes' ? 1 : 0,
+            'business_type' => $data['businessType'],
+            'average_monthly_spend_ex_vat' => $data['averageMonthlySpendExVat'] ?? null,
+            'stores_serviced_count' => $data['storesServicedCount'],
+            'contact_person_name' => $data['yourName'],
         ]);
         $customerWelcomeEmailService->send($customer);
     
@@ -220,5 +237,6 @@ class AuthController extends Controller
         ], 422);
     }
 }
+
 
 

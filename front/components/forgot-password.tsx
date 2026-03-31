@@ -53,7 +53,7 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex justify-center">
       <div
-        className="relative w-[402px] h-[750px] pr-[16px] pl-4 flex flex-col gap-8 overflow-hidden"
+        className="relative w-[402px] pr-[16px] pl-4 flex flex-col gap-8 overflow-hidden"
         style={{
           backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
           backgroundRepeat: "no-repeat",
