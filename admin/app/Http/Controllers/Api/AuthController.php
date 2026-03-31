@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\SyncUpdate;
 use Illuminate\Support\Facades\DB;
+use App\Services\CustomerWelcomeEmailService;
+use App\Support\PhoneNormalizer;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -91,12 +96,16 @@ class AuthController extends Controller
 		]);
 	}
 
-    public function register(Request $request)
+    public function register(Request $request, CustomerWelcomeEmailService $customerWelcomeEmailService)
     {
+        $request->merge([
+            'mobile' => PhoneNormalizer::normalize($request->input('mobile')) ?? '',
+        ]);
+
         $validator = Validator::make($request->all(), [
             'companyName' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:customers,email'],
-            'mobile' => ['required', 'string', 'digits:10', 'unique:customers,phone'],
+            'mobile' => ['required', 'string', 'min:10', 'max:20', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('customers', 'phone')],
             'password' => ['required', 'string', 'min:6'],
             // address fields
             'addressLine1' => ['required', 'string', 'max:255'],
@@ -111,7 +120,9 @@ class AuthController extends Controller
             'password.required' => 'Please enter password',
             'password.min' => 'Password must be more than 6 characters',
             'mobile.required' => 'Please enter mobile number',
-            'mobile.digits' => 'Mobile number must be 10 digits',
+            'mobile.min' => 'Mobile must be at least 10 characters.',
+            'mobile.max' => 'Mobile must be at most 20 characters.',
+            'mobile.regex' => 'Mobile must contain only letters and numbers.',
             'mobile.unique' => 'Mobile number already exists',
             'companyName.required' => 'Please enter company name',
             'addressLine1.required' => 'Please enter address line 1',
@@ -144,6 +155,7 @@ class AuthController extends Controller
             'company_country' => $data['country'] ?? null,
             'company_zip_code' => $data['zip_code'],
         ]);
+        $customerWelcomeEmailService->send($customer);
     
 
         return response()->json([
@@ -151,6 +163,61 @@ class AuthController extends Controller
             'message' => 'Registration successful',
             'customer_id' => $customer->id,
         ], 201);
+    }
+
+    /**
+     * POST /forgot-password — queue password reset email (generic response for privacy).
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        Password::broker('customers')->sendResetLink($request->only('email'));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'If an account exists for that email, we have sent password reset instructions.',
+        ]);
+    }
+
+    /**
+     * POST /reset-password — complete reset after customer follows email link.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $status = Password::broker('customers')->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (Customer $user, string $password) {
+                $user->password = $password;
+                $user->save();
+                $user->tokens()->delete();
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Your password has been reset. You can log in with your new password.',
+            ]);
+        }
+
+        $message = $status === Password::INVALID_TOKEN
+            ? 'This password reset link is invalid or has expired. Please request a new one.'
+            : 'Unable to reset password. Please try again.';
+
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+        ], 422);
     }
 }
 

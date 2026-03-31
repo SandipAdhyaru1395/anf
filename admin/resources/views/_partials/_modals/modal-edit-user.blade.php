@@ -28,10 +28,8 @@
           </div>
           <div class="col-12 col-md-6">
             <label class="form-label" for="modalEditUserPhone">Phone Number</label>
-            <div class="input-group">
-              <span class="input-group-text">IN (+91)</span>
-              <input type="text" id="modalEditUserPhone" name="modalEditUserPhone" class="form-control phone-number-mask" placeholder="202 555 0111" value="{{ $user->phone }}" />
-            </div>
+            <input type="text" id="modalEditUserPhone" name="modalEditUserPhone" class="form-control" placeholder="10–20 letters or numbers" value="{{ $user->phone }}"
+              onkeypress="if (event.key.length !== 1) return true; return /^[a-zA-Z0-9]$/i.test(event.key)" />
           </div>
           <div class="col-12 col-md-6">
             <label class="form-label" for="modalEditUserRole">Role</label>

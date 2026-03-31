@@ -124,6 +124,12 @@
           "slug": "settings.general"
         },
         {
+          "url": "settings/smtp",
+          "icon": "menu-icon icon-base ti tabler-mail",
+          "name": "SMTP",
+          "slug": "settings.smtp"
+        },
+        {
           "url": "settings/banner",
           "icon": "menu-icon icon-base ti tabler-photo",
           "name": "Banner",

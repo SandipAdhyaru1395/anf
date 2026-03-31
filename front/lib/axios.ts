@@ -30,7 +30,15 @@ if (typeof window !== "undefined") {
 
         // Avoid redirect loops if we're already on the auth pages
         const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
-        const isOnAuthPage = currentPath.endsWith("/login") || currentPath.endsWith("/register") || currentPath.includes("/login/") || currentPath.includes("/register/");
+        const isOnAuthPage =
+          currentPath.endsWith("/login") ||
+          currentPath.endsWith("/register") ||
+          currentPath.endsWith("/forgot-password") ||
+          currentPath.endsWith("/reset-password") ||
+          currentPath.includes("/login/") ||
+          currentPath.includes("/register/") ||
+          currentPath.includes("/forgot-password") ||
+          currentPath.includes("/reset-password");
         if (!isOnAuthPage) {
           // Redirect to login
           try {

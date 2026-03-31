@@ -27,14 +27,21 @@ use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use App\Services\OrderDeletionService;
+use App\Services\OrderStatusEmailService;
+use App\Support\MailSettingsHelper;
 
 class OrderController extends Controller
 {
   protected $orderDeletionService;
+  protected $orderStatusEmailService;
 
-    public function __construct(OrderDeletionService $orderDeletionService)
+    public function __construct(
+      OrderDeletionService $orderDeletionService,
+      OrderStatusEmailService $orderStatusEmailService
+    )
     {
         $this->orderDeletionService = $orderDeletionService;
+        $this->orderStatusEmailService = $orderStatusEmailService;
     }
   
   public function index()
@@ -931,6 +938,12 @@ class OrderController extends Controller
       }
     });
 
+    if ($oldStatus !== 'Cancelled' && $newStatus === 'Cancelled') {
+      $order->refresh();
+      $order->loadMissing(['customer']);
+      $this->orderStatusEmailService->sendCancelled($order);
+    }
+
     Toastr::success('Order updated successfully!');
     return redirect()->route('order.list');
   }
@@ -1385,6 +1398,19 @@ class OrderController extends Controller
       // Get settings for store information
       $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
 
+      $fromEmail = MailSettingsHelper::fromAddress($settings);
+      $fromName = MailSettingsHelper::fromName($settings);
+      if ($fromName === '') {
+        $fromName = (string) ($settings['company_name'] ?? '');
+      }
+
+      if ($fromEmail === '' || config('mail.default') !== 'smtp') {
+        return response()->json([
+          'success' => false,
+          'message' => 'Complete SMTP credentials and From email in Settings → SMTP before sending mail.',
+        ], 422);
+      }
+
       // Get currency symbol
       $currencySymbol = $settings['currency_symbol'] ?? '£';
 
@@ -1415,10 +1441,6 @@ class OrderController extends Controller
 
       $pdfContent = $dompdf->output();
       $filename = ($order->type === 'CN' ? 'CreditNote' : ($order->type === 'EST' ? 'Order Details' : 'Invoice')) . '_' . $order->order_number . '.pdf';
-
-      // Get company email from settings or use default
-      $fromEmail = $settings['company_email'] ?? config('mail.from.address');
-      $fromName = $settings['company_name'] ?? config('mail.from.name');
 
       // Prepare email subject
       $invoiceType = $order->type === 'CN' ? 'Credit Note' : ($order->type === 'EST' ? 'Order Details' : 'Invoice');

@@ -15,6 +15,7 @@ export default function EarlyRedirect() {
         buildPath("/login"),
         buildPath("/register"),
         buildPath("/forgot-password"),
+        buildPath("/reset-password"),
         buildPath("/forgot-email"),
         buildPath("/payment-result"),
       ]);

@@ -36,10 +36,10 @@
                             <div class="mb-6 form-control-validation">
                                 <label class="form-label" for="mobile">Mobile <span
                                         class="text-danger">*</span></label>
-                                <input type="text" maxlength="10" autocomplete="off"
-                                    onkeypress="return /[0-9]/i.test(event.key)" id="mobile" class="form-control"
-                                    placeholder="Enter mobile no" aria-label="Enter mobile no" name="mobile"
-                                    value="{{ old('mobile') ?? $customer->phone }}" />
+                                <input type="text" maxlength="40" autocomplete="off" id="mobile" class="form-control"
+                                    placeholder="10–20 letters or numbers" aria-label="Enter mobile no" name="mobile"
+                                    value="{{ old('mobile') ?? $customer->phone }}"
+                                    onkeypress="if (event.key.length !== 1) return true; return /^[a-zA-Z0-9]$/i.test(event.key)" />
                                 @error('mobile', 'editCustomer')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror

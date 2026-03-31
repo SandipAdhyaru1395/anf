@@ -312,6 +312,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
 
     Route::middleware('permission:settings.read')->group(function () {
         Route::get('/settings', [SettingController::class, 'viewGeneralSettings'])->name('settings.general');
+        Route::get('/settings/smtp', [SettingController::class, 'viewSmtpSettings'])->name('settings.smtp');
         Route::get('/settings/banner', [SettingController::class, 'viewBannerSettings'])->name('settings.banner');
         Route::get('/settings/maintenance', [SettingController::class, 'viewMaintenanceSettings'])->name('settings.maintenance');
         Route::get('/settings/terms-and-conditions', [SettingController::class, 'viewTermsAndConditions'])->name('settings.termsAndConditions');
@@ -351,6 +352,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
 
     Route::middleware('permission:settings.update')->group(function () {
         Route::post('/settings/general/update', [SettingController::class, 'updateGeneralSettings'])->name('settings.general.update');
+        Route::post('/settings/smtp/update', [SettingController::class, 'updateSmtpSettings'])->name('settings.smtp.update');
         Route::post('/settings/banner/update', [SettingController::class, 'updateBannerSettings'])->name('settings.banner.update');
         Route::post('/settings/maintenance/update', [SettingController::class, 'updateMaintenanceSettings'])->name('settings.maintenance.update');
         Route::post('/settings/terms-and-conditions/update', [SettingController::class, 'updateTermsAndConditions'])->name('settings.termsAndConditions.update');

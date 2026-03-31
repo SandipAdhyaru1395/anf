@@ -9,11 +9,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Concerns\RecordsSyncUpdate;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CustomerPasswordResetMail;
 
-class Customer extends Model
+class Customer extends Model implements CanResetPasswordContract
 {
     use HasFactory, SoftDeletes, HasApiTokens;
     use RecordsSyncUpdate;
+    use CanResetPassword;
 
     protected $table = 'customers';
 
@@ -70,6 +75,11 @@ class Customer extends Model
     public function customerGroup()
     {
         return $this->belongsTo(CustomerGroup::class);
+    }
+
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        Mail::to($this->getEmailForPasswordReset())->queue(new CustomerPasswordResetMail($this, $token));
     }
 }
 

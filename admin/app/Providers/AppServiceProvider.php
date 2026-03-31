@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Vite;
 use Brian2694\Toastr\Facades\Toastr;
 use App\Models\Setting;
+use App\Services\SmtpSettingsMailConfigurator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -49,5 +50,7 @@ class AppServiceProvider extends ServiceProvider
             'variables.ogTitle' => $setting_title,
             'session.lifetime' => ($sessionTimeout && $sessionTimeout > 0) ? $sessionTimeout : 120
         ]);
+
+        $this->app->make(SmtpSettingsMailConfigurator::class)->applyFromDatabase();
     }
 }

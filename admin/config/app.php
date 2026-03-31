@@ -123,6 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Customer storefront (Next.js) base URL
+    |--------------------------------------------------------------------------
+    | Used for password reset and other customer-facing links. Must NOT be the
+    | Laravel API host (APP_URL). Include path if the app is under a subpath
+    | (e.g. http://127.0.0.1/anf/front). Set FRONTEND_URL in .env or frontend_url in settings.
+    */
+    'frontend_url' => env('FRONTEND_URL'),
+
     'aliases' => [
         // Other aliases...
         'Str' => Illuminate\Support\Str::class,

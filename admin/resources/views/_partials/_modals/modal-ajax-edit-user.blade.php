@@ -10,40 +10,58 @@
         </div>
         <form id="ajaxEditUserForm" class="row g-6" onsubmit="return false" method="POST" action="{{ route('user.update') }}">
           @csrf
-          <input type="hidden" name="id" id="id" value="">
+          <input type="hidden" name="id" id="id" value="{{ old('id') }}">
           <div class="col-12 col-md-6 form-control-validation">
             <label class="form-label" for="modalEditUserName">Name</label>
-            <input type="text" id="modalEditUserName" name="modalEditUserName" class="form-control" placeholder="John" value="" />
+            <input type="text" id="modalEditUserName" name="modalEditUserName" class="form-control" placeholder="John" value="{{ old('modalEditUserName') }}" />
+            @error('modalEditUserName', 'editModal')
+              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+            @enderror
           </div>
           <div class="col-12 col-md-6 form-control-validation">
             <label class="form-label" for="modalEditUserEmail">Email</label>
-            <input type="text" id="modalEditUserEmail" name="modalEditUserEmail" class="form-control" placeholder="example@email.com" value="" />
+            <input type="text" id="modalEditUserEmail" name="modalEditUserEmail" class="form-control" placeholder="example@email.com" value="{{ old('modalEditUserEmail') }}" />
+            @error('modalEditUserEmail', 'editModal')
+              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+            @enderror
           </div>
           <div class="col-12 col-md-6 form-control-validation">
             <label class="form-label" for="modalEditUserStatus">Status</label>
             <select id="modalEditUserStatus" name="modalEditUserStatus" class="select2 form-select" aria-label="Default select example">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="active" @selected(old('modalEditUserStatus', 'active') === 'active')>Active</option>
+              <option value="inactive" @selected(old('modalEditUserStatus') === 'inactive')>Inactive</option>
             </select>
+            @error('modalEditUserStatus', 'editModal')
+              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+            @enderror
           </div>
           <div class="col-12 col-md-6">
             <label class="form-label" for="modalEditUserPhone">Phone Number</label>
-            <div class="input-group">
-              <span class="input-group-text">IN (+91)</span>
-              <input type="text" id="modalEditUserPhone" name="modalEditUserPhone" class="form-control phone-number-mask" placeholder="202 555 0111" value="" />
-            </div>
+            <input type="text" id="modalEditUserPhone" name="modalEditUserPhone" class="form-control" placeholder="10–20 letters or numbers" value="{{ old('modalEditUserPhone') }}"
+              onkeypress="if (event.key.length !== 1) return true; return /^[a-zA-Z0-9]$/i.test(event.key)" />
+            @error('modalEditUserPhone', 'editModal')
+              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+            @enderror
           </div>
           <div class="col-12 col-md-6">
             <label class="form-label" for="modalEditUserRole">Role</label>
             <select id="modalEditUserRole" name="modalEditUserRole" class="select2 form-select" data-allow-clear="true">
               <option value="">Select</option>
               @forelse($roles as $role)
-                <option value="{{$role->id}}">{{$role->name}}</option>
+                <option value="{{ $role->id }}" @selected(old('modalEditUserRole') == $role->id)>{{ $role->name }}</option>
               @empty
                 <option>No roles found</option>
               @endforelse
             </select>
+            @error('modalEditUserRole', 'editModal')
+              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+            @enderror
           </div>
+          @error('id', 'editModal')
+            <div class="col-12">
+              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+            </div>
+          @enderror
           <div class="col-12 text-center">
             <button type="submit" class="btn btn-primary me-3">Submit</button>
             <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancel</button>

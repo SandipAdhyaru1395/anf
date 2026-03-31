@@ -722,26 +722,8 @@ document.addEventListener('DOMContentLoaded', function (e) {
     });
   }, 100);
 
-  // Validation & Phone mask
-  const phoneMaskList = document.querySelectorAll('.phone-mask'),
-    addNewUserForm = document.getElementById('addNewUserForm');
+  const addNewUserForm = document.getElementById('addNewUserForm');
 
-  // Phone Number
-  if (phoneMaskList) {
-    phoneMaskList.forEach(function (phoneMask) {
-      phoneMask.addEventListener('input', event => {
-        const cleanValue = event.target.value.replace(/\D/g, '');
-        phoneMask.value = formatGeneral(cleanValue, {
-          blocks: [3, 3, 4],
-          delimiters: [' ', ' ']
-        });
-      });
-      registerCursorTracker({
-        input: phoneMask,
-        delimiter: ' '
-      });
-    });
-  }
   // Add New User Form Validation
   if (addNewUserForm) {
     const fv = FormValidation.formValidation(addNewUserForm, {

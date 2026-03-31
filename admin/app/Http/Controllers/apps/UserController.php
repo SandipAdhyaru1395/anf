@@ -10,6 +10,8 @@ use App\Models\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Services\UserDeletionService;
+use App\Support\PhoneNormalizer;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -105,22 +107,50 @@ class UserController extends Controller
 
   public function update(Request $request)
   {
+    $request->merge([
+      'modalEditUserPhone' => PhoneNormalizer::normalize($request->modalEditUserPhone),
+    ]);
+
+    $validator = Validator::make($request->all(), [
+      'id' => 'required|exists:users,id',
+      'modalEditUserName' => 'required|string|max:255',
+      'modalEditUserEmail' => 'required|email|unique:users,email,' . $request->id,
+      'modalEditUserPhone' => ['nullable', 'min:10', 'max:20', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('users', 'phone')->ignore($request->id)],
+      'modalEditUserStatus' => 'required|in:active,inactive',
+      'modalEditUserRole' => 'nullable|exists:roles,id',
+    ], [
+      'id.required' => 'User is required',
+      'modalEditUserName.required' => 'Name is required',
+      'modalEditUserEmail.required' => 'Email is required',
+      'modalEditUserEmail.email' => 'Must be a valid email',
+      'modalEditUserEmail.unique' => 'Email already exists',
+      'modalEditUserPhone.min' => 'Contact must be at least 10 characters.',
+      'modalEditUserPhone.max' => 'Contact must be at most 20 characters.',
+      'modalEditUserPhone.regex' => 'Contact must contain only letters and numbers.',
+      'modalEditUserPhone.unique' => 'This contact number is already in use',
+      'modalEditUserStatus.required' => 'Status is required',
+    ]);
+
+    if ($validator->fails()) {
+      return redirect()->back()->withErrors($validator, 'editModal')->withInput();
+    }
 
     $user = User::findOrFail($request->id);
 
-    if ($user->role_id != 1) {
-
-      $user->name = $request->modalEditUserName;
-      $user->email = $request->modalEditUserEmail;
-      $user->status = $request->modalEditUserStatus;
-      $user->phone = $request->modalEditUserPhone;
-      $user->role_id = $request->modalEditUserRole;
-      $user->save();
+    if ($user->role_id == 1) {
+      Toastr::error('Super admin cannot be updated from this form.');
+      return redirect()->back();
     }
+
+    $user->name = $request->modalEditUserName;
+    $user->email = $request->modalEditUserEmail;
+    $user->status = $request->modalEditUserStatus;
+    $user->phone = $request->modalEditUserPhone;
+    $user->role_id = $request->modalEditUserRole;
+    $user->save();
 
     Toastr::success('User updated successfully!');
     return redirect()->back();
-
   }
 
   public function updatePassword(Request $request)
@@ -165,10 +195,14 @@ class UserController extends Controller
 
   public function create(Request $request)
   {
+    $request->merge([
+      'modalAddUserPhone' => PhoneNormalizer::normalize($request->modalAddUserPhone),
+    ]);
+
     $validator = Validator::make($request->all(), [
       'modalAddUserName' => 'required',
       'modalAddUserEmail' => 'required|email|unique:users,email',
-      'modalAddUserPhone' => 'nullable|unique:users,phone|digits:10',
+      'modalAddUserPhone' => ['nullable', 'min:10', 'max:20', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('users', 'phone')],
       'modalAddUserStatus' => 'required',
       'newPassword' => 'required',
     ], [
@@ -176,8 +210,10 @@ class UserController extends Controller
       'modalAddUserEmail.required' => 'Email is required',
       'modalAddUserEmail.email' => 'Must be valid email',
       'modalAddUserEmail.unique' => 'Email already exists',
-      'modalAddUserPhone.unique' => 'Number already exists',
-      'modalAddUserPhone.digits' => 'Number must be 10 digits',
+      'modalAddUserPhone.min' => 'Contact must be at least 10 characters.',
+      'modalAddUserPhone.max' => 'Contact must be at most 20 characters.',
+      'modalAddUserPhone.regex' => 'Contact must contain only letters and numbers.',
+      'modalAddUserPhone.unique' => 'This contact number is already in use',
       'modalAddUserStatus.required' => 'Status is required',
       'newPassword.required' => 'Password is required',
     ]);

@@ -145,7 +145,7 @@ export default function Login() {
               })}
             />
             <p className="text-[13px] text-[#3D495E] font-light [font-family:Roboto]">
-              Use your existing Aquavape login details.
+              Use your existing {settings?.company_title || "shop"} login details.
             </p>
           </div>
 

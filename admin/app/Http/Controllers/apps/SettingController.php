@@ -22,6 +22,7 @@ use App\Models\Unit;
 use App\Models\Currency;
 use App\Models\Brand;
 use App\Services\ApplicationLogTailReader;
+use App\Services\SmtpSettingsMailConfigurator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
@@ -57,6 +58,63 @@ class SettingController extends Controller
       }
     }
     return view('content.settings.general', compact('setting', 'currencies', 'brands', 'selectedLeadingBrands'));
+  }
+
+  public function viewSmtpSettings()
+  {
+    $setting = Setting::all()->pluck('value', 'key');
+
+    return view('content.settings.smtp', compact('setting'));
+  }
+
+  public function updateSmtpSettings(Request $request)
+  {
+    $hasStoredPassword = (bool) Setting::where('key', 'smtp_password')->value('value');
+
+    $validated = $request->validate([
+      'smtp_host' => ['required', 'string', 'max:255'],
+      'smtp_port' => ['required', 'integer', 'min:1', 'max:65535'],
+      'smtp_username' => ['required', 'string', 'max:255'],
+      'smtp_password' => $hasStoredPassword
+        ? ['nullable', 'string', 'max:512']
+        : ['required', 'string', 'max:512'],
+      'smtp_encryption' => ['nullable', 'string', 'max:10'],
+      'mail_from_address' => ['required', 'email', 'max:255'],
+      'mail_from_name' => ['nullable', 'string', 'max:255'],
+    ]);
+
+    $enc = strtolower(trim((string) $request->input('smtp_encryption', '')));
+    if (! in_array($enc, ['tls', 'ssl'], true)) {
+      $enc = '';
+    }
+
+    Setting::updateOrCreate(['key' => 'smtp_host'], ['value' => trim($validated['smtp_host'])]);
+    Setting::updateOrCreate(['key' => 'smtp_port'], ['value' => (string) $validated['smtp_port']]);
+    Setting::updateOrCreate(['key' => 'smtp_username'], ['value' => trim($validated['smtp_username'])]);
+    Setting::updateOrCreate(['key' => 'smtp_encryption'], ['value' => $enc]);
+    Setting::updateOrCreate(['key' => 'mail_from_address'], ['value' => trim($validated['mail_from_address'])]);
+    Setting::updateOrCreate(
+      ['key' => 'mail_from_name'],
+      ['value' => trim((string) ($validated['mail_from_name'] ?? ''))]
+    );
+
+    $newPassword = trim((string) $request->input('smtp_password', ''));
+    if ($newPassword !== '') {
+      Setting::updateOrCreate(
+        ['key' => 'smtp_password'],
+        ['value' => Crypt::encryptString($newPassword)]
+      );
+    }
+
+    app(SmtpSettingsMailConfigurator::class)->applyFromDatabase();
+
+    try {
+      Artisan::call('queue:restart');
+    } catch (\Throwable) {
+    }
+
+    Toastr::success('SMTP settings updated successfully');
+    return redirect()->route('settings.smtp');
   }
 
   public function viewDeliveryMethod()

@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\PlanufacWebhookController;
 // Public endpoints
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::get('/settings', [SettingController::class, 'show']);
 // Protected endpoints (blocked when store maintenance is on)

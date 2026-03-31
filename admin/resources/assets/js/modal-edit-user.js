@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function (e) {
   (function () {
     // variables
     const modalEditUserTaxID = document.querySelector('.modal-edit-tax-id');
-    const modalEditUserPhone = document.querySelector('.phone-number-mask');
 
     // Prefix
     if (modalEditUserTaxID) {
@@ -42,22 +41,6 @@ document.addEventListener('DOMContentLoaded', function (e) {
         modalEditUserTaxID.value = formatGeneral(event.target.value, prefixOption);
       });
     }
-
-    // Phone Number Input Mask
-    if (modalEditUserPhone) {
-      modalEditUserPhone.addEventListener('input', event => {
-        const cleanValue = event.target.value.replace(/\D/g, '');
-        modalEditUserPhone.value = formatGeneral(cleanValue, {
-          blocks: [3, 3, 4],
-          delimiters: [' ', ' ']
-        });
-      });
-      registerCursorTracker({
-        input: modalEditUserPhone,
-        delimiter: ' '
-      });
-    }
-
 
     // Edit user form validation
     const editUserFormEl = document.getElementById('editUserForm');

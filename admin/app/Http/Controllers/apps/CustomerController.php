@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
 use App\Models\Address;
 use App\Helpers\Helpers;
@@ -16,12 +17,21 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Yajra\DataTables\Facades\DataTables;
+use App\Services\CustomerWelcomeEmailService;
+use App\Support\PhoneNormalizer;
+use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
   use BulkDeletes;
 
   protected $model = Customer::class;
+  protected $customerWelcomeEmailService;
+
+  public function __construct(CustomerWelcomeEmailService $customerWelcomeEmailService)
+  {
+    $this->customerWelcomeEmailService = $customerWelcomeEmailService;
+  }
   
   public function index()
   {
@@ -302,11 +312,14 @@ class CustomerController extends Controller
 
   public function store(Request $request)
   {
+    $request->merge([
+      'mobile' => PhoneNormalizer::normalize($request->mobile) ?? '',
+    ]);
 
     $validator = Validator::make($request->all(), [
       'companyName' => ['required', 'string', 'max:255'],
       'email' => ['required', 'string', 'email', 'max:255', 'unique:customers'],
-      'mobile' => ['required', 'string', 'digits:10', 'unique:customers,phone'],
+      'mobile' => ['required', 'string', 'min:10', 'max:20', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('customers', 'phone')],
       'password' => ['required', 'string', 'min:6'],
       'status' => ['required'],
       'addressLine1' => ['required', 'string', 'max:255'],
@@ -319,7 +332,9 @@ class CustomerController extends Controller
       'password.required' => 'Please enter password',
       'password.min' => 'Password must be more than 6 characters',
       'mobile.required' => 'Please enter mobile number',
-      'mobile.digits' => 'Mobile number must be 10 digits',
+      'mobile.min' => 'Mobile must be at least 10 characters.',
+      'mobile.max' => 'Mobile must be at most 20 characters.',
+      'mobile.regex' => 'Mobile must contain only letters and numbers.',
       'mobile.unique' => 'Mobile number already exists',
       'addressLine1.required' => 'Please enter address line 1',
       'city.required' => 'Please enter city',
@@ -333,13 +348,13 @@ class CustomerController extends Controller
     try {
       DB::beginTransaction();
 
-      Customer::create([
+      $customer = Customer::create([
         'company_name' => $request->companyName,
         'email' => $request->email,
         'phone' => $request->mobile,
         'password' => $request->password, // ✅ hash password
         'approved_at' => now(),
-        'approved_by' => auth()->id(),
+        'approved_by' => Auth::id(),
         'is_active' => $request->status === 'active' ? 1 : 0,
         'company_address_line1' => $request->addressLine1,
         'company_address_line2' => $request->addressLine2,
@@ -352,6 +367,7 @@ class CustomerController extends Controller
       ]);
 
       DB::commit();
+      $this->customerWelcomeEmailService->send($customer);
 
       Toastr::success('Customer created successfully!');
     } catch (\Exception $e) {
@@ -365,11 +381,14 @@ class CustomerController extends Controller
 
   public function update(Request $request)
   {
+    $request->merge([
+      'mobile' => PhoneNormalizer::normalize($request->mobile) ?? '',
+    ]);
 
     $validator = Validator::make($request->all(), [
       'companyName' => ['required', 'string', 'max:255'],
       'email' => ['required', 'string', 'email', 'max:255', 'unique:customers,email,' . $request->id],
-      'mobile' => ['required', 'string', 'digits:10', 'unique:customers,phone,' . $request->id],
+      'mobile' => ['required', 'string', 'min:10', 'max:20', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('customers', 'phone')->ignore($request->id)],
       'password' => ['nullable', 'string', 'min:6'],
       'status' => ['required'],
       'addressLine1' => ['required', 'string', 'max:255'],
@@ -381,7 +400,9 @@ class CustomerController extends Controller
       'email.unique' => 'Email already exists',
       'password.min' => 'Password must be more than 6 characters',
       'mobile.required' => 'Please enter mobile number',
-      'mobile.digits' => 'Mobile number must be 10 digits',
+      'mobile.min' => 'Mobile must be at least 10 characters.',
+      'mobile.max' => 'Mobile must be at most 20 characters.',
+      'mobile.regex' => 'Mobile must contain only letters and numbers.',
       'mobile.unique' => 'Mobile number already exists',
       'addressLine1.required' => 'Please enter address line 1',
       'city.required' => 'Please enter city',

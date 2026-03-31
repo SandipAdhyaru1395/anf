@@ -31,11 +31,9 @@
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label" for="modalAddUserPhone">Phone Number</label>
-                        <div class="input-group">
-                            <span class="input-group-text">IN (+91)</span>
-                            <input type="text" id="modalAddUserPhone" name="modalAddUserPhone"
-                                class="form-control phone-number-mask" placeholder="202 555 0111" />
-                        </div>
+                        <input type="text" id="modalAddUserPhone" name="modalAddUserPhone"
+                            class="form-control" placeholder="10–20 letters or numbers"
+                            onkeypress="if (event.key.length !== 1) return true; return /^[a-zA-Z0-9]$/i.test(event.key)" />
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label" for="modalAddUserRole">Role</label>

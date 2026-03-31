@@ -17,21 +17,28 @@
   @vite(['resources/assets/js/modal-ajax-edit-user.js', 'resources/assets/js/app-user-list.js'])
 
   <script>
-    @if ($errors->addModal->any())
-          document.addEventListener("DOMContentLoaded", function () {
-              let addCustomerOffcanvas = new bootstrap.Offcanvas(document.getElementById('offcanvasCustomerAdd'));
-              addCustomerOffcanvas.show();
-          });
-    @endif
-  
-
-    $(document).ready(function () {
-      @if ($errors->editModal->any())
-            $('#editModal').modal('show');
+    document.addEventListener('DOMContentLoaded', function () {
+      @if ($errors->addModal->any())
+        const addOffcanvasEl = document.getElementById('offcanvasAddUser');
+        if (addOffcanvasEl && typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+          bootstrap.Offcanvas.getOrCreateInstance(addOffcanvasEl).show();
+        }
       @endif
 
-      $('#ajaxEditUserModal').on('show.bs.modal', function (e) {
+      @if ($errors->editModal->any())
+        const editModalEl = document.getElementById('ajaxEditUserModal');
+        if (editModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+          const editModal = bootstrap.Modal.getOrCreateInstance(editModalEl);
+          editModal.show();
+          if (window.jQuery) {
+            window.jQuery(editModalEl).find('.select2').trigger('change');
+          }
+        }
+      @endif
+    });
 
+    $(document).ready(function () {
+      $('#ajaxEditUserModal').on('show.bs.modal', function (e) {
         var id = $(e.relatedTarget).data('id');
 
         if (id) {

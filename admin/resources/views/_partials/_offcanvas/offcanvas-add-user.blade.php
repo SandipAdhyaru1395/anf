@@ -29,8 +29,9 @@
             </div>
             <div class="mb-6">
                 <label class="form-label" for="modalAddUserPhone">Contact</label>
-                <input type="text" id="modalAddUserPhone" class="form-control phone-mask"
-                    placeholder="+1 (609) 988-44-11" aria-label="john.doe@example.com" name="modalAddUserPhone" value="{{ old('modalAddUserPhone') }}"/>
+                <input type="text" id="modalAddUserPhone" class="form-control"
+                    placeholder="10–20 letters or numbers" aria-label="Contact" name="modalAddUserPhone" value="{{ old('modalAddUserPhone') }}"
+                    onkeypress="if (event.key.length !== 1) return true; return /^[a-zA-Z0-9]$/i.test(event.key)" />
                 @error('modalAddUserPhone', 'addModal')
                     <span class="text-danger" role="alert">
                         <strong>{{ $message }}</strong>

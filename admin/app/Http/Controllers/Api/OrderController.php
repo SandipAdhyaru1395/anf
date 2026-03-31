@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Services\WarehouseProductSyncService;
 use App\Services\DnaPaymentsService;
+use App\Services\OrderConfirmationEmailService;
 use Illuminate\Support\Str;
 use App\Jobs\SendPlanufacOrderWebhookJob;
 
@@ -137,7 +138,7 @@ class OrderController extends Controller
         }
     }
 
-    public function store(Request $request, DnaPaymentsService $dnaPayments){
+    public function store(Request $request, DnaPaymentsService $dnaPayments, OrderConfirmationEmailService $orderConfirmationEmailService){
 
         try {
             // Validate the request (server will derive items/totals from cart)
@@ -548,6 +549,7 @@ class OrderController extends Controller
 			}
 
 			SendPlanufacOrderWebhookJob::dispatch($order->id);
+            $orderConfirmationEmailService->sendForOrder($order);
 
 			return response()->json([
                 'success' => true,

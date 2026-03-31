@@ -20,10 +20,11 @@ use DNAPayments\DNAPayments;
 use App\Helpers\Helpers;
 use Illuminate\Support\Facades\Crypt;
 use App\Jobs\SendPlanufacOrderWebhookJob;
+use App\Services\OrderConfirmationEmailService;
 
 class DnaCallbackController extends Controller
 {
-    public function handle(Request $request)
+    public function handle(Request $request, OrderConfirmationEmailService $orderConfirmationEmailService)
     {
         $payload = $request->all();
 
@@ -121,6 +122,7 @@ class DnaCallbackController extends Controller
             }
 
             $planufacOrderWebhookId = null;
+            $createdOrderId = null;
 
             DB::transaction(function () use (
                 $cart,
@@ -144,7 +146,8 @@ class DnaCallbackController extends Controller
                 $cardExpiry,
                 $cardTokenId,
                 $payload,
-                &$planufacOrderWebhookId
+                &$planufacOrderWebhookId,
+                &$createdOrderId
             ) {
                 $subtotal = 0;
                 $units = 0;
@@ -389,10 +392,19 @@ class DnaCallbackController extends Controller
                 }
 
                 $planufacOrderWebhookId = $order->id;
+                $createdOrderId = $order->id;
             });
 
             if ($planufacOrderWebhookId !== null) {
                 SendPlanufacOrderWebhookJob::dispatch($planufacOrderWebhookId);
+            }
+            if ($createdOrderId !== null) {
+                $createdOrder = Order::with(['customer', 'items.product', 'shippingBranch'])
+                    ->whereKey($createdOrderId)
+                    ->first();
+                if ($createdOrder) {
+                    $orderConfirmationEmailService->sendForOrder($createdOrder);
+                }
             }
 
             return;

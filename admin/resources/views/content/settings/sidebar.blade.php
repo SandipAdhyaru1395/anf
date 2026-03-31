@@ -13,6 +13,13 @@
         </a>
       </li>
 
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.smtp') ? 'active' : '' }}"
+           href="{{ route('settings.smtp') }}">
+          <i class="ti tabler-mail me-1"></i> SMTP
+        </a>
+      </li>
+
       <!-- Banner -->
       <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('settings.banner') ? 'active' : '' }}"
@@ -115,6 +122,13 @@
         <a class="nav-link {{ request()->routeIs('settings.general') ? 'active' : '' }}"
            href="{{ route('settings.general') }}">
           General
+        </a>
+      </li>
+
+      <li class="nav-item mb-1">
+        <a class="nav-link {{ request()->routeIs('settings.smtp') ? 'active' : '' }}"
+           href="{{ route('settings.smtp') }}">
+          SMTP
         </a>
       </li>
 

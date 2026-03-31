@@ -8,6 +8,18 @@
 
   const addCustomerForm = document.getElementById('addCustomerForm');
 
+  function normalizeContact(value) {
+    if (value == null || value === '') return '';
+    var s = String(value).trim();
+    if (s === '') return '';
+    s = s.replace(/\s+/g, '');
+    s = s.replace(/^\+/, '');
+    if (s.indexOf('0091') === 0) s = s.slice(4);
+    else if (s.indexOf('91') === 0 && s.length >= 12) s = s.slice(2);
+    s = s.replace(/[^a-zA-Z0-9]/g, '');
+    return s;
+  }
+
   // Add New customer Form Validation
   if (!addCustomerForm) return;
   const fv = FormValidation.formValidation(addCustomerForm, {
@@ -34,13 +46,18 @@
           notEmpty: {
             message: 'Please enter mobile number'
           },
-          numeric: {
-            message: 'The value is not a valid number'
-          },
-          stringLength: {
-            min: 10,
-            max: 10,
-            message: 'Mobile number must be 10 digits'
+          callback: {
+            message: 'Mobile must be at least 10 characters.',
+            callback: function (input) {
+              var n = normalizeContact(input.value);
+              if (n.length > 20) {
+                return { valid: false, message: 'Mobile must be at most 20 characters.' };
+              }
+              if (n.length < 10) {
+                return { valid: false, message: 'Mobile must be at least 10 characters.' };
+              }
+              return { valid: true };
+            }
           }
         },
       },

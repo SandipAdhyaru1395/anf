@@ -8,6 +8,12 @@ import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { Thumbnail } from "./thumbnail";
 
+function contactSetValueAs(v: unknown): string {
+  return String(v ?? "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 20);
+}
+
 export default function Register() {
   const router = useRouter();
   const { toast } = useToast();
@@ -71,6 +77,8 @@ export default function Register() {
           const msg = Array.isArray(msgs) ? msgs[0] : String(msgs);
           const map: Record<string, string> = {
             companyName: "company",
+            addressLine1: "invoice1",
+            addressLine2: "invoice2",
             zip_code: "postcode",
           };
           const target = map[field] || field;
@@ -135,18 +143,23 @@ export default function Register() {
                   placeholder="Invoice address line 1"
                   className={inputStyle}
                 />
+                {errors.invoice1 && <p className="text-red-500 text-[10px]">{errors.invoice1.message as string}</p>}
                 <input {...register("invoice2")} placeholder="Invoice address line 2" className={inputStyle} />
+                {errors.invoice2 && <p className="text-red-500 text-[10px]">{errors.invoice2.message as string}</p>}
                 <input
                   {...register("city", { required: "City is required" })}
                   placeholder="Invoice address city"
                   className={inputStyle}
                 />
+                {errors.city && <p className="text-red-500 text-[10px]">{errors.city.message as string}</p>}
                 <input {...register("state")} placeholder="Invoice address county" className={inputStyle} />
+                {errors.state && <p className="text-red-500 text-[10px]">{errors.state.message as string}</p>}
                 <input
                   {...register("postcode", { required: "Postcode is required" })}
                   placeholder="Invoice address postcode"
                   className={inputStyle}
                 />
+                {errors.postcode && <p className="text-red-500 text-[10px]">{errors.postcode.message as string}</p>}
               </div>
             </div>
 
@@ -154,9 +167,34 @@ export default function Register() {
             <div className="flex flex-col gap-1">
               <label className={sectionTitleStyle} style={{fontWeight:"500"}}>Contact Number</label>
               <input
-                {...register("mobile", { required: "Contact number is required" })}
-                placeholder="Please enter your contact number"
+                type="text"
+                inputMode="text"
+                autoComplete="tel"
+                maxLength={20}
+                placeholder="10–20 letters or numbers"
                 className={inputStyle}
+                onKeyDown={(e) => {
+                  if (e.ctrlKey || e.metaKey || e.altKey) return;
+                  if (e.key.length === 1 && !/^[a-zA-Z0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                {...register("mobile", {
+                  required: "Contact number is required",
+                  setValueAs: contactSetValueAs,
+                  minLength: {
+                    value: 10,
+                    message: "Contact must be at least 10 characters.",
+                  },
+                  maxLength: {
+                    value: 20,
+                    message: "Contact must be at most 20 characters.",
+                  },
+                  pattern: {
+                    value: /^[a-zA-Z0-9]+$/,
+                    message: "Contact must contain only letters and numbers.",
+                  },
+                })}
               />
               {errors.mobile && <p className="text-red-500 text-[10px]">{errors.mobile.message as string}</p>}
             </div>
@@ -173,12 +211,14 @@ export default function Register() {
       placeholder="Please enter your email"
       className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5] focus:ring-1 focus:ring-[#4A90E5]`}  style={{ border:"1px solid #4A90E5" }}
     />
+    {errors.email && <p className="text-red-500 text-[10px]">{errors.email.message as string}</p>}
     <input
       type="password"
       {...register("password", { required: "Password is required", minLength: 6 })}
       placeholder="Create password"
       className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5] focus:ring-1 focus:ring-[#4A90E5]`} style={{ border:"1px solid #4A90E5" }}
     />
+    {errors.password && <p className="text-red-500 text-[10px]">{errors.password.message as string}</p>}
   </div>
 </div>
           </div>
