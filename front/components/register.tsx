@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildPath, getBasePath, publicAssetUrl } from "@/lib/utils";
+import { buildPath, publicAssetUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
@@ -118,17 +118,15 @@ export default function Register() {
       <div 
         className="relative w-[402px] h-[874px] bg-[#FAFBFD] flex flex-col overflow-hidden shadow-sm"
       >
-        <img
-          src={buildPath("/background.svg")}
-          alt=""
-          aria-hidden="true"
-          className="absolute left-0 right-0 bottom-0 w-full object-cover pointer-events-none z-0"
-          style={{ top: "215px", height: "calc(100% - 215px)" }}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "/background.svg";
-          }}
-        />
+        <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "auto 90%",
+              backgroundPosition: "top 60px right",
+            }}
+          />
         
         {/* Background Overlay Color (#4A90E50D) */}
         <div 
