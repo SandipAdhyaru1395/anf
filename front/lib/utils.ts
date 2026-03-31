@@ -40,7 +40,7 @@ export function buildPath(relativePath: string): string {
 /** URL path for static files in `/public` (e.g. `/background.svg` vs `/anf/front/background.svg`). */
 export function publicAssetUrl(assetPath: string): string {
   const p = (assetPath || "").replace(/^\/+/, "")
-  return buildPath(`/${p}`)
+  return getBasePath() + `/${p}`
 }
 
 /**
