@@ -119,7 +119,7 @@ export default function Register() {
         className="relative w-[402px] h-[874px] bg-[#FAFBFD] flex flex-col overflow-hidden shadow-sm"
       >
         <img
-          src={getBasePath() + "/background.svg"}
+          src={buildPath("/background.svg")}
           alt=""
           aria-hidden="true"
           className="absolute left-0 right-0 bottom-0 w-full object-cover pointer-events-none z-0"
