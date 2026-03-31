@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildPath, publicAssetUrl } from "@/lib/utils";
+import { buildPath, getBasePath, publicAssetUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
@@ -119,7 +119,7 @@ export default function Register() {
         className="relative w-[402px] h-[874px] bg-[#FAFBFD] flex flex-col overflow-hidden shadow-sm"
       >
         <img
-          src={publicAssetUrl("background.svg")}
+          src={getBasePath() + "/background.svg"}
           alt=""
           aria-hidden="true"
           className="absolute left-0 right-0 bottom-0 w-full object-cover pointer-events-none z-0"
