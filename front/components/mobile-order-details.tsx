@@ -30,6 +30,14 @@ type Address = {
   country?: string | null;
 };
 
+type OrderPayment = {
+  date?: string | null;
+  reference_no?: string | null;
+  card_brand?: string | null;
+  card_last4?: string | null;
+  card_expiry?: string | null;
+};
+
 type OrderDetails = {
   order_number: string;
   ordered_at: string;
@@ -49,6 +57,7 @@ type OrderDetails = {
   company_name?: string | null;
   branch_name?: string | null;
   address: Address;
+  payments?: OrderPayment[];
   items: Array<{
     product_id: number;
     product_name?: string | null;
@@ -72,6 +81,20 @@ function formatStatusLabel(status: string): string {
     .replace(/_/g, " ")
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatPaymentDate(iso: string | null | undefined): string {
+  const s = String(iso || "").trim();
+  if (!s) return "—";
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function statusBadgeClass(status: string): string {
@@ -263,6 +286,47 @@ export function MobileOrderDetails({
 
               <div className="rounded-[12px] border border-[#E4E7F0] bg-white px-4 py-4 shadow-sm">
                 <h3 className="mb-3 text-[14px] font-bold text-[#4E5667]">Payment</h3>
+                <div
+                  className={`mb-3 space-y-2 text-[12px] text-[#4E5667] ${Array.isArray(order.payments) && order.payments.length > 0 ? "" : "border-b border-[#E8EDF5] pb-3"}`}
+                >
+                  <div className="flex justify-between gap-3">
+                    <span className="shrink-0 text-[#8F98AD]">Status</span>
+                    <span className="text-right font-medium">{formatStatusLabel(order.payment_status)}</span>
+                  </div>
+                </div>
+                {(() => {
+                  const p = Array.isArray(order.payments) && order.payments.length > 0 ? order.payments[0] : null;
+                  const rowClass = "mb-3 space-y-2 border-b border-[#E8EDF5] pb-3 text-[12px] text-[#4E5667]";
+                  if (!p) {
+                    return null;
+                  }
+                  return (
+                    <div className={rowClass}>
+                      <div className="flex justify-between gap-3">
+                        <span className="shrink-0 text-[#8F98AD]">Paid on</span>
+                        <span className="text-right font-medium">{formatPaymentDate(p.date)}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="shrink-0 text-[#8F98AD]">Payment reference</span>
+                        <span className="text-right font-medium">{p.reference_no ?? "—"}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="shrink-0 text-[#8F98AD]">Card brand</span>
+                        <span className="text-right font-medium">{p.card_brand ?? "—"}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="shrink-0 text-[#8F98AD]">Card number</span>
+                        <span className="text-right font-medium" dir="ltr">
+                          {p.card_last4 ? `•••• ${p.card_last4}` : "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="shrink-0 text-[#8F98AD]">Expires</span>
+                        <span className="text-right font-medium">{p.card_expiry ?? "—"}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="space-y-2 text-[13px] text-[#4E5667]">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
