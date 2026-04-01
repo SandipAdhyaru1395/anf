@@ -278,7 +278,6 @@ class DnaCallbackController extends Controller
                 $paymentStatus = 'Paid';
 
                 $isPayByBank = (isset($payload['paymentMethod']) && strtolower((string) $payload['paymentMethod']) === 'ecospend');
-                $checkoutMode = $isPayByBank ? 'gateway_bank' : 'gateway';
 
                 $order = Order::create([
                     'order_number' => $orderNumber,
@@ -297,7 +296,6 @@ class DnaCallbackController extends Controller
                     'items_count' => count($items),
                     'payment_terms' => 'net_30',
                     'payment_status' => $paymentStatus,
-                    'checkout_payment_mode' => $checkoutMode,
                     'outstanding_amount' => $outstandingAmount,
                     'estimated_delivery_date' => now()->addDays(7),
                     'status' => 'New',

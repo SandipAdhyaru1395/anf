@@ -485,7 +485,6 @@ class OrderController extends Controller
                 'items_count' => count($items),
                 'payment_terms' => 'net_30',
 				'payment_status' => $paymentStatus,
-                'checkout_payment_mode' => $paymentMode === 'pay_later' ? 'pay_later' : null,
 				'outstanding_amount' => $outstandingAmount,
                 'estimated_delivery_date' => now()->addDays(7),
                 'status' => 'New',

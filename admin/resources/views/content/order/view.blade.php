@@ -199,13 +199,13 @@
                 <div class="col-12 col-lg-6">
                     <div class="ov-title mb-2">Payment</div>
                     <div class="ov-info" style="border-top: 0">
-                        <div class="ov-row">
-                            <div class="ov-label">Status</div>
-                            <div class="ov-value">{{ strtoupper($order->payment_status ?? '—') }}</div>
-                        </div>
                         @php
                             $payment = $order->payments->first();
                         @endphp
+                        <div class="ov-row {{ $payment ? '' : 'ov-row-last' }}">
+                            <div class="ov-label">Status</div>
+                            <div class="ov-value">{{ strtoupper($order->payment_status ?? '—') }}</div>
+                        </div>
                         @if ($payment)
                             <div class="ov-row">
                                 <div class="ov-label">Paid on</div>
@@ -226,11 +226,6 @@
                             <div class="ov-row ov-row-last">
                                 <div class="ov-label">Expires</div>
                                 <div class="ov-value">{{ $payment->card_expiry ?: '—' }}</div>
-                            </div>
-                        @else
-                            <div class="ov-row ov-row-last">
-                                <div class="ov-label">Card</div>
-                                <div class="ov-value text-muted">No payment on file</div>
                             </div>
                         @endif
                     </div>
