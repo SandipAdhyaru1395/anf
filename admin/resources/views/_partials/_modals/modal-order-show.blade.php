@@ -703,6 +703,10 @@
                         <td>{{ '#SO'. $order->order_number }}</td>
                     </tr>
                 @endif
+                <tr>
+                    <td>PAYMENT STATUS:</td>
+                    <td>{{ strtoupper($order->payment_status ?? '—') }}</td>
+                </tr>
             </table>
         </div>
     </div>
@@ -803,27 +807,22 @@
         </table>
     </div>
 
-    <!-- Payment Details Table -->
-    @if($order->payments->count() > 0)
-    <h6 class="fw-bold" style="margin-top: 3.5rem;">Payment Details :</h6>
+    @php
+        $invoicePayment = $order->payments->first();
+    @endphp
+    @if($invoicePayment)
+    <h6 class="fw-bold" style="margin-top: 3.5rem;">Payment</h6>
     <table class="payment-details-table mx-auto">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Payment Reference</th>
-                <th>Paid by</th>
-                <th style="text-align: right;">Amount</th>
-            </tr>
-        </thead>
         <tbody>
-            @foreach($order->payments as $payment)
-                <tr>
-                    <td>{{ optional($payment->date)->format('d/m/Y H:i') ?? '' }}</td>
-                    <td>{{ $payment->reference_no ?? 'N/A' }}</td>
-                    <td>{{ $payment->payment_method ?? 'N/A' }}</td>
-                    <td style="text-align: right;">{{ $currencySymbol }}{{ number_format((float) ($payment->amount ?? 0), 2) }}</td>
-                </tr>
-            @endforeach
+            <tr>
+                <td style="font-weight: 600;">Date</td>
+                <td>{{ optional($invoicePayment->date)->format('d/m/Y H:i') ?? '' }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: 600;">Reference</td>
+                <td>{{ $invoicePayment->reference_no ?? 'N/A' }}</td>
+            </tr>
+            @include('_partials._payment_card_table_rows', ['payment' => $invoicePayment, 'singleColumn' => true])
         </tbody>
     </table>
     @endif

@@ -3,7 +3,7 @@
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="viewPaymentsModalTitle">VIEW PAYMENTS</h5>
+        <h5 class="modal-title fw-bold" id="viewPaymentsModalTitle">VIEW PAYMENT</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -13,14 +13,13 @@
               <tr style="background-color: var(--bs-primary); color: white;">
                 <th style="color: white;">Date</th>
                 <th style="color: white;">Reference No</th>
-                <th style="color: white;">Amount</th>
-                <th style="color: white;">Paid by</th>
+                <th style="color: white;">Card</th>
                 <th style="color: white;">Actions</th>
               </tr>
             </thead>
             <tbody id="viewPaymentsTableBody">
               <tr>
-                <td colspan="5" class="text-center">Loading payments...</td>
+                <td colspan="4" class="text-center">Loading payment...</td>
               </tr>
             </tbody>
           </table>

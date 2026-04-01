@@ -10,18 +10,37 @@
   const currencySymbol = window.currencySymbol || '';
   const baseUrl = window.baseUrl || '';
 
+  function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+  }
+
+  function buildPaymentDetails(payment) {
+    const brand = payment.card_brand ? escapeHtml(payment.card_brand) : '—';
+    const num = payment.card_last4 ? ('•••• ' + escapeHtml(payment.card_last4)) : '—';
+    const exp = payment.card_expiry ? escapeHtml(payment.card_expiry) : '—';
+    return (
+      '<div class="small text-break">Card brand: ' + brand + '</div>' +
+      '<div class="small text-break">Card number: ' + num + '</div>' +
+      '<div class="small text-break">Expires: ' + exp + '</div>'
+    );
+  }
+
   // Function to render payments table
   function renderPaymentsTable(payments, currencySymbol) {
     const tableBody = document.getElementById('viewPaymentsTableBody');
     if (!tableBody) return;
     
-    if (!payments || payments.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No payments found</td></tr>';
+    const displayPayments = payments && payments.length ? [payments[0]] : [];
+    if (!displayPayments.length) {
+      tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No payment on file</td></tr>';
       return;
     }
     
     let html = '';
-    payments.forEach(function(payment) {
+    displayPayments.forEach(function(payment) {
       const date = new Date(payment.date);
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -30,25 +49,15 @@
       const minutes = String(date.getMinutes()).padStart(2, '0');
       const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}`;
       
-      const amount = parseFloat(payment.amount || 0);
       const orderId = payment.order_id || '';
-      
-      const note = payment.note || '';
-      const hasNote = note && note.trim() !== '' && note !== '<p><br></p>';
-      // Store note in a way that preserves HTML - use base64 encoding for safety
-      const noteEncoded = hasNote ? btoa(unescape(encodeURIComponent(note))) : '';
-      
+
       html += `
         <tr>
           <td>${formattedDate}</td>
           <td>${payment.reference_no || 'N/A'}</td>
-          <td>${currencySymbol}${amount.toFixed(2)}</td>
-          <td>${payment.payment_method || 'N/A'}</td>
+          <td>${buildPaymentDetails(payment)}</td>
           <td>
             <div class="d-flex gap-2">
-              ${hasNote ? `<button type="button" class="btn btn-icon btn-label-primary view-note-btn" data-note="${noteEncoded}" title="View Note">
-                <i class="icon-base ti tabler-eye"></i>
-              </button>` : ''}
               <button type="button" class="btn btn-icon btn-danger delete-payment-btn" data-payment-id="${payment.id}" data-order-id="${orderId}" title="Delete Payment">
                 <i class="icon-base ti tabler-trash text-white"></i>
               </button>
@@ -99,13 +108,13 @@
     // Update modal title
     const modalTitle = document.getElementById('viewPaymentsModalTitle');
     if (modalTitle) {
-      modalTitle.textContent = `VIEW PAYMENTS (#${orderNumber || 'N/A'})`;
+      modalTitle.textContent = `VIEW PAYMENT (#${orderNumber || 'N/A'})`;
     }
     
     // Show loading state
     const tableBody = document.getElementById('viewPaymentsTableBody');
     if (tableBody) {
-      tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Loading payments...</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Loading payment...</td></tr>';
     }
     
     // Open modal
@@ -128,14 +137,14 @@
         renderPaymentsTable(data.payments, currencySymbol);
       } else {
         if (tableBody) {
-          tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load payments</td></tr>';
+          tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load payments</td></tr>';
         }
       }
     })
     .catch(error => {
       console.error('Error loading payments:', error);
       if (tableBody) {
-        tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading payments</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading payments</td></tr>';
       }
     });
   });

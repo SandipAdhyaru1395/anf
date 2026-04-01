@@ -277,6 +277,9 @@ class DnaCallbackController extends Controller
 
                 $paymentStatus = 'Paid';
 
+                $isPayByBank = (isset($payload['paymentMethod']) && strtolower((string) $payload['paymentMethod']) === 'ecospend');
+                $checkoutMode = $isPayByBank ? 'gateway_bank' : 'gateway';
+
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'type' => 'SO',
@@ -294,6 +297,7 @@ class DnaCallbackController extends Controller
                     'items_count' => count($items),
                     'payment_terms' => 'net_30',
                     'payment_status' => $paymentStatus,
+                    'checkout_payment_mode' => $checkoutMode,
                     'outstanding_amount' => $outstandingAmount,
                     'estimated_delivery_date' => now()->addDays(7),
                     'status' => 'New',
@@ -320,7 +324,6 @@ class DnaCallbackController extends Controller
                     $digits = preg_replace('/\D+/', '', $cardMaskedPan);
                     if ($digits && strlen($digits) >= 4) $cardLast4 = substr($digits, -4);
                 }
-                $isPayByBank = (isset($payload['paymentMethod']) && strtolower((string) $payload['paymentMethod']) === 'ecospend');
                 $paymentNote = $isPayByBank ? 'Pay by bank' : ($dnaScheme ? ('DNA scheme reference: '.$dnaScheme) : null);
 
                 Payment::create([

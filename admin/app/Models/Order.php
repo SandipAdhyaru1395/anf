@@ -28,6 +28,7 @@ class Order extends Model
         'items_count',
         'payment_terms',
         'payment_status',
+        'checkout_payment_mode',
         'outstanding_amount',
         'estimated_delivery_date',
         'status',

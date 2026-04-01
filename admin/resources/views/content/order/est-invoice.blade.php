@@ -421,6 +421,7 @@
             <tr>
                 <td class="addr" aria-label="Payment details">
                     <p><b>Order Date:</b> {{ optional($order->order_date)->format('d/m/Y H:i') ?? optional($order->created_at)->format('d/m/Y H:i') }}</p>
+                    <p><b>Payment status:</b> {{ strtoupper($order->payment_status ?? '—') }}</p>
                 </td>
             </tr>
         </table>
@@ -506,26 +507,22 @@
             </tbody>
         </table>
 
-        @if($order->payments && $order->payments->count() > 0)
-        <h4 style="margin-top:35px; margin-bottom:10px;">Payments:</h4>
+        @php
+            $invoicePayment = $order->payments->first();
+        @endphp
+        @if($invoicePayment)
+        <h4 style="margin-top:35px; margin-bottom:10px;">Payment</h4>
         <table class="history">
-            <thead>
-                <tr>
-                    <th style="width:35%">Date</th>
-                    <th style="width:45%">Reference</th>
-                    <th style="width:45%">Paid By</th>
-                    <th style="width:20%">Amount</th>
-                </tr>
-            </thead>
             <tbody>
-                @foreach($order->payments as $payment)
                 <tr>
-                    <td>{{ optional($payment->date)->format('d/m/Y') ?? optional($payment->created_at)->format('d/m/Y') }}</td>
-                    <td>{{ $payment->reference_no ?? 'N/A' }}</td>
-                    <td>{{ $payment->payment_method ?? 'N/A' }}</td>
-                    <td>{{ $currencySymbol }}{{ number_format((float)($payment->amount ?? 0), 2) }}</td>
+                    <td style="width:22%; font-weight:600;">Date</td>
+                    <td>{{ optional($invoicePayment->date)->format('d/m/Y') ?? optional($invoicePayment->created_at)->format('d/m/Y') }}</td>
                 </tr>
-                @endforeach
+                <tr>
+                    <td style="font-weight:600;">Reference</td>
+                    <td>{{ $invoicePayment->reference_no ?? 'N/A' }}</td>
+                </tr>
+                @include('_partials._payment_card_table_rows', ['payment' => $invoicePayment, 'singleColumn' => true])
             </tbody>
         </table>
         @endif

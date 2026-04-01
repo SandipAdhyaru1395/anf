@@ -2125,7 +2125,7 @@ class OrderController extends Controller
     try {
       $order = Order::findOrFail($orderId);
 
-      $payments = \App\Models\Payment::where('order_id', $orderId)
+        $payments = \App\Models\Payment::where('order_id', $orderId)
         ->orderBy('date', 'desc')
         ->get()
         ->map(function ($payment) {
@@ -2137,6 +2137,13 @@ class OrderController extends Controller
             'amount' => (float) $payment->amount,
             'payment_method' => $payment->payment_method,
             'note' => $payment->note,
+            'card_brand' => $payment->card_brand,
+            'card_last4' => $payment->card_last4,
+            'card_expiry' => $payment->card_expiry,
+            'card_country' => $payment->card_country,
+            'dna_transaction_id' => $payment->dna_transaction_id,
+            'dna_rrn' => $payment->dna_rrn,
+            'dna_scheme_reference' => $payment->dna_scheme_reference,
           ];
         });
 

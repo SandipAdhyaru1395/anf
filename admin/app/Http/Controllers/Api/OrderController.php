@@ -22,7 +22,6 @@ use App\Services\DnaPaymentsService;
 use App\Services\OrderConfirmationEmailService;
 use Illuminate\Support\Str;
 use App\Jobs\SendPlanufacOrderWebhookJob;
-
 class OrderController extends Controller
 {
     
@@ -63,7 +62,7 @@ class OrderController extends Controller
     public function show(Request $request, string $orderNumber)
     {
         $setting = Helpers::setting();
-        $order = Order::with(['items', 'customer'])
+        $order = Order::with(['items', 'customer', 'payments'])
             ->where('order_number', $orderNumber)
             ->where('customer_id', $request->user()->id)
             ->where('type', '!=', 'EST')
@@ -75,6 +74,16 @@ class OrderController extends Controller
                 'message' => 'Order not found',
             ], 404);
         }
+
+        $paymentsPayload = $order->payments->map(function ($p) {
+            return [
+                'date' => $p->date ? $p->date->toIso8601String() : null,
+                'reference_no' => $p->reference_no,
+                'card_brand' => $p->card_brand,
+                'card_last4' => $p->card_last4,
+                'card_expiry' => $p->card_expiry,
+            ];
+        })->values()->all();
 
         $items = $order->items()->with('product')->get()->map(function(OrderItem $item) {
             $image = optional($item->product)->image_url;
@@ -114,6 +123,7 @@ class OrderController extends Controller
                     'country' => $order->country,
                 ],
                 'items' => $items,
+                'payments' => $paymentsPayload,
             ],
         ]);
     }
@@ -475,6 +485,7 @@ class OrderController extends Controller
                 'items_count' => count($items),
                 'payment_terms' => 'net_30',
 				'payment_status' => $paymentStatus,
+                'checkout_payment_mode' => $paymentMode === 'pay_later' ? 'pay_later' : null,
 				'outstanding_amount' => $outstandingAmount,
                 'estimated_delivery_date' => now()->addDays(7),
                 'status' => 'New',

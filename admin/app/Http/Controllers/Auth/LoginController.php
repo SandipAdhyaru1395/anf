@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -92,7 +93,14 @@ public function login(Request $request)
     Auth::login($user, $remember);
     $request->session()->regenerate();
 
-    return redirect()->intended(route('dashboard.read'));
+    $hasOrderReadPermission = Permission::where('role_id', Auth::user()->role_id)
+        ->where('route', 'order.read')->exists();
+
+    if ($hasOrderReadPermission || Auth::user()->role_id == 1) {
+        return redirect()->intended(route('order.list'));
+    } else {
+        return redirect()->intended(route('dashboard.read'));
+    }
 }
 
 
