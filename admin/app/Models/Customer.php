@@ -11,6 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Models\Concerns\RecordsSyncUpdate;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CustomerPasswordResetMail;
 
@@ -86,7 +87,14 @@ class Customer extends Model implements CanResetPasswordContract
 
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
-        Mail::to($this->getEmailForPasswordReset())->queue(new CustomerPasswordResetMail($this, $token));
+        try {
+            Mail::to($this->getEmailForPasswordReset())->queue(new CustomerPasswordResetMail($this, $token));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to queue customer password reset email', [
+                'customer_id' => $this->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 }
 

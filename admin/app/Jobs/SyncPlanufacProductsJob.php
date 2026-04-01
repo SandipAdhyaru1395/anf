@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SyncPlanufacProductsJob implements ShouldQueue
 {
@@ -18,9 +19,15 @@ class SyncPlanufacProductsJob implements ShouldQueue
 
     public function handle(): void
     {
-        $client = new PlanufacClient();
-        $service = new PlanufacProductSyncService($client);
-        $service->syncAll(20);
+        try {
+            $client = new PlanufacClient();
+            $service = new PlanufacProductSyncService($client);
+            $service->syncAll(20);
+        } catch (\Throwable $e) {
+            Log::error('Planufac product sync job failed', [
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 }
 

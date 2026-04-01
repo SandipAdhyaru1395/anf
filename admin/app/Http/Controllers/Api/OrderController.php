@@ -22,6 +22,8 @@ use App\Services\DnaPaymentsService;
 use App\Services\OrderConfirmationEmailService;
 use Illuminate\Support\Str;
 use App\Jobs\SendPlanufacOrderWebhookJob;
+use Illuminate\Support\Facades\Log;
+
 class OrderController extends Controller
 {
     
@@ -558,7 +560,14 @@ class OrderController extends Controller
 				]);
 			}
 
-			SendPlanufacOrderWebhookJob::dispatch($order->id);
+			try {
+				SendPlanufacOrderWebhookJob::dispatch($order->id);
+			} catch (\Throwable $e) {
+				Log::warning('Planufac order webhook dispatch failed', [
+					'order_id' => $order->id,
+					'message' => $e->getMessage(),
+				]);
+			}
             $orderConfirmationEmailService->sendForOrder($order);
 
 			return response()->json([

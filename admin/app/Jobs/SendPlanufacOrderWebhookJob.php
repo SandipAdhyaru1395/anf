@@ -143,7 +143,6 @@ class SendPlanufacOrderWebhookJob implements ShouldQueue
                 'url' => $url,
                 'message' => $e->getMessage(),
             ]);
-            throw $e;
         }
     }
 }

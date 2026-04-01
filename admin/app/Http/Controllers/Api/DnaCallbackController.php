@@ -397,7 +397,14 @@ class DnaCallbackController extends Controller
             });
 
             if ($planufacOrderWebhookId !== null) {
-                SendPlanufacOrderWebhookJob::dispatch($planufacOrderWebhookId);
+                try {
+                    SendPlanufacOrderWebhookJob::dispatch($planufacOrderWebhookId);
+                } catch (\Throwable $e) {
+                    Log::warning('Planufac order webhook dispatch failed', [
+                        'order_id' => $planufacOrderWebhookId,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
             }
             if ($createdOrderId !== null) {
                 $createdOrder = Order::with(['customer', 'items.product', 'shippingBranch'])
