@@ -1534,7 +1534,7 @@ class ProductController extends Controller
   }
 
   /**
-   * CSV: Name, SKU, Image, Unit Price, Step Qty, then one column per price list (header = list name).
+   * CSV: SKU, Unit Price, Image, then one column per price list (header = list name).
    * Rows match by SKU; unknown SKUs are skipped. Missing price lists are created.
    */
   public function importPricelist(Request $request)
@@ -1575,45 +1575,38 @@ class ProductController extends Controller
       }
 
       $headers = array_shift($rows);
-      if (empty($headers) || count($headers) < 5) {
-        Toastr::error('The CSV must start with a header row containing at least: Name, SKU, Image, Unit Price, Step Qty, plus optional price list columns.');
+      if (empty($headers) || count($headers) < 3) {
+        Toastr::error('The CSV must start with a header row containing at least: SKU, Unit Price, Image, plus optional price list columns.');
         return redirect()->back();
       }
 
-      $normalizedFirstFive = [];
-      for ($i = 0; $i < 5; $i++) {
+      $normalizedFirstThree = [];
+      for ($i = 0; $i < 3; $i++) {
         $h = preg_replace('/\x{FEFF}/u', '', (string) ($headers[$i] ?? ''));
         $h = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $h);
-        $normalizedFirstFive[$i] = strtolower(trim(preg_replace('/\s+/', ' ', $h)));
+        $normalizedFirstThree[$i] = strtolower(trim(preg_replace('/\s+/', ' ', $h)));
       }
 
       $expected = [
-        ['name'],
         ['sku'],
-        ['image'],
         ['unit price', 'unitprice'],
-        ['step qty', 'step quantity', 'stepqty'],
+        ['image'],
       ];
 
       $headerOk = true;
-      for ($i = 0; $i < 5; $i++) {
-        $h = $normalizedFirstFive[$i];
+      for ($i = 0; $i < 3; $i++) {
+        $h = $normalizedFirstThree[$i];
         if ($h === '') {
           $headerOk = false;
           break;
         }
-        if ($i === 2) {
+        if ($i === 1) {
+          if (!in_array($h, $expected[1], true) && !(str_contains($h, 'unit') && str_contains($h, 'price'))) {
+            $headerOk = false;
+            break;
+          }
+        } elseif ($i === 2) {
           if (!in_array($h, ['image', 'image url'], true)) {
-            $headerOk = false;
-            break;
-          }
-        } elseif ($i === 3) {
-          if (!in_array($h, $expected[3], true) && !(str_contains($h, 'unit') && str_contains($h, 'price'))) {
-            $headerOk = false;
-            break;
-          }
-        } elseif ($i === 4) {
-          if (!in_array($h, $expected[4], true)) {
             $headerOk = false;
             break;
           }
@@ -1627,7 +1620,7 @@ class ProductController extends Controller
 
       if (!$headerOk) {
         $found = array_values(array_filter(array_map('trim', $headers)));
-        $msg = 'The first five columns must be exactly (in order): Name, SKU, Image, Unit Price, Step Qty.';
+        $msg = 'The first three columns must be exactly (in order): SKU, Unit Price, Image.';
         if (!empty($found)) {
           $msg .= '<br><strong>Found:</strong> ' . implode(', ', array_map(function ($h) {
             return '"' . htmlspecialchars($h, ENT_QUOTES, 'UTF-8') . '"';
@@ -1638,7 +1631,7 @@ class ProductController extends Controller
       }
 
       $priceListSpecs = [];
-      for ($c = 5; $c < count($headers); $c++) {
+      for ($c = 3; $c < count($headers); $c++) {
         $rawName = trim((string) ($headers[$c] ?? ''));
         $rawName = preg_replace('/\x{FEFF}/u', '', $rawName);
         if ($rawName === '') {
@@ -1656,7 +1649,7 @@ class ProductController extends Controller
       DB::beginTransaction();
 
       foreach ($rows as $row) {
-        $sku = isset($row[1]) ? trim((string) $row[1]) : '';
+        $sku = isset($row[0]) ? trim((string) $row[0]) : '';
 
         if ($sku === '' && $this->pricelistRowIsEmpty($row)) {
           continue;
@@ -1675,9 +1668,9 @@ class ProductController extends Controller
 
         $changed = false;
 
-        $nameVal = isset($row[0]) ? trim((string) $row[0]) : '';
-        if ($nameVal !== '') {
-          $product->name = $nameVal;
+        $unitPrice = $this->parseCsvDecimal($row[1] ?? null);
+        if ($unitPrice !== null) {
+          $product->price = $unitPrice;
           $changed = true;
         }
 
@@ -1693,18 +1686,6 @@ class ProductController extends Controller
             $product->image_url = $url;
             $changed = true;
           }
-        }
-
-        $unitPrice = $this->parseCsvDecimal($row[3] ?? null);
-        if ($unitPrice !== null) {
-          $product->price = $unitPrice;
-          $changed = true;
-        }
-
-        $stepQty = $this->parseCsvDecimal($row[4] ?? null);
-        if ($stepQty !== null) {
-          $product->step_quantity = max(1, (int) round($stepQty));
-          $changed = true;
         }
 
         if ($changed) {
@@ -1749,7 +1730,7 @@ class ProductController extends Controller
 
       $parts = [];
       if ($updatedProducts > 0) {
-        $parts[] = "{$updatedProducts} product row(s) had name/image/unit price/step qty updated";
+        $parts[] = "{$updatedProducts} product row(s) had image/unit price updated";
       }
       if ($priceCellsUpdated > 0) {
         $parts[] = "{$priceCellsUpdated} price list price(s) set";
@@ -1779,22 +1760,18 @@ class ProductController extends Controller
   public function downloadPricelistSample()
   {
     $headers = [
-      'Name',
       'SKU',
-      'Image',
       'Unit Price',
-      'Step Qty',
+      'Image',
       'Example Price List A',
       'Example Price List B',
     ];
 
     $sampleData = [
       [
-        'Sample Product',
         '6936330000000',
-        'https://example.com/images/product.jpg',
         '10.50',
-        '1',
+        'https://example.com/images/product.jpg',
         '11.00',
         '9.75',
       ],

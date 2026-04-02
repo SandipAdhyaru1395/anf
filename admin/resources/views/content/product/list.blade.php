@@ -272,7 +272,7 @@
           <div class="mb-4">
             <label class="form-label" for="pricelistFile">Select File <span class="text-danger">*</span></label>
             <input type="file" class="form-control" id="pricelistFile" name="pricelistFile" accept=".csv" required>
-            <div class="form-text">CSV only. First five columns are fixed; each further column is a price list (column header = list name).</div>
+            <div class="form-text">CSV only. First three columns are fixed; each further column is a price list (column header = list name).</div>
             @error('pricelistFile')
               <span class="text-danger" role="alert">
                 <strong>{{ $message }}</strong>
@@ -282,10 +282,10 @@
           <div class="alert alert-info">
             <h6 class="alert-heading">File format</h6>
             <ul class="mb-0">
-              <li><strong>Column order (required):</strong> Name, SKU, Image, Unit Price, Step Qty</li>
-              <li><strong>After Step Qty:</strong> Any extra columns are treated as separate price lists. The header text becomes the price list name (created automatically if it does not exist).</li>
+              <li><strong>Column order (required):</strong> SKU, Unit Price, Image</li>
+              <li><strong>After Image:</strong> Any extra columns are treated as separate price lists. The header text becomes the price list name (created automatically if it does not exist).</li>
               <li><strong>SKU:</strong> Must match an existing product. Rows with unknown SKUs are skipped.</li>
-              <li><strong>Unit Price / Step Qty / list cells:</strong> Numeric values update the product or that list price; leave blank to leave the current value unchanged.</li>
+              <li><strong>Unit Price / list cells:</strong> Numeric values update the product or that list price; leave blank to leave the current value unchanged.</li>
               <li><strong>Image:</strong> Full URL recommended; <code>https://</code> is added when omitted for host-like values.</li>
             </ul>
           </div>
