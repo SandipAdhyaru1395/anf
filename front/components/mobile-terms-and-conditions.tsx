@@ -4,7 +4,7 @@ import { useSettings } from "@/components/settings-provider";
 import { MobilePageHeader } from "@/components/mobile-page-header";
 
 interface MobileTermsAndConditionsProps {
-  onNavigate: (page: string, favorites?: boolean) => void;
+  onNavigate: (page: any, favorites?: boolean) => void;
 }
 
 export function MobileTermsAndConditions({ onNavigate }: MobileTermsAndConditionsProps) {
