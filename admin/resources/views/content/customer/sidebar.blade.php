@@ -49,6 +49,16 @@
               <span class="badge {{ $customer->is_active ? 'bg-label-success' : 'bg-label-danger' }}">{{ $customer->is_active ? 'Active' : 'Inactive' }}</span>
             </li>
             @endif
+            <li class="mb-2">
+              <span class="h6 me-1">Registration:</span>
+              @if(is_null($customer->is_approved))
+                <span class="badge bg-label-warning">Pending approval</span>
+              @elseif((int) ($customer->is_approved ?? 0) === 0)
+                <span class="badge bg-label-danger">Rejected</span>
+              @else
+                <span class="badge bg-label-success">Approved</span>
+              @endif
+            </li>
             @if(!empty($customer->phone))
             <li class="mb-2">
               <span class="h6 me-1">Contact:</span>

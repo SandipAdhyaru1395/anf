@@ -7,7 +7,8 @@ import Image from "next/image";
 
 export default function LandingPage() {
   const { settings } = useSettings();
-  const logoSrc = settings?.company_logo_url;
+  // const logoSrc = settings?.company_logo_url;
+  const logoSrc = "https://aidemo.in/anf/admin/public/storage/settings/EIr5VV7lgIUiUYJFe7cRJrqAr5Mja5DVlp70TcL0.svg";
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isCompactActions, setIsCompactActions] = useState(false);

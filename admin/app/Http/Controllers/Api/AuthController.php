@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\SyncUpdate;
 use Illuminate\Support\Facades\DB;
+use App\Services\CustomerRegistrationAdminNotifyService;
 use App\Services\CustomerWelcomeEmailService;
 use App\Support\PhoneNormalizer;
 use Illuminate\Support\Facades\Password;
@@ -42,6 +43,23 @@ class AuthController extends Controller
 				'success' => false,
 				'message' => 'Invalid credentials',
 			], 401);
+		}
+
+		// Pending must be checked before (int) cast: (int) null === 0 in PHP.
+		if ($customer->is_approved === null) {
+			return response()->json([
+				'success' => false,
+				'code' => 'not_approved',
+				'message' => 'Your account is not approved yet. Please wait for an administrator to approve your registration before signing in.',
+			], 403);
+		}
+
+		if ((int) $customer->is_approved === 0) {
+			return response()->json([
+				'success' => false,
+				'code' => 'rejected',
+				'message' => 'Your registration was not approved. Please contact support if you have questions.',
+			], 403);
 		}
 
 		if (!(int)($customer->is_active ?? 0)) {
@@ -96,7 +114,7 @@ class AuthController extends Controller
 		]);
 	}
 
-    public function register(Request $request, CustomerWelcomeEmailService $customerWelcomeEmailService)
+    public function register(Request $request, CustomerWelcomeEmailService $customerWelcomeEmailService, CustomerRegistrationAdminNotifyService $customerRegistrationAdminNotifyService)
     {
         $request->merge([
             'mobile' => PhoneNormalizer::normalize($request->input('mobile')) ?? '',
@@ -157,7 +175,8 @@ class AuthController extends Controller
             'password' => bcrypt($data['password']),
             'approved_at' => null,
             'approved_by' => null,
-            'is_active' => 1,
+            'is_approved' => null,
+            'is_active' => 0,
             'company_name' => $data['companyName'],
             'company_address_line1' => $data['addressLine1'],
             'company_address_line2' => $data['addressLine2'] ?? null,
@@ -173,7 +192,7 @@ class AuthController extends Controller
             'contact_person_name' => $data['yourName'],
         ]);
         $customerWelcomeEmailService->send($customer);
-    
+        $customerRegistrationAdminNotifyService->send($customer);
 
         return response()->json([
             'success' => true,

@@ -27,16 +27,19 @@ class CustomerWelcomeMail extends Mailable implements ShouldQueue
         $companyTitle = (string) ($settings['company_title'] ?? config('app.name'));
         $companyEmail = MailSettingsHelper::fromAddress($settings);
         $fromName = MailSettingsHelper::fromName($settings);
-        $discountPercent = (string) ($settings['welcome_discount_percent'] ?? '10');
-        $welcomeCode = (string) ($settings['welcome_discount_code'] ?? 'WELCOME10');
+        $greetingName = trim((string) ($this->customer->contact_person_name ?? ''));
+        if ($greetingName === '') {
+            $greetingName = trim((string) ($this->customer->company_name ?? ''));
+        }
+        if ($greetingName === '') {
+            $greetingName = 'Customer';
+        }
 
         $mail = $this
-            ->subject('Welcome to ' . $companyTitle)
+            ->subject('Thank you for your application - ' . $companyTitle)
             ->view('emails.customer-welcome')
             ->with([
-                'user' => (object) ['name' => ($this->customer->company_name ?? 'Customer')],
-                'discountPercent' => $discountPercent,
-                'welcomeCode' => $welcomeCode,
+                'user' => (object) ['name' => $greetingName],
                 'company_title' => $companyTitle,
                 'company_email' => $companyEmail,
             ]);

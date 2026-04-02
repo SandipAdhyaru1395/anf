@@ -81,8 +81,8 @@ export default function Register() {
       });
 
       if (data?.success) {
-        toast({ title: "Registration successful", description: "You can now log in." });
-        setTimeout(() => router.replace(buildPath("/login")), 1200);
+        toast({ title: "Thank you", description: "Your application has been received and we will email you once your account has been approved." });
+        setTimeout(() => router.replace(buildPath("/login")), 3200);
       } else {
         toast({ variant: "destructive", title: "Error", description: data?.message || "Registration failed" });
       }

@@ -81,7 +81,19 @@ export default function Login() {
         setError(message);
       }
     } catch (err: any) {
-      const message = err?.response?.data?.message || "Invalid credentials";
+      const data = err?.response?.data;
+      let message = data?.message || "Invalid credentials";
+      if (data?.code === "not_approved") {
+        message =
+          typeof data?.message === "string" && data.message.trim()
+            ? data.message
+            : "Your account is not approved yet. Please wait for an administrator to approve your registration before signing in.";
+      } else if (data?.code === "rejected") {
+        message =
+          typeof data?.message === "string" && data.message.trim()
+            ? data.message
+            : "Your registration was not approved. Please contact support if you have questions.";
+      }
       setError(message);
     } finally {
       setLoading(false);

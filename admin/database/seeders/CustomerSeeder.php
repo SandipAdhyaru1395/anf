@@ -51,6 +51,8 @@ class CustomerSeeder extends Seeder
                 'stores_serviced_count' => 3,
                 'contact_person_name' => 'Customer One',
                 'is_active' => 1,
+                'is_approved' => 1,
+                'approved_at' => now(),
             ],
             [
                 'email' => 'customer2@example.com',
@@ -70,6 +72,8 @@ class CustomerSeeder extends Seeder
                 'stores_serviced_count' => 1,
                 'contact_person_name' => 'Customer Two',
                 'is_active' => 1,
+                'is_approved' => 1,
+                'approved_at' => now(),
             ],
         ];
 

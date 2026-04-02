@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CustomerApplicationApprovedMail;
 use App\Models\Order;
 use App\Models\Address;
 use App\Helpers\Helpers;
@@ -124,6 +126,7 @@ class CustomerController extends Controller
         'customers.phone',
         'customers.last_login',
         'customers.is_active',
+        'customers.is_approved',
         'customer_groups.name as group_name',
         DB::raw('COALESCE(order_stats.orders_count,0) as orders_count'),
         DB::raw('COALESCE(order_stats.total_spent,0) as total_spent'),
@@ -189,6 +192,12 @@ class CustomerController extends Controller
         return '-';
       })
       ->addColumn('status', function ($row) {
+        if ($row->is_approved === null) {
+          return '<span class="badge-status-new">New</span>';
+        }
+        if ((int) $row->is_approved === 0) {
+          return '<span class="badge-status-rejected">Rejected</span>';
+        }
         $active = (bool) $row->is_active;
         $class = $active ? 'badge-status-active' : 'badge-status-inactive';
         $text = $active ? 'Active' : 'Inactive';
@@ -285,6 +294,61 @@ class CustomerController extends Controller
     ]);
   }
 
+  public function approveRegistration($id)
+  {
+    $customer = Customer::query()->findOrFail($id);
+
+    if (!is_null($customer->is_approved)) {
+      Toastr::warning('This customer is already approved or rejected.');
+      return redirect()->back();
+    }
+
+    $customer->update([
+      'is_approved' => 1,
+      'is_active' => 1,
+      'approved_at' => now(),
+      'approved_by' => Auth::id(),
+    ]);
+
+    $customer->refresh();
+
+    $email = trim((string) ($customer->email ?? ''));
+    if ($email !== '') {
+      try {
+        Mail::to($email)->queue(new CustomerApplicationApprovedMail($customer));
+      } catch (\Throwable $e) {
+        Log::warning('Failed to queue customer application approved email', [
+          'customer_id' => $customer->id,
+          'email' => $email,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    Toastr::success('Customer approved successfully.');
+    return redirect()->back();
+  }
+
+  public function rejectRegistration($id)
+  {
+    $customer = Customer::query()->findOrFail($id);
+
+    if (!is_null($customer->is_approved)) {
+      Toastr::warning('This customer is already approved or rejected.');
+      return redirect()->back();
+    }
+
+    $customer->update([
+      'is_approved' => 0,
+      'is_active' => 0,
+      'approved_at' => null,
+      'approved_by' => null,
+    ]);
+
+    Toastr::warning('Customer registration rejected.');
+    return redirect()->back();
+  }
+
   public function updatePassword(Request $request)
   {
     $validator = Validator::make($request->all(), [
@@ -365,6 +429,7 @@ class CustomerController extends Controller
         'password' => $request->password, // ✅ hash password
         'approved_at' => now(),
         'approved_by' => Auth::id(),
+        'is_approved' => 1,
         'is_active' => $request->status === 'active' ? 1 : 0,
         'company_address_line1' => $request->addressLine1,
         'company_address_line2' => $request->addressLine2,

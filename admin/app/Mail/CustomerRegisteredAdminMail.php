@@ -5,24 +5,20 @@ namespace App\Mail;
 use App\Models\Customer;
 use App\Models\Setting;
 use App\Support\MailSettingsHelper;
-use App\Support\StorefrontUrlHelper;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class CustomerPasswordResetMail extends Mailable implements ShouldQueue
+class CustomerRegisteredAdminMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public Customer $customer;
 
-    public string $token;
-
-    public function __construct(Customer $customer, string $token)
+    public function __construct(Customer $customer)
     {
         $this->customer = $customer;
-        $this->token = $token;
     }
 
     public function build()
@@ -32,30 +28,29 @@ class CustomerPasswordResetMail extends Mailable implements ShouldQueue
         $companyEmail = MailSettingsHelper::fromAddress($settings);
         $fromName = MailSettingsHelper::fromName($settings);
 
-        $name = (string) ($this->customer->company_name ?? 'Customer');
-        $email = (string) ($this->customer->email ?? '');
-        $base = StorefrontUrlHelper::baseUrl($settings);
-        $resetUrl = $base . '/reset-password?' . http_build_query([
-            'token' => $this->token,
-            'email' => $email,
-        ]);
-
-        $expires = (int) config('auth.passwords.customers.expire', 60);
+        $reviewUrl = route('customer.overview', ['id' => $this->customer->id], true);
 
         $mail = $this
-            ->subject('Reset Your Password - ' . $companyTitle)
-            ->view('emails.password-reset')
+            ->subject('New customer registration (pending approval) - ' . $companyTitle)
+            ->view('emails.customer-registered-admin')
             ->with([
-                'user' => (object) ['name' => $name],
-                'token' => $this->token,
-                'resetUrl' => $resetUrl,
-                'expiryMinutes' => $expires,
+                'customer' => $this->customer,
+                'reviewUrl' => $reviewUrl,
                 'company_title' => $companyTitle,
                 'company_email' => $companyEmail,
             ]);
 
         if ($companyEmail !== '') {
             $mail->from($companyEmail, $fromName !== '' ? $fromName : $companyTitle);
+        }
+
+        $custEmail = trim((string) ($this->customer->email ?? ''));
+        if ($custEmail !== '') {
+            $replyName = trim((string) ($this->customer->contact_person_name ?? ''));
+            if ($replyName === '') {
+                $replyName = trim((string) ($this->customer->company_name ?? ''));
+            }
+            $mail->replyTo($custEmail, $replyName !== '' ? $replyName : $custEmail);
         }
 
         return $mail;

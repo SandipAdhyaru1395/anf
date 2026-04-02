@@ -11,18 +11,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class CustomerPasswordResetMail extends Mailable implements ShouldQueue
+class CustomerApplicationApprovedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public Customer $customer;
 
-    public string $token;
-
-    public function __construct(Customer $customer, string $token)
+    public function __construct(Customer $customer)
     {
         $this->customer = $customer;
-        $this->token = $token;
     }
 
     public function build()
@@ -32,24 +29,22 @@ class CustomerPasswordResetMail extends Mailable implements ShouldQueue
         $companyEmail = MailSettingsHelper::fromAddress($settings);
         $fromName = MailSettingsHelper::fromName($settings);
 
-        $name = (string) ($this->customer->company_name ?? 'Customer');
-        $email = (string) ($this->customer->email ?? '');
-        $base = StorefrontUrlHelper::baseUrl($settings);
-        $resetUrl = $base . '/reset-password?' . http_build_query([
-            'token' => $this->token,
-            'email' => $email,
-        ]);
+        $customerName = trim((string) ($this->customer->contact_person_name ?? ''));
+        if ($customerName === '') {
+            $customerName = trim((string) ($this->customer->company_name ?? ''));
+        }
+        if ($customerName === '') {
+            $customerName = 'Customer';
+        }
 
-        $expires = (int) config('auth.passwords.customers.expire', 60);
+        $storefrontUrl = StorefrontUrlHelper::baseUrl($settings);
 
         $mail = $this
-            ->subject('Reset Your Password - ' . $companyTitle)
-            ->view('emails.password-reset')
+            ->subject('Your application has been approved - ' . $companyTitle)
+            ->view('emails.customer-application-approved')
             ->with([
-                'user' => (object) ['name' => $name],
-                'token' => $this->token,
-                'resetUrl' => $resetUrl,
-                'expiryMinutes' => $expires,
+                'customerName' => $customerName,
+                'storefrontUrl' => $storefrontUrl,
                 'company_title' => $companyTitle,
                 'company_email' => $companyEmail,
             ]);

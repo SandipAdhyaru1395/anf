@@ -172,6 +172,24 @@
     font-size: 0.75rem;
     font-weight: 500;
   }
+  /* New = danger (needs attention) */
+  .badge-status-new {
+    background-color: #ff3e1d;
+    color: #fff;
+    padding: 0.35em 0.65em;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  /* Rejected = slate (distinct from danger / active / inactive) */
+  .badge-status-rejected {
+    background-color: #8592a3;
+    color: #fff;
+    padding: 0.35em 0.65em;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
 </style>
 @endsection
 

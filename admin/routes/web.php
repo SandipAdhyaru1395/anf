@@ -219,6 +219,8 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
     });
 
     Route::middleware('permission:customer.write')->group(function () {
+        Route::post('/customer/{id}/approve', [CustomerController::class, 'approveRegistration'])->whereNumber('id')->name('customer.approve');
+        Route::post('/customer/{id}/reject', [CustomerController::class, 'rejectRegistration'])->whereNumber('id')->name('customer.reject');
         Route::delete('/customer/{id}', [CustomerController::class, 'destroy'])->name('customer.destroy');
         Route::post('/customer/update/password', [CustomerController::class, 'updatePassword'])->name('customer.update-password');
         Route::post('/customer/update', [CustomerController::class, 'update'])->name('customer.update');
