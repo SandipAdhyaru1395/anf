@@ -165,4 +165,4 @@ Artisan::command('products:import-sql {path}', function (string $path) {
 
     $this->info("Processed: {$totalProcessed}, Inserted/Updated: {$totalInserted}");
     return 0;
-})->purpose('Import products from SQL dump into products table (maps only related fields)');
+})->purpose('Import new products from SQL dump into products table (maps only related fields)');

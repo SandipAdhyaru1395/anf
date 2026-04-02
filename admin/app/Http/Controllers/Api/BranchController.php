@@ -42,10 +42,12 @@ class BranchController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'address_line1' => 'required|string|max:255',
             'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
             'zip_code' => 'required|string|max:255',
         ], [
             'name.required' => 'Branch name is required',
@@ -67,10 +69,15 @@ class BranchController extends Controller
 
             $user = $request->user();
 
-            $branchData = $request->all();
-            $branchData['customer_id'] = $user->id;
-            
-            $branch = Branch::create($branchData);
+            $data = array_merge($validator->validated(), [
+                'customer_id' => $user->id,
+            ]);
+            $data['contact_name'] = $request->filled('contact_name') ? $request->input('contact_name') : null;
+            if ($request->has('is_default')) {
+                $data['is_default'] = $request->boolean('is_default');
+            }
+
+            $branch = Branch::create($data);
 
             DB::commit();
 
@@ -128,6 +135,7 @@ class BranchController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'address_line1' => 'required|string|max:255',
             'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
@@ -151,7 +159,8 @@ class BranchController extends Controller
         try {
             DB::beginTransaction();
 
-            $updateData = $request->all();
+            $updateData = $validator->validated();
+            $updateData['contact_name'] = $request->filled('contact_name') ? $request->input('contact_name') : null;
             $branch->update($updateData);
 
             DB::commit();

@@ -30,6 +30,8 @@ class CustomerController extends Controller
                 'city' => $user->company_city ?? null,
                 'country' => $user->company_country ?? null,
                 'postcode' => $user->company_zip_code ?? null,
+                'vat_number' => $user->vat_number ?? null,
+                'your_name' => $user->contact_person_name ?? null,
                 'rep_name' => $user?->salesPerson?->name ?? null,
                 'rep_email' => $user?->salesPerson?->email ?? null,
                 'rep_mobile' => $user?->salesPerson?->phone ?? null,
@@ -45,13 +47,16 @@ class CustomerController extends Controller
         $request->validate([
             'company_name' => ['required', 'string', 'max:255'],
             'address_line1' => ['required', 'string', 'max:255'],
+            'address_line2' => ['nullable', 'string', 'max:255'],
             'city' =>  ['required', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:255'],
             'postcode' => ['required', 'string', 'max:255'],
+            'contact_number' => ['nullable', 'string', 'max:50'],
+            'vat_number' => ['nullable', 'string', 'max:100'],
+            'your_name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        // Update customer company name
         $user->update([
             'company_name' => $request->company_name,
             'company_address_line1' => $request->address_line1,
@@ -59,6 +64,9 @@ class CustomerController extends Controller
             'company_city' => $request->city,
             'company_country' => $request->country,
             'company_zip_code' => $request->postcode,
+            'phone' => $request->filled('contact_number') ? $request->contact_number : null,
+            'vat_number' => $request->filled('vat_number') ? $request->vat_number : null,
+            'contact_person_name' => $request->filled('your_name') ? $request->your_name : null,
         ]);
       
 
@@ -77,6 +85,8 @@ class CustomerController extends Controller
                 'city' => $user->company_city ?? null,
                 'country' => $user->company_country ?? null,
                 'postcode' => $user->company_zip_code ?? null,
+                'vat_number' => $user->vat_number ?? null,
+                'your_name' => $user->contact_person_name ?? null,
             ],
         ]);
     }

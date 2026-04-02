@@ -14,6 +14,7 @@ class Branch extends Model
         'is_default_delivery',
         'is_default_billing',
         'name',
+        'contact_name',
         'country',
         'address_line1',
         'address_line2',

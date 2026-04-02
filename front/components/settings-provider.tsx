@@ -22,6 +22,10 @@ type Theme = {
 
 type Settings = {
   company_title?: string | null
+  company_name?: string | null
+  company_address?: string | null
+  company_email?: string | null
+  company_phone?: string | null
   company_logo_url?: string | null
   currency?: string | null
   currency_symbol?: string | null
@@ -104,6 +108,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const v = res?.data?.versions
       const normalized: Settings = normalizeSettingsMediaUrls({
         company_title: s?.company_title ?? null,
+        company_name: typeof s?.company_name === "string" ? s.company_name : s?.company_name != null ? String(s.company_name) : null,
+        company_address: typeof s?.company_address === "string" ? s.company_address : s?.company_address != null ? String(s.company_address) : null,
+        company_email: typeof s?.company_email === "string" ? s.company_email : s?.company_email != null ? String(s.company_email) : null,
+        company_phone: typeof s?.company_phone === "string" ? s.company_phone : s?.company_phone != null ? String(s.company_phone) : null,
         company_logo_url: s?.company_logo_url ?? null,
         currency: s?.currency ?? null,
         currency_symbol: s?.currency_symbol ?? null,
@@ -223,6 +231,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                   city: c.city ?? null,
                   country: c.country ?? null,
                   postcode: c.postcode ?? null,
+                  vat_number: c.vat_number ?? null,
+                  your_name: c.your_name ?? null,
                   rep_name: c.rep_name ?? null,
                   rep_email: c.rep_email ?? null,
                   rep_mobile: c.rep_mobile ?? null,
@@ -287,6 +297,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           }
           if (!cachedSettings.hasOwnProperty('terms_and_conditions')) {
             cachedSettings.terms_and_conditions = null
+          }
+          if (!cachedSettings.hasOwnProperty('company_name')) {
+            cachedSettings.company_name = null
+          }
+          if (!cachedSettings.hasOwnProperty('company_address')) {
+            cachedSettings.company_address = null
+          }
+          if (!cachedSettings.hasOwnProperty('company_email')) {
+            cachedSettings.company_email = null
+          }
+          if (!cachedSettings.hasOwnProperty('company_phone')) {
+            cachedSettings.company_phone = null
           }
           const fixed = normalizeSettingsMediaUrls(cachedSettings as Settings)
           try { sessionStorage.setItem('settings_cache', JSON.stringify(fixed)) } catch {}

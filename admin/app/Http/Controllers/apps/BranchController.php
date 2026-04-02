@@ -23,6 +23,7 @@ class BranchController extends Controller
         $validator = Validator::make($request->all(),[
             'customer_id' => 'required|exists:customers,id',
             'name' => 'required|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
             'address_line1' => 'required|string|max:255',
             'address_line2' => 'nullable|string|max:255',
@@ -46,6 +47,7 @@ class BranchController extends Controller
             $validatedData = $validator->validated();
             $validatedData['is_default_delivery'] = $request->boolean('is_default_delivery');
             $validatedData['is_default_billing'] = $request->boolean('is_default_billing');
+            $validatedData['contact_name'] = $request->filled('contact_name') ? $request->input('contact_name') : null;
 
             $branch = Branch::create($validatedData);
 
@@ -106,6 +108,7 @@ class BranchController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
             'address_line1' => 'required|string|max:255',
             'address_line2' => 'nullable|string|max:255',
@@ -132,6 +135,7 @@ class BranchController extends Controller
             $validatedData = $validator->validated();
             $validatedData['is_default_delivery'] = $request->boolean('is_default_delivery');
             $validatedData['is_default_billing'] = $request->boolean('is_default_billing');
+            $validatedData['contact_name'] = $request->filled('contact_name') ? $request->input('contact_name') : null;
             $branch->update($validatedData);
 
             if ($branch->is_default_delivery) {

@@ -89,8 +89,20 @@
   </div>
 </div>
 
-<!-- Product List Table -->
+<!-- Brand List Table -->
 <div class="card">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <h5 class="mb-0">Brands</h5>
+    <button
+      type="button"
+      class="btn btn-label-secondary"
+      id="btn-sync-planufac-brands"
+      disabled
+      data-sync-url="{{ route('brand.sync.planufac') }}"
+    >
+      <i class="icon-base ti tabler-refresh me-1"></i>Sync ERP
+    </button>
+  </div>
   <div class="card-datatable">
     <table class="datatables-brands table">
       <thead class="border-top">

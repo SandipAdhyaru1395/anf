@@ -11,7 +11,12 @@ use App\Models\Tag;
 use App\traits\BulkDeletes;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Setting;
+use App\Jobs\SyncPlanufacProductsJob;
+use App\Services\Planufac\PlanufacProductSyncService;
 use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
@@ -37,7 +42,8 @@ class BrandController extends Controller
       'brands.id',
       'brands.name as brand',
       'brands.image',
-      'brands.is_active'
+      'brands.is_active',
+      'brands.erp_brand_id',
     ])->with('categories');
 
     return DataTables::eloquent($query)
@@ -80,6 +86,81 @@ class BrandController extends Controller
       ->toJson();
   }
 
+  public function syncPlanufacBrands(Request $request)
+  {
+    try {
+      $validated = $request->validate([
+        'brand_id' => ['required', 'string', 'max:2000'],
+      ]);
+
+      $missing = [];
+      $settings = Setting::whereIn('key', ['planufac_base_url', 'planufac_email', 'planufac_password'])
+        ->get(['key', 'value'])
+        ->pluck('value', 'key');
+
+      $baseUrl = trim((string) ($settings->get('planufac_base_url') ?? ''));
+      $email = trim((string) ($settings->get('planufac_email') ?? ''));
+
+      $passwordEnc = $settings->get('planufac_password');
+      $password = '';
+      if (is_string($passwordEnc) && $passwordEnc !== '') {
+        try {
+          $password = trim((string) Crypt::decryptString($passwordEnc));
+        } catch (\Throwable $e) {
+          $password = '';
+        }
+      }
+
+      if ($baseUrl === '') {
+        $missing[] = 'Base URL';
+      }
+      if ($email === '') {
+        $missing[] = 'Email';
+      }
+      if ($password === '') {
+        $missing[] = 'Password';
+      }
+
+      if (!empty($missing)) {
+        return response()->json([
+          'queued' => false,
+          'message' => 'Planufac ERP is not configured. Missing: ' . implode(', ', $missing) . '. Please set it in Settings → Planufac ERP.',
+        ], 422);
+      }
+
+      $parts = array_values(array_filter(array_map('trim', explode(',', $validated['brand_id'])), static fn ($s) => $s !== ''));
+      if (count($parts) === 0) {
+        return response()->json([
+          'queued' => false,
+          'message' => 'No valid ERP brand IDs in brand_id.',
+        ], 422);
+      }
+
+      foreach ($parts as $p) {
+        if (!ctype_digit($p)) {
+          return response()->json([
+            'queued' => false,
+            'message' => 'Each brand_id value must be a numeric ERP brand ID.',
+          ], 422);
+        }
+      }
+
+      $brandIdCsv = implode(',', $parts);
+
+      SyncPlanufacProductsJob::dispatch($brandIdCsv);
+
+      return response()->json([
+        'queued' => true,
+        'message' => 'Sync started in background for the selected ERP brands. Refresh the product list shortly to see updates.',
+        'last_sync' => Cache::get(PlanufacProductSyncService::CACHE_LAST_SYNC_KEY),
+      ], 202);
+    } catch (\Throwable $e) {
+      return response()->json([
+        'queued' => false,
+        'message' => $e->getMessage(),
+      ], 500);
+    }
+  }
 
   public function changeStatus($id)
   {

@@ -145,7 +145,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Import Products</h5>
+        <h5 class="modal-title">Import New Products</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="importProductForm" method="POST" action="{{ route('product.import') }}" enctype="multipart/form-data">
@@ -205,7 +205,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Import Products</button>
+          <button type="submit" class="btn btn-primary">Import New Products</button>
         </div>
       </form>
     </div>
@@ -252,6 +252,52 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Import Images</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Import Pricelist Modal -->
+<div class="modal fade" id="importPricelistModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Import Pricelist</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="importPricelistForm" method="POST" action="{{ route('product.pricelist.import') }}" enctype="multipart/form-data">
+        @csrf
+        <div class="modal-body">
+          <div class="mb-4">
+            <label class="form-label" for="pricelistFile">Select File <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" id="pricelistFile" name="pricelistFile" accept=".csv" required>
+            <div class="form-text">CSV only. First five columns are fixed; each further column is a price list (column header = list name).</div>
+            @error('pricelistFile')
+              <span class="text-danger" role="alert">
+                <strong>{{ $message }}</strong>
+              </span>
+            @enderror
+          </div>
+          <div class="alert alert-info">
+            <h6 class="alert-heading">File format</h6>
+            <ul class="mb-0">
+              <li><strong>Column order (required):</strong> Name, SKU, Image, Unit Price, Step Qty</li>
+              <li><strong>After Step Qty:</strong> Any extra columns are treated as separate price lists. The header text becomes the price list name (created automatically if it does not exist).</li>
+              <li><strong>SKU:</strong> Must match an existing product. Rows with unknown SKUs are skipped.</li>
+              <li><strong>Unit Price / Step Qty / list cells:</strong> Numeric values update the product or that list price; leave blank to leave the current value unchanged.</li>
+              <li><strong>Image:</strong> Full URL recommended; <code>https://</code> is added when omitted for host-like values.</li>
+            </ul>
+          </div>
+          <div class="mb-3">
+            <a href="{{ route('product.pricelist.import.sample') }}" class="btn btn-sm btn-label-secondary">
+              <i class="icon-base ti tabler-download me-1"></i>Download Sample CSV
+            </a>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Import Pricelist</button>
         </div>
       </form>
     </div>

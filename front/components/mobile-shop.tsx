@@ -925,7 +925,7 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
                       </span>
                     </div>
 
-                    <button
+                    {/* <button
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
@@ -935,7 +935,7 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
                     >
                       <Eye className="h-2.5 w-2.5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
                       Quick View
-                    </button>
+                    </button> */}
                   </div>
                 )
               })}

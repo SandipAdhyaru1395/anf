@@ -15,6 +15,8 @@ type Customer = {
   city?: string | null
   country?: string | null
   postcode?: string | null
+  vat_number?: string | null
+  your_name?: string | null
   rep_name?: string | null
   rep_email?: string | null
   rep_mobile?: string | null
@@ -62,6 +64,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
           city: c.city ?? null,
           country: c.country ?? null,
           postcode: c.postcode ?? null,
+          vat_number: c.vat_number ?? null,
+          your_name: c.your_name ?? null,
           rep_name : c.rep_name ?? null,
           rep_email : c.rep_email ?? null,
           rep_mobile : c.rep_mobile ?? null,

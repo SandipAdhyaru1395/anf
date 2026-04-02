@@ -22,7 +22,7 @@ class PlanufacProductSyncService
      *
      * @return array{inserted:int,updated:int,processed:int,started_at:string,finished_at:string}
      */
-    public function syncAll(int $pageSize = 20): array
+    public function syncAll(int $pageSize = 20, ?string $brandIdCsv = null): array
     {
         $startedAt = Carbon::now();
 
@@ -38,7 +38,7 @@ class PlanufacProductSyncService
         $total = null;
 
         do {
-            $resp = $this->client->listProducts($pageSize, $start);
+            $resp = $this->client->listProducts($pageSize, $start, 'products.name', 'asc', '', $brandIdCsv);
             $items = $resp['items'] ?? [];
             $total = $resp['total'] ?? $total;
 
@@ -49,6 +49,7 @@ class PlanufacProductSyncService
             $now = Carbon::now();
             $rows = [];
             $brandNameByErpId = [];
+            $brandErpIdByProductErpId = [];
             $categoryNameByErpId = [];
 
             foreach ($items as $item) {
@@ -58,6 +59,10 @@ class PlanufacProductSyncService
 
                 $erpId = $this->extractId($item);
                 if ($erpId === null) {
+                    continue;
+                }
+
+                if ($this->hasDiscontinuedTag($item)) {
                     continue;
                 }
 
@@ -77,6 +82,7 @@ class PlanufacProductSyncService
                     ?? $this->extractString($item, ['category_name', 'categoryName', 'group_name', 'groupName']);
 
                 $brandNameByErpId[(string) $erpId] = $brandName;
+                $brandErpIdByProductErpId[(string) $erpId] = $this->extractBrandErpId($item);
                 $categoryNameByErpId[(string) $erpId] = $categoryName;
 
                 $rows[] = [
@@ -148,7 +154,7 @@ class PlanufacProductSyncService
                 }
             }
 
-            $this->syncProductBrandsAndCategories($rows, $brandNameByErpId, $categoryNameByErpId);
+            $this->syncProductBrandsAndCategories($rows, $brandNameByErpId, $brandErpIdByProductErpId, $categoryNameByErpId);
 
             $afterExistingCount = (int) DB::table('products')
                 ->whereIn('planufac_product_id', array_values(array_unique(array_column($rows, 'planufac_product_id'))))
@@ -167,6 +173,20 @@ class PlanufacProductSyncService
         Cache::put(self::CACHE_LAST_SYNC_KEY, $summary, now()->addDays(7));
 
         return $summary;
+    }
+
+    private function hasDiscontinuedTag(array $item): bool
+    {
+        if (!array_key_exists('tags', $item) || !is_array($item['tags'])) {
+            return false;
+        }
+        foreach ($item['tags'] as $tag) {
+            if (is_string($tag) && strcasecmp(trim($tag), 'discontinued') === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function extractId(array $item): ?string
@@ -235,6 +255,43 @@ class PlanufacProductSyncService
         return null;
     }
 
+    /**
+     * Planufac product payload may include top-level brand_id or nested brand.id.
+     */
+    private function extractBrandErpId(array $item): ?int
+    {
+        foreach (['brand_id', 'brandId'] as $k) {
+            if (!array_key_exists($k, $item)) {
+                continue;
+            }
+            $v = $item[$k];
+            if (is_int($v)) {
+                return $v;
+            }
+            if (is_string($v) && $v !== '' && ctype_digit($v)) {
+                return (int) $v;
+            }
+        }
+
+        if (array_key_exists('brand', $item) && is_array($item['brand'])) {
+            $nested = $item['brand'];
+            foreach (['id', 'brand_id'] as $k) {
+                if (!array_key_exists($k, $nested)) {
+                    continue;
+                }
+                $v = $nested[$k];
+                if (is_int($v)) {
+                    return $v;
+                }
+                if (is_string($v) && $v !== '' && ctype_digit($v)) {
+                    return (int) $v;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private function extractNestedName(array $item, string $containerKey, array $nameKeys = ['name']): ?string
     {
         if (!array_key_exists($containerKey, $item) || !is_array($item[$containerKey])) {
@@ -255,7 +312,7 @@ class PlanufacProductSyncService
         return null;
     }
 
-    private function syncProductBrandsAndCategories(array $rows, array $brandNameByErpId, array $categoryNameByErpId): void
+    private function syncProductBrandsAndCategories(array $rows, array $brandNameByErpId, array $brandErpIdByProductErpId, array $categoryNameByErpId): void
     {
         $erpIds = array_values(array_unique(array_column($rows, 'planufac_product_id')));
         if (count($erpIds) === 0) {
@@ -284,8 +341,16 @@ class PlanufacProductSyncService
             $brandId = null;
             if (is_string($brandName) && trim($brandName) !== '') {
                 $brandName = trim($brandName);
+                $erpBrandId = $brandErpIdByProductErpId[(string) $erpId] ?? null;
+
                 if (!array_key_exists($brandName, $brandIdByName)) {
-                    $brand = Brand::withTrashed()->where('name', $brandName)->first();
+                    $brand = null;
+                    if ($erpBrandId !== null) {
+                        $brand = Brand::withTrashed()->where('erp_brand_id', $erpBrandId)->first();
+                    }
+                    if (!$brand) {
+                        $brand = Brand::withTrashed()->where('name', $brandName)->first();
+                    }
                     if (!$brand) {
                         $brand = Brand::create([
                             'name' => $brandName,
@@ -299,6 +364,14 @@ class PlanufacProductSyncService
                     $brandIdByName[$brandName] = (int) $brand->id;
                 }
                 $brandId = $brandIdByName[$brandName];
+
+                if ($erpBrandId !== null) {
+                    Brand::where('id', $brandId)
+                        ->where(function ($q) {
+                            $q->whereNull('erp_brand_id')->orWhere('erp_brand_id', 0);
+                        })
+                        ->update(['erp_brand_id' => $erpBrandId]);
+                }
 
                 DB::table('product_brand')->insertOrIgnore([
                     'product_id' => $productId,

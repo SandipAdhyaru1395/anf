@@ -87,6 +87,10 @@ class SettingController extends Controller
             'success' => true,
             'settings' => [
                 'company_title' => $settings->get('company_title'),
+                'company_name' => $settings->get('company_name'),
+                'company_address' => $settings->get('company_address'),
+                'company_email' => $settings->get('company_email'),
+                'company_phone' => $settings->get('company_phone'),
                 'company_logo_url' => $logoUrl,
                 'currency_symbol' => $settings->get('currency_symbol') ?? '',
                 'banner' => $bannerUrl,

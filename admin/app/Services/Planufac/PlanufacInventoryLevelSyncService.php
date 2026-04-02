@@ -3,6 +3,7 @@
 namespace App\Services\Planufac;
 
 use App\Models\Product;
+use App\Models\SyncUpdate;
 use Illuminate\Support\Facades\Log;
 
 /**

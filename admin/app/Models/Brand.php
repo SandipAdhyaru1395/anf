@@ -12,6 +12,7 @@ class Brand extends Model
 
     protected $fillable = [
         'name',
+        'erp_brand_id',
         'is_new',
         'is_hot',
         'is_sale',

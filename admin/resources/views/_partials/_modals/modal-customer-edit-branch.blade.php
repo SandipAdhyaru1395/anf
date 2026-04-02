@@ -18,6 +18,13 @@
                 <span class="text-danger">{{ $message }}</span>
             @enderror
           </div>
+          <div class="col-12">
+            <label class="form-label" for="edit_branch_contact_name">Contact Name</label>
+            <input type="text" autocomplete="off" id="edit_branch_contact_name" name="contact_name" value="{{ old('contact_name') ?? '' }}" class="form-control" placeholder="Contact name" />
+            @error('contact_name','editBranch')
+                <span class="text-danger">{{ $message }}</span>
+            @enderror
+          </div>
           <div class="col-12 form-control-validation">
             <label class="form-label" for="address_line1">Address Line 1 <span class="text-danger">*</span></label>
             <input type="text" autocomplete="off" id="address_line1" name="address_line1" value="{{ old('address_line1') ?? '' }}" class="form-control" placeholder="12, Business Park" />

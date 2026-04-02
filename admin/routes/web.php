@@ -64,6 +64,7 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/brand/update', [BrandController::class, 'update'])->name('brand.update');
         Route::get('/brand/delete/{id}', [BrandController::class, 'delete'])->name('brand.delete');
         Route::post('/brand/delete-multiple', [BrandController::class, 'deleteMultiple']);
+        Route::post('/brand/sync/planufac', [BrandController::class, 'syncPlanufacBrands'])->name('brand.sync.planufac');
     });
 
     Route::middleware('permission:brand.create')->group(function () {
@@ -101,6 +102,8 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/product/import/sample', [ProductController::class, 'downloadSample'])->name('product.import.sample');
         Route::post('/product/images/import', [ProductController::class, 'importImages'])->name('product.images.import');
         Route::get('/product/images/import/sample', [ProductController::class, 'downloadImagesSample'])->name('product.images.import.sample');
+        Route::post('/product/pricelist/import', [ProductController::class, 'importPricelist'])->name('product.pricelist.import');
+        Route::get('/product/pricelist/import/sample', [ProductController::class, 'downloadPricelistSample'])->name('product.pricelist.import.sample');
     });
 
     Route::middleware('permission:product.write')->group(function () {

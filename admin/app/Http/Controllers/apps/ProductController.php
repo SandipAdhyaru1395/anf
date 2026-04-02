@@ -1206,23 +1206,23 @@ class ProductController extends Controller
         ], 422);
       }
 
-      if (Schema::hasTable('jobs') && config('queue.default') !== 'sync') {
+      // if (Schema::hasTable('jobs') && config('queue.default') !== 'sync') {
         SyncPlanufacProductsJob::dispatch();
         return response()->json([
           'queued' => true,
           'message' => 'Sync started in background. Refresh this page in a moment to see updated products.',
           'last_sync' => Cache::get(PlanufacProductSyncService::CACHE_LAST_SYNC_KEY),
         ], 202);
-      }
+      // }
 
-      $service = new PlanufacProductSyncService(new PlanufacClient());
-      $summary = $service->syncAll(200);
+      // $service = new PlanufacProductSyncService(new PlanufacClient());
+      // $summary = $service->syncAll(20);
 
-      return response()->json([
-        'queued' => false,
-        'message' => 'Sync completed.',
-        'summary' => $summary,
-      ]);
+      // return response()->json([
+      //   'queued' => false,
+      //   'message' => 'Sync completed.',
+      //   'summary' => $summary,
+      // ]);
     } catch (\Throwable $e) {
       return response()->json([
         'queued' => false,
@@ -1533,6 +1533,314 @@ class ProductController extends Controller
       ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
   }
 
+  /**
+   * CSV: Name, SKU, Image, Unit Price, Step Qty, then one column per price list (header = list name).
+   * Rows match by SKU; unknown SKUs are skipped. Missing price lists are created.
+   */
+  public function importPricelist(Request $request)
+  {
+    $request->validate([
+      'pricelistFile' => ['required', 'file', 'max:10240'],
+    ], [
+      'pricelistFile.required' => 'Please select a file to import',
+      'pricelistFile.file' => 'The uploaded file is invalid',
+      'pricelistFile.max' => 'File size must not exceed 10MB',
+    ]);
+
+    $file = $request->file('pricelistFile');
+    $extension = strtolower($file->getClientOriginalExtension());
+    $allowedExtensions = ['csv', 'txt'];
+
+    if (!in_array($extension, $allowedExtensions)) {
+      return redirect()->back()
+        ->withErrors(['pricelistFile' => 'File must be in CSV format (.csv). If you have an Excel file, please convert it to CSV first.'])
+        ->withInput();
+    }
+
+    $fileContent = file_get_contents($file->getRealPath(), false, null, 0, 4);
+    $isExcelFile = (substr($fileContent, 0, 2) === 'PK');
+
+    if ($isExcelFile) {
+      return redirect()->back()
+        ->withErrors(['pricelistFile' => 'The file appears to be an Excel file. Please convert it to CSV format first. In Excel: File &gt; Save As &gt; CSV (Comma delimited) (*.csv)'])
+        ->withInput();
+    }
+
+    try {
+      $rows = $this->readCsvFile($file);
+
+      if (empty($rows)) {
+        Toastr::error('No data found in the file or file is empty. Please ensure your file is a valid CSV file.');
+        return redirect()->back();
+      }
+
+      $headers = array_shift($rows);
+      if (empty($headers) || count($headers) < 5) {
+        Toastr::error('The CSV must start with a header row containing at least: Name, SKU, Image, Unit Price, Step Qty, plus optional price list columns.');
+        return redirect()->back();
+      }
+
+      $normalizedFirstFive = [];
+      for ($i = 0; $i < 5; $i++) {
+        $h = preg_replace('/\x{FEFF}/u', '', (string) ($headers[$i] ?? ''));
+        $h = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $h);
+        $normalizedFirstFive[$i] = strtolower(trim(preg_replace('/\s+/', ' ', $h)));
+      }
+
+      $expected = [
+        ['name'],
+        ['sku'],
+        ['image'],
+        ['unit price', 'unitprice'],
+        ['step qty', 'step quantity', 'stepqty'],
+      ];
+
+      $headerOk = true;
+      for ($i = 0; $i < 5; $i++) {
+        $h = $normalizedFirstFive[$i];
+        if ($h === '') {
+          $headerOk = false;
+          break;
+        }
+        if ($i === 2) {
+          if (!in_array($h, ['image', 'image url'], true)) {
+            $headerOk = false;
+            break;
+          }
+        } elseif ($i === 3) {
+          if (!in_array($h, $expected[3], true) && !(str_contains($h, 'unit') && str_contains($h, 'price'))) {
+            $headerOk = false;
+            break;
+          }
+        } elseif ($i === 4) {
+          if (!in_array($h, $expected[4], true)) {
+            $headerOk = false;
+            break;
+          }
+        } else {
+          if ($h !== $expected[$i][0]) {
+            $headerOk = false;
+            break;
+          }
+        }
+      }
+
+      if (!$headerOk) {
+        $found = array_values(array_filter(array_map('trim', $headers)));
+        $msg = 'The first five columns must be exactly (in order): Name, SKU, Image, Unit Price, Step Qty.';
+        if (!empty($found)) {
+          $msg .= '<br><strong>Found:</strong> ' . implode(', ', array_map(function ($h) {
+            return '"' . htmlspecialchars($h, ENT_QUOTES, 'UTF-8') . '"';
+          }, array_slice($found, 0, 25)));
+        }
+        Toastr::error($msg, '', ['timeOut' => 12000, 'escapeHtml' => false]);
+        return redirect()->back();
+      }
+
+      $priceListSpecs = [];
+      for ($c = 5; $c < count($headers); $c++) {
+        $rawName = trim((string) ($headers[$c] ?? ''));
+        $rawName = preg_replace('/\x{FEFF}/u', '', $rawName);
+        if ($rawName === '') {
+          continue;
+        }
+        $priceListSpecs[] = ['index' => $c, 'name' => $rawName];
+      }
+
+      $skippedNoSku = 0;
+      $skippedUnknownSku = 0;
+      $updatedProducts = 0;
+      $priceCellsUpdated = 0;
+      $listIdCache = [];
+
+      DB::beginTransaction();
+
+      foreach ($rows as $row) {
+        $sku = isset($row[1]) ? trim((string) $row[1]) : '';
+
+        if ($sku === '' && $this->pricelistRowIsEmpty($row)) {
+          continue;
+        }
+
+        if ($sku === '') {
+          $skippedNoSku++;
+          continue;
+        }
+
+        $product = Product::where('sku', $sku)->first();
+        if (!$product) {
+          $skippedUnknownSku++;
+          continue;
+        }
+
+        $changed = false;
+
+        $nameVal = isset($row[0]) ? trim((string) $row[0]) : '';
+        if ($nameVal !== '') {
+          $product->name = $nameVal;
+          $changed = true;
+        }
+
+        $imageRaw = isset($row[2]) ? trim((string) $row[2]) : '';
+        if ($imageRaw !== '') {
+          $url = $imageRaw;
+          if (!preg_match('/^https?:\/\//i', $url) && !filter_var($url, FILTER_VALIDATE_URL)) {
+            if (strpos($url, '://') === false && strpos($url, '.') !== false) {
+              $url = 'https://' . ltrim($url, '/');
+            }
+          }
+          if (preg_match('/^https?:\/\//i', $url) || filter_var($url, FILTER_VALIDATE_URL)) {
+            $product->image_url = $url;
+            $changed = true;
+          }
+        }
+
+        $unitPrice = $this->parseCsvDecimal($row[3] ?? null);
+        if ($unitPrice !== null) {
+          $product->price = $unitPrice;
+          $changed = true;
+        }
+
+        $stepQty = $this->parseCsvDecimal($row[4] ?? null);
+        if ($stepQty !== null) {
+          $product->step_quantity = max(1, (int) round($stepQty));
+          $changed = true;
+        }
+
+        if ($changed) {
+          $product->save();
+          $updatedProducts++;
+        }
+
+        foreach ($priceListSpecs as $spec) {
+          $idx = $spec['index'];
+          $listName = $spec['name'];
+          if (!isset($row[$idx])) {
+            continue;
+          }
+          $cellPrice = $this->parseCsvDecimal($row[$idx]);
+          if ($cellPrice === null) {
+            continue;
+          }
+
+          if (!isset($listIdCache[$listName])) {
+            $priceList = PriceList::firstOrCreate(
+              ['name' => $listName],
+              [
+                'conversion_rate' => 1,
+                'price_list_type' => 1,
+              ]
+            );
+            $listIdCache[$listName] = $priceList->id;
+          }
+          $priceListId = $listIdCache[$listName];
+
+          $ppl = ProductPriceList::firstOrNew([
+            'product_id' => $product->id,
+            'price_list_id' => $priceListId,
+          ]);
+          $ppl->unit_price = $cellPrice;
+          $ppl->save();
+          $priceCellsUpdated++;
+        }
+      }
+
+      DB::commit();
+
+      $parts = [];
+      if ($updatedProducts > 0) {
+        $parts[] = "{$updatedProducts} product row(s) had name/image/unit price/step qty updated";
+      }
+      if ($priceCellsUpdated > 0) {
+        $parts[] = "{$priceCellsUpdated} price list price(s) set";
+      }
+      if (!empty($parts)) {
+        Toastr::success('Pricelist import complete: ' . implode('; ', $parts) . '.');
+      } else {
+        Toastr::warning('No product or price list cells were updated. Check SKUs and that unit price / list columns contain numbers where you expect updates.');
+      }
+
+      if ($skippedUnknownSku > 0) {
+        Toastr::warning("{$skippedUnknownSku} row(s) skipped (SKU not found).");
+      }
+      if ($skippedNoSku > 0) {
+        Toastr::warning("{$skippedNoSku} row(s) skipped (missing SKU).");
+      }
+    } catch (\Throwable $e) {
+      if (DB::transactionLevel() > 0) {
+        DB::rollBack();
+      }
+      Toastr::error('Pricelist import failed: ' . $e->getMessage());
+    }
+
+    return redirect()->route('product.list');
+  }
+
+  public function downloadPricelistSample()
+  {
+    $headers = [
+      'Name',
+      'SKU',
+      'Image',
+      'Unit Price',
+      'Step Qty',
+      'Example Price List A',
+      'Example Price List B',
+    ];
+
+    $sampleData = [
+      [
+        'Sample Product',
+        '6936330000000',
+        'https://example.com/images/product.jpg',
+        '10.50',
+        '1',
+        '11.00',
+        '9.75',
+      ],
+    ];
+
+    $filename = 'sample-product-pricelist-import.csv';
+    $handle = fopen('php://temp', 'r+');
+
+    fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+    fputcsv($handle, $headers);
+    foreach ($sampleData as $row) {
+      fputcsv($handle, $row);
+    }
+
+    rewind($handle);
+    $csv = stream_get_contents($handle);
+    fclose($handle);
+
+    return response($csv)
+      ->header('Content-Type', 'text/csv; charset=UTF-8')
+      ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+  }
+
+  private function pricelistRowIsEmpty(array $row): bool
+  {
+    foreach ($row as $cell) {
+      if (trim((string) $cell) !== '') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private function parseCsvDecimal($value): ?float
+  {
+    $v = trim((string) $value);
+    if ($v === '') {
+      return null;
+    }
+    if (!is_numeric($v)) {
+      return null;
+    }
+
+    return round((float) $v, 2);
+  }
+
   public function import(Request $request)
   {
     $request->validate([
@@ -1806,7 +2114,7 @@ class ProductController extends Controller
     $handle = fopen($tempFile, 'r');
 
     if ($handle !== false) {
-      while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+      while (($row = fgetcsv($handle, 65536, ',')) !== false) {
         $rows[] = $row;
       }
       fclose($handle);

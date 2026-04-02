@@ -148,20 +148,25 @@ class PlanufacClient
      *
      * Returns ['items' => array, 'total' => int|null]
      */
-    public function listProducts(int $length = 20, int $start = 0, string $orderBy = 'products.name', string $direction = 'asc', string $q = ''): array
+    public function listProducts(int $length = 20, int $start = 0, string $orderBy = 'products.name', string $direction = 'asc', string $q = '', ?string $brandIdCsv = null): array
     {
         $token = $this->getAccessToken();
+
+        $query = [
+            'length' => $length,
+            'start' => $start,
+            'orderBy' => $orderBy,
+            'direction' => $direction,
+            'q' => $q,
+        ];
+        if ($brandIdCsv !== null && trim($brandIdCsv) !== '') {
+            $query['brand_id'] = trim($brandIdCsv);
+        }
 
         try {
             $resp = $this->http($token)
                 ->retry(2, 250)
-                ->get('/api/products', [
-                    'length' => $length,
-                    'start' => $start,
-                    'orderBy' => $orderBy,
-                    'direction' => $direction,
-                    'q' => $q,
-                ])
+                ->get('/api/products', $query)
                 ->throw();
         } catch (RequestException $e) {
             // If token expired, attempt refresh once.
@@ -169,13 +174,7 @@ class PlanufacClient
                 $newToken = $this->refresh() ?? $this->login();
                 $resp = $this->http($newToken)
                     ->retry(2, 250)
-                    ->get('/api/products', [
-                        'length' => $length,
-                        'start' => $start,
-                        'orderBy' => $orderBy,
-                        'direction' => $direction,
-                        'q' => $q,
-                    ])
+                    ->get('/api/products', $query)
                     ->throw();
             } else {
                 throw $e;

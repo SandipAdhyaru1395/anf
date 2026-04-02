@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 // Validation schema
 const branchSchema = z.object({
     name: z.string().min(1, "Branch name is required"),
+    contact_name: z.string().max(255, "Contact name must be at most 255 characters").optional(),
     line1: z.string().min(1, "Address line 1 is required"),
     line2: z.string().optional(),
     city: z.string().min(1, "City is required"),
@@ -73,6 +74,7 @@ export function MobileNewBranch({ onNavigate, onBack, onBranchSaved }: MobileNew
         try {
             const response = await api.post("/branches", {
                 name: data.name,
+                contact_name: data.contact_name?.trim() ? data.contact_name.trim() : null,
                 address_line1: data.line1,
                 address_line2: data.line2,
                 city: data.city,
@@ -149,6 +151,12 @@ export function MobileNewBranch({ onNavigate, onBack, onBranchSaved }: MobileNew
                     placeholder="Please enter your branch name..."
                     {...register("name")}
                     error={errors.name?.message}
+                />
+                <FloatingInput
+                    label="Contact Name"
+                    placeholder="Please enter contact name..."
+                    {...register("contact_name")}
+                    error={errors.contact_name?.message}
                 />
                 <hr className="my-[20px]"></hr>
                 <FloatingInput

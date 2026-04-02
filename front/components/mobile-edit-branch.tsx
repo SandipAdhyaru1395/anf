@@ -14,6 +14,7 @@ import { MobilePageHeader } from "@/components/mobile-page-header";
 interface Branch {
   id: number;
   name: string;
+  contact_name?: string | null;
   address_line1: string;
   address_line2: string;
   city: string;
@@ -49,6 +50,7 @@ export function MobileEditBranch({ branchDetails, onNavigate, onBack, onBranchUp
 
   const branchSchema = z.object({
     name: z.string().min(1, "Branch name is required"),
+    contact_name: z.string().max(255, "Contact name must be at most 255 characters").optional(),
     line1: z.string().min(1, "Address line 1 is required"),
     line2: z.string().optional(),
     city: z.string().min(1, "City is required"),
@@ -62,6 +64,7 @@ export function MobileEditBranch({ branchDetails, onNavigate, onBack, onBranchUp
     resolver: zodResolver(branchSchema),
     defaultValues: {
       name: branchDetails.name || "",
+      contact_name: branchDetails.contact_name || "",
       line1: branchDetails.address_line1 || "",
       line2: branchDetails.address_line2 || "",
       city: branchDetails.city || "",
@@ -79,6 +82,7 @@ export function MobileEditBranch({ branchDetails, onNavigate, onBack, onBranchUp
       setIsSaving(true);
       const payload = {
         name: data.name,
+        contact_name: data.contact_name?.trim() ? data.contact_name.trim() : null,
         address_line1: data.line1,
         address_line2: data.line2,
         city: data.city,
@@ -162,7 +166,7 @@ export function MobileEditBranch({ branchDetails, onNavigate, onBack, onBranchUp
               <input
                 id="eb-name"
                 type="text"
-                placeholder="Please enter branch / company name"
+                placeholder="Company Name"
                 {...register("name")}
                 className={inputClass}
               />
@@ -170,11 +174,27 @@ export function MobileEditBranch({ branchDetails, onNavigate, onBack, onBranchUp
             </div>
 
             <div className="flex w-full flex-col">
+              <label htmlFor="eb-contact-name" className={labelClass}>
+                Contact Name
+              </label>
+              <input
+                id="eb-contact-name"
+                type="text"
+                placeholder="Contact Name"
+                {...register("contact_name")}
+                className={inputClass}
+              />
+              {errors.contact_name?.message ? (
+                <p className="mt-1 text-[11px] text-red-600">{errors.contact_name.message}</p>
+              ) : null}
+            </div>
+
+            <div className="flex w-full flex-col">
               <span className={labelClass}>Address</span>
               <div className="flex flex-col gap-2">
                 <input type="text" placeholder="Address line 1" {...register("line1")} className={inputClass} />
                 <input type="text" placeholder="Address line 2" {...register("line2")} className={inputClass} />
-                <input type="text" placeholder="City" {...register("city")} className={inputClass} />
+                <input type="text" placeholder="Town / City" {...register("city")} className={inputClass} />
                 <input type="text" placeholder="County" {...register("county")} className={inputClass} />
                 <input type="text" placeholder="Postcode" {...register("postcode")} className={inputClass} />
               </div>

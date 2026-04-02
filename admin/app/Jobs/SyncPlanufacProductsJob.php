@@ -17,12 +17,16 @@ class SyncPlanufacProductsJob implements ShouldQueue
 
     public int $timeout = 900; // 15 minutes
 
+    public function __construct(public ?string $brandIdCsv = null)
+    {
+    }
+
     public function handle(): void
     {
         try {
             $client = new PlanufacClient();
             $service = new PlanufacProductSyncService($client);
-            $service->syncAll(20);
+            $service->syncAll(20, $this->brandIdCsv);
         } catch (\Throwable $e) {
             Log::error('Planufac product sync job failed', [
                 'message' => $e->getMessage(),

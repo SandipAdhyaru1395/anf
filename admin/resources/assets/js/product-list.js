@@ -16,8 +16,14 @@ document.addEventListener('DOMContentLoaded', function (e) {
   const syncBtn = document.getElementById('btn-sync-planufac');
   if (syncBtn) {
     syncBtn.addEventListener('click', function () {
+      if (syncBtn.disabled) {
+        return;
+      }
+
       const url = syncBtn.getAttribute('data-sync-url') || (baseUrl + 'product/sync/planufac');
       const token = $('meta[name="csrf-token"]').attr('content');
+
+      syncBtn.disabled = true;
 
       Swal.fire({
         title: 'Sync products from ERP?',
@@ -32,17 +38,21 @@ document.addEventListener('DOMContentLoaded', function (e) {
         },
         buttonsStyling: false
       }).then(function (result) {
-        if (!result.isConfirmed) return;
-
-        syncBtn.disabled = true;
+        if (!result.isConfirmed) {
+          syncBtn.disabled = false;
+          return;
+        }
         const originalHtml = syncBtn.innerHTML;
         syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Syncing...';
+
+        let syncRequestSucceeded = false;
 
         $.ajax({
           url: url,
           type: 'POST',
           data: { _token: token },
           success: function (response, status, xhr) {
+            syncRequestSucceeded = true;
             const queued = response && response.queued;
             const summary = response && response.summary ? response.summary : null;
 
@@ -87,8 +97,10 @@ document.addEventListener('DOMContentLoaded', function (e) {
             });
           },
           complete: function () {
-            syncBtn.disabled = false;
             syncBtn.innerHTML = originalHtml;
+            if (!syncRequestSucceeded) {
+              syncBtn.disabled = false;
+            }
           }
         });
       });
@@ -561,18 +573,32 @@ document.addEventListener('DOMContentLoaded', function (e) {
                   ]
                 },
                 {
-                  text: '<i class="icon-base ti tabler-download me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Import Products</span>',
-                  className: 'btn btn-label-secondary me-2',
-                  action: function () {
-                    $('#importProductModal').modal('show');
-                  }
-                },
-                {
-                  text: '<i class="icon-base ti tabler-photo-plus me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Import Images</span>',
-                  className: 'btn btn-label-secondary me-2',
-                  action: function () {
-                    $('#importProductImagesModal').modal('show');
-                  }
+                  extend: 'collection',
+                  className: 'btn btn-label-secondary dropdown-toggle me-2',
+                  text: '<span class="d-flex align-items-center gap-1"><i class="icon-base ti tabler-file-import icon-xs"></i> <span class="d-none d-sm-inline-block">Import</span></span>',
+                  buttons: [
+                    {
+                      text: '<span class="d-flex align-items-center"><i class="icon-base ti tabler-download me-1"></i>New Products</span>',
+                      className: 'dropdown-item',
+                      action: function () {
+                        $('#importProductModal').modal('show');
+                      }
+                    },
+                    {
+                      text: '<span class="d-flex align-items-center"><i class="icon-base ti tabler-photo-plus me-1"></i>Images</span>',
+                      className: 'dropdown-item',
+                      action: function () {
+                        $('#importProductImagesModal').modal('show');
+                      }
+                    },
+                    {
+                      text: '<span class="d-flex align-items-center"><i class="icon-base ti tabler-currency-dollar me-1"></i>Pricelist</span>',
+                      className: 'dropdown-item',
+                      action: function () {
+                        $('#importPricelistModal').modal('show');
+                      }
+                    }
+                  ]
                 },
                 {
                   text: '<i class="icon-base ti tabler-plus me-0 me-sm-1 icon-16px"></i><span class="d-none d-sm-inline-block">Add Product</span>',

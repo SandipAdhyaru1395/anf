@@ -41,6 +41,7 @@ import { useSettings } from "@/components/settings-provider";
 interface Branch {
   id: number;
   name: string;
+  contact_name?: string | null;
   address_line1: string;
   address_line2: string;
   city: string;
@@ -459,7 +460,11 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
               <div className="text-[12px] text-[#4E5667] font-semibold line-clamp-2 mt-1 leading-[1.2]">
                 {selectedShippingBranch ? (
                   <>
-                    <span className="font-bold">{selectedShippingBranch.name}</span>, {selectedShippingBranch.address_line1} {selectedShippingBranch.address_line2}
+                    <span className="font-bold">{selectedShippingBranch.name}</span>
+                    {selectedShippingBranch.contact_name ? (
+                      <span className="font-semibold"> ({selectedShippingBranch.contact_name})</span>
+                    ) : null}
+                    , {selectedShippingBranch.address_line1} {selectedShippingBranch.address_line2}
                   </>
                 ) : "Select a branch"}
               </div>
@@ -480,7 +485,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
                     className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
                   />
                   <div className="ml-3 text-[13px] text-[#131A44]">
-                    <span className="font-bold">{branch.name}</span>, {branch.address_line1}
+                    <span className="font-bold">{branch.name}</span>
+                    {branch.contact_name ? <span> ({branch.contact_name})</span> : null}, {branch.address_line1}
                   </div>
                 </label>
               ))}
@@ -502,7 +508,11 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
               <div className="text-[12px] text-[#4E5667] font-semibold line-clamp-2 mt-1 leading-[1.2]">
                 {selectedBillingBranch ? (
                   <>
-                    <span className="font-bold">{selectedBillingBranch.name}</span>, {selectedBillingBranch.address_line1} {selectedBillingBranch.address_line2}
+                    <span className="font-bold">{selectedBillingBranch.name}</span>
+                    {selectedBillingBranch.contact_name ? (
+                      <span className="font-semibold"> ({selectedBillingBranch.contact_name})</span>
+                    ) : null}
+                    , {selectedBillingBranch.address_line1} {selectedBillingBranch.address_line2}
                   </>
                 ) : "Select a branch"}
               </div>
@@ -523,7 +533,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
                     className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
                   />
                   <div className="ml-3 text-[13px] text-[#131A44]">
-                    <span className="font-bold">{branch.name}</span>, {branch.address_line1}
+                    <span className="font-bold">{branch.name}</span>
+                    {branch.contact_name ? <span> ({branch.contact_name})</span> : null}, {branch.address_line1}
                   </div>
                 </label>
               ))}

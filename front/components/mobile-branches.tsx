@@ -14,6 +14,7 @@ import api from "@/lib/axios";
 interface Branch {
   id: number;
   name: string;
+  contact_name?: string | null;
   address_line1: string;
   address_line2: string;
   city: string;
@@ -83,6 +84,7 @@ export function MobileBranches({ onNavigate, onBack }: MobileBranchesProps) {
   if (showEditBranch && selectedBranch) {
     return (
       <MobileEditBranch
+        key={selectedBranch.id}
         branchDetails={selectedBranch}
         onNavigate={onNavigate}
         onBack={() => setShowEditBranch(false)}
@@ -129,6 +131,9 @@ export function MobileBranches({ onNavigate, onBack }: MobileBranchesProps) {
                     </div>
                     <div className="min-w-0 flex-1 border-l border-[#E2E2E2] pl-4">
                       <p className="text-[14px] font-bold leading-tight text-[#3D495E]">{branch.name || "Company Name"}</p>
+                      {branch.contact_name ? (
+                        <p className="mt-0.5 text-[12px] font-medium leading-snug text-[#5C6B8A]">Contact: {branch.contact_name}</p>
+                      ) : null}
                       <p className="mt-1.5 text-[12px] font-normal leading-snug text-[#8F98AD]">{formatBranchAddress(branch)}</p>
                     </div>
                   </div>

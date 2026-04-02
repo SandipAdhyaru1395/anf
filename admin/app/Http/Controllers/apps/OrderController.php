@@ -952,7 +952,11 @@ class OrderController extends Controller
   {
     $customer = \App\Models\Customer::with('branches')->findOrFail($customerId);
     $branches = $customer->branches->map(function ($branch) {
-      $addressText = $branch->name . ' - ' . $branch->address_line1;
+      $addressText = $branch->name;
+      if (!empty($branch->contact_name)) {
+        $addressText .= ' (' . $branch->contact_name . ')';
+      }
+      $addressText .= ' - ' . $branch->address_line1;
       if ($branch->address_line2) {
         $addressText .= ', ' . $branch->address_line2;
       }

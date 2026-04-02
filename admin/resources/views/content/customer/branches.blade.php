@@ -56,6 +56,7 @@ $(document).ready(function () {
                 $('#editCustomerBranchForm input[name="state"]').val(branch.state || '');
                 $('#editCustomerBranchForm input[name="zip_code"]').val(branch.zip_code || '');
                 $('#editCustomerBranchForm input[name="country"]').val(branch.country || '');
+                $('#editCustomerBranchForm input[name="contact_name"]').val(branch.contact_name || '');
       $('#editCustomerBranchForm input[name="is_default_delivery"]').prop('checked', !!branch.is_default_delivery);
       $('#editCustomerBranchForm input[name="is_default_billing"]').prop('checked', !!branch.is_default_billing);
             }
@@ -212,6 +213,7 @@ function deleteBranch(branchId) {
             <i class="icon-base ti tabler-pencil"></i>
           </span>
           <p>{{ $branch->name ?: ($branch->company_name ?? '') }}</p>
+          @if(!empty($branch->contact_name)) <p class="text-muted small mb-0">Contact: {{ $branch->contact_name }}</p> @endif
           @if(!empty($customerName)) <p>{{ $customerName }}</p> @endif
           @if(!empty($branch->address_line1)) <p>{{ $branch->address_line1 }}</p> @endif
           @if(!empty($branch->address_line2)) <p>{{ $branch->address_line2 }}</p> @endif

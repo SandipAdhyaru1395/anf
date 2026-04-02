@@ -19,47 +19,7 @@ if (typeof window !== "undefined") {
     }
     return config;
   });
-
-  api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      const status = error?.response?.status;
-      if (status === 401 || status === 403) {
-        // Clear any potentially stale auth token
-        try { window.localStorage.removeItem("auth_token"); } catch {}
-
-        // Avoid redirect loops if we're already on the auth pages
-        const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
-        const isOnAuthPage =
-          currentPath.endsWith("/login") ||
-          currentPath.endsWith("/register") ||
-          currentPath.endsWith("/forgot-password") ||
-          currentPath.endsWith("/reset-password") ||
-          currentPath.includes("/login/") ||
-          currentPath.includes("/register/") ||
-          currentPath.includes("/forgot-password") ||
-          currentPath.includes("/reset-password");
-        if (!isOnAuthPage) {
-          // Redirect to login
-          try {
-          //  if(currentPath.endsWith("/login") || currentPath.includes("/login/")) {
-          //   window.location.href = buildPath("/login");
-          //   console.log('buildPath :', buildPath("/login"));
-          //  } else if(currentPath.endsWith("/register") || currentPath.includes("/register/")) {
-          //   window.location.href = buildPath("/register");
-          //   console.log('buildPath :', buildPath("/register"));
-          //  } 
-            // window.location.assign(buildPath("/landing"));
-          } catch {
-            // Fallback
-            // console.log(currentPath);
-            // window.location.href = buildPath("/landing");
-          }
-        }
-      }
-      return Promise.reject(error);
-    }
-  );
+ 
 }
 
 export default api;

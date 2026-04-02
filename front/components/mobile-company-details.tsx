@@ -20,6 +20,8 @@ const companyDetailsSchema = z.object({
   country: z.string().max(255, "Country must be less than 255 characters").optional(),
   postcode: z.string().min(1, "Postcode is required").max(255, "Postcode must be less than 255 characters"),
   contact_number: z.string().max(50, "Contact number must be less than 50 characters").optional(),
+  vat_number: z.string().max(100, "VAT number must be at most 100 characters").optional(),
+  your_name: z.string().max(255, "Your name must be at most 255 characters").optional(),
 });
 
 type CompanyDetailsForm = z.infer<typeof companyDetailsSchema>;
@@ -55,6 +57,8 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
       country: "",
       postcode: "",
       contact_number: "",
+      vat_number: "",
+      your_name: "",
     },
   });
 
@@ -67,7 +71,9 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
         city: customer.city || "",
         country: customer.country || "",
         postcode: customer.postcode || "",
-        contact_number: (customer as { phone?: string }).phone || "",
+        contact_number: customer.phone || "",
+        vat_number: customer.vat_number || "",
+        your_name: customer.your_name || "",
       });
     }
   }, [customer, form]);
@@ -124,7 +130,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               <input
                 id="cd-company"
                 type="text"
-                placeholder="Please enter your company name"
+                placeholder="Company Name"
                 {...form.register("company_name")}
                 className={inputClass}
               />
@@ -136,11 +142,11 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
             <div className="flex w-full flex-col">
               <span className={labelClass}>Company Address</span>
               <div className="flex flex-col gap-3">
-                <input type="text" placeholder="Invoice address line 1" {...form.register("address_line1")} className={inputClass} />
-                <input type="text" placeholder="Invoice address line 2" {...form.register("address_line2")} className={inputClass} />
-                <input type="text" placeholder="Invoice address city" {...form.register("city")} className={inputClass} />
-                <input type="text" placeholder="Invoice address county" {...form.register("country")} className={inputClass} />
-                <input type="text" placeholder="Invoice address postcode" {...form.register("postcode")} className={inputClass} />
+                <input type="text" placeholder="Address Line 1" {...form.register("address_line1")} className={inputClass} />
+                <input type="text" placeholder="Address Line 2" {...form.register("address_line2")} className={inputClass} />
+                <input type="text" placeholder="Town / City" {...form.register("city")} className={inputClass} />
+                <input type="text" placeholder="Country" {...form.register("country")} className={inputClass} />
+                <input type="text" placeholder="Postcode" {...form.register("postcode")} className={inputClass} />
               </div>
               {form.formState.errors.address_line1?.message ? (
                 <p className="mt-1 text-[11px] text-red-600">{form.formState.errors.address_line1.message}</p>
@@ -149,15 +155,47 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
 
             <div className="flex w-full flex-col">
               <label htmlFor="cd-contact" className={labelClass}>
-                Contact Number
+                Phone Number
               </label>
               <input
                 id="cd-contact"
                 type="text"
-                placeholder="Please enter your contact number"
+                placeholder="Phone number"
                 {...form.register("contact_number")}
                 className={inputClass}
               />
+            </div>
+
+            <div className="flex w-full flex-col">
+              <label htmlFor="cd-vat" className={labelClass}>
+                VAT Number (if applicable)
+              </label>
+              <input
+                id="cd-vat"
+                type="text"
+                placeholder="VAT Number (if applicable)"
+                {...form.register("vat_number")}
+                className={inputClass}
+              />
+              {form.formState.errors.vat_number?.message ? (
+                <p className="mt-1 text-[11px] text-red-600">{form.formState.errors.vat_number.message}</p>
+              ) : null}
+            </div>
+
+            <div className="flex w-full flex-col">
+              <label htmlFor="cd-your-name" className={labelClass}>
+                Your Name
+              </label>
+              <input
+                id="cd-your-name"
+                type="text"
+                placeholder="Your Name"
+                {...form.register("your_name")}
+                className={inputClass}
+              />
+              {form.formState.errors.your_name?.message ? (
+                <p className="mt-1 text-[11px] text-red-600">{form.formState.errors.your_name.message}</p>
+              ) : null}
             </div>
 
             <div className="flex w-full flex-col">

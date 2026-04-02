@@ -539,15 +539,145 @@ document.addEventListener('DOMContentLoaded', function (e) {
         }
       },
       initComplete: function () {
-        const api = this.api();
-
-             }
+        const syncBtnInit = document.getElementById('btn-sync-planufac-brands');
+        if (syncBtnInit) {
+          syncBtnInit.disabled = this.api().rows({ selected: true }).count() === 0;
+        }
+      }
     });
 
     dt_products.on('select deselect', function () {
       let selectedCount = dt_products.rows({ selected: true }).count();
       dt_products.button(0).enable(selectedCount > 0);
+      const syncBtnSel = document.getElementById('btn-sync-planufac-brands');
+      if (syncBtnSel) {
+        syncBtnSel.disabled = selectedCount === 0;
+      }
     });
+
+    const syncBtn = document.getElementById('btn-sync-planufac-brands');
+    if (syncBtn) {
+      syncBtn.addEventListener('click', function () {
+        const url = syncBtn.getAttribute('data-sync-url') || (baseUrl + 'brand/sync/planufac');
+        const token = $('meta[name="csrf-token"]').attr('content');
+
+        const selectedRows = dt_products.rows({ selected: true }).data();
+        const erpIds = [];
+        const missingNames = [];
+        selectedRows.each(function (row) {
+          const v = row.erp_brand_id;
+          if (v === null || v === undefined || String(v).trim() === '') {
+            missingNames.push(row.brand ? String(row.brand) : 'ID ' + row.id);
+          } else {
+            erpIds.push(String(v).trim());
+          }
+        });
+
+        if (missingNames.length > 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Missing ERP brand ID',
+            text:
+              'These brands have no ERP brand ID (run a full product ERP sync first, or set erp_brand_id): ' +
+              missingNames.join(', '),
+            customClass: { confirmButton: 'btn btn-primary' },
+            buttonsStyling: false
+          });
+          return;
+        }
+
+        if (erpIds.length === 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'No selection',
+            text: 'Select at least one brand.',
+            customClass: { confirmButton: 'btn btn-primary' },
+            buttonsStyling: false
+          });
+          return;
+        }
+
+        const brandIdCsv = [...new Set(erpIds)].join(',');
+
+        Swal.fire({
+          title: 'Sync products from ERP for selected brands?',
+          text: 'This will queue a Planufac sync filtered by the selected ERP brand IDs.',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, sync now',
+          cancelButtonText: 'Cancel',
+          customClass: {
+            confirmButton: 'btn btn-primary me-3',
+            cancelButton: 'btn btn-label-secondary'
+          },
+          buttonsStyling: false
+        }).then(function (result) {
+          if (!result.isConfirmed) return;
+
+          syncBtn.disabled = true;
+          const originalHtml = syncBtn.innerHTML;
+          syncBtn.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Syncing...';
+
+          $.ajax({
+            url: url,
+            type: 'POST',
+            data: { _token: token, brand_id: brandIdCsv },
+            success: function (response, status, xhr) {
+              const queued = response && response.queued;
+              const summary = response && response.summary ? response.summary : null;
+
+              let message = response && response.message ? response.message : 'Sync started.';
+              if (!queued && summary) {
+                message =
+                  `Processed: ${summary.processed || 0}\n` +
+                  `Inserted: ${summary.inserted || 0}\n` +
+                  `Updated: ${summary.updated || 0}`;
+              }
+
+              Swal.fire({
+                icon: 'success',
+                title: queued ? 'Sync queued' : 'Sync complete',
+                text: message,
+                customClass: { confirmButton: 'btn btn-success' },
+                buttonsStyling: false
+              });
+
+              dt_products.ajax.reload(null, false);
+              dt_products.rows().deselect();
+              dt_products.button(0).enable(false);
+              syncBtn.disabled = true;
+            },
+            error: function (xhr) {
+              let message = 'Sync failed.';
+              if (xhr.responseJSON && xhr.responseJSON.errors && xhr.responseJSON.errors.brand_id) {
+                const arr = xhr.responseJSON.errors.brand_id;
+                if (Array.isArray(arr) && arr[0]) {
+                  message = arr[0];
+                }
+              } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+              }
+              if (xhr.status === 422 && (message || '').toLowerCase().includes('planufac')) {
+                message = message + ' (Go to Settings → Planufac ERP)';
+              }
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                customClass: { confirmButton: 'btn btn-danger' },
+                buttonsStyling: false
+              });
+            },
+            complete: function () {
+              syncBtn.innerHTML = originalHtml;
+              const n = dt_products.rows({ selected: true }).count();
+              syncBtn.disabled = n === 0;
+            }
+          });
+        });
+      });
+    }
   }
 
   // Filter form control to default size

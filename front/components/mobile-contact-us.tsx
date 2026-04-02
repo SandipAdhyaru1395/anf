@@ -1,18 +1,11 @@
 "use client";
 
 import { MobilePageHeader } from "@/components/mobile-page-header";
+import { useSettings } from "@/components/settings-provider";
 
 interface MobileContactUsProps {
   onNavigate: (page: any, favorites?: boolean) => void;
 }
-
-const initialContactUsData = {
-  name: "ANF",
-  companyName: "Your Company Name ANF",
-  address: "1109, SATYAMEV EMINENCE, Science City Rd, near shukan mall, Sola, Ahmedabad, Gujarat 380060",
-  email: "sandip@silverwebbuzz.com",
-  phone: "7405896475",
-};
 
 interface ContactFieldProps {
   label: string;
@@ -29,6 +22,38 @@ function ContactField({ label, value }: ContactFieldProps) {
 }
 
 export function MobileContactUs({ onNavigate }: MobileContactUsProps) {
+  const { settings, loading, error } = useSettings();
+
+  if (loading && !settings) {
+    return (
+      <div
+        className="relative mx-auto flex min-h-[100dvh] w-full max-w-[402px] flex-col bg-[#FAFBFD]"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <MobilePageHeader variant="plain" title="Contact Us" onBack={() => onNavigate("account")} />
+        <main className="flex flex-1 items-center justify-center px-4 pb-6 pt-3">
+          <p className="text-[14px] text-[#7D8798]">Loading…</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error && !settings) {
+    return (
+      <div
+        className="relative mx-auto flex min-h-[100dvh] w-full max-w-[402px] flex-col bg-[#FAFBFD]"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <MobilePageHeader variant="plain" title="Contact Us" onBack={() => onNavigate("account")} />
+        <main className="flex flex-1 items-center justify-center px-4 pb-6 pt-3">
+          <p className="text-center text-[14px] text-[#B42318]">{error}</p>
+        </main>
+      </div>
+    );
+  }
+
+  const s = settings!;
+
   return (
     <div
       className="relative mx-auto flex min-h-[100dvh] w-full max-w-[402px] flex-col bg-[#FAFBFD]"
@@ -44,14 +69,11 @@ export function MobileContactUs({ onNavigate }: MobileContactUsProps) {
           </div>
 
           <div className="flex flex-col gap-3">
-            {/* <ContactField label="Name" value={initialContactUsData.name} /> */}
-            <ContactField label="Company Name" value={initialContactUsData.companyName} />
-            <ContactField label="Address" value={initialContactUsData.address} />
-
-            {/* <div className="grid grid-cols-2 gap-3"> */}
-              <ContactField label="Email" value={initialContactUsData.email} />
-              <ContactField label="Phone" value={initialContactUsData.phone} />
-            {/* </div> */}
+            <ContactField label="Name" value={s.company_title ?? ""} />
+            <ContactField label="Company Name" value={s.company_name ?? ""} />
+            <ContactField label="Address" value={s.company_address ?? ""} />
+            <ContactField label="Email" value={s.company_email ?? ""} />
+            <ContactField label="Phone" value={s.company_phone ?? ""} />
           </div>
         </div>
       </main>
