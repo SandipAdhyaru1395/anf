@@ -73,9 +73,6 @@ class BranchController extends Controller
                 'customer_id' => $user->id,
             ]);
             $data['contact_name'] = $request->filled('contact_name') ? $request->input('contact_name') : null;
-            if ($request->has('is_default')) {
-                $data['is_default'] = $request->boolean('is_default');
-            }
 
             $branch = Branch::create($data);
 

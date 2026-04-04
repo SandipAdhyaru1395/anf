@@ -151,7 +151,7 @@ class CustomerController extends Controller
         $query->orderBy($columns[$orderColumnIndex], $orderDirection);
       }
     } else {
-      $query->orderBy(DB::raw('COALESCE(customers.company_name, customers.email)'), 'asc');
+      $query->orderBy('id', 'desc');
     }
 
     return DataTables::of($query)
@@ -286,6 +286,7 @@ class CustomerController extends Controller
   public function destroy($id)
   {
     $customer = Customer::query()->findOrFail($id);
+    $customer->tokens()->delete();
     $customer->delete();
 
     return response()->json([
@@ -344,6 +345,8 @@ class CustomerController extends Controller
       'approved_at' => null,
       'approved_by' => null,
     ]);
+
+    $customer->tokens()->delete();
 
     Toastr::warning('Customer registration rejected.');
     return redirect()->back();
@@ -534,6 +537,10 @@ class CustomerController extends Controller
     }
 
     $customer->update($data);
+
+    if (!(int) ($data['is_active'] ?? 0)) {
+      $customer->tokens()->delete();
+    }
 
     Toastr::success('Customer updated successfully!');
     return redirect()->back();

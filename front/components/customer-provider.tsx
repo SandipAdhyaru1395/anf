@@ -97,19 +97,33 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e: any) {
       const status = e?.response?.status
+      const code = e?.response?.data?.code
       const message = e?.response?.data?.message || e?.message
-      // If customer is deleted or not found, force logout and inform user on login screen
-      if (status === 404 || status === 410 || (typeof message === 'string' && message.toLowerCase().includes('deleted'))) {
-        try { sessionStorage.setItem('account_deleted', '1') } catch {}
-        try { window.localStorage.removeItem('auth_token') } catch {}
-        // Avoid infinite loops if already on login
+      // Deactivated / disapproved: axios interceptor redirects; still clear local UI state
+      if (
+        status === 403 &&
+        (code === "account_inactive" || code === "account_not_approved" || code === "account_rejected")
+      ) {
+        setCustomer(null)
+        setFavoriteProductIds([])
         try {
-          if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-            const q = new URLSearchParams({ reason: 'deleted' }).toString()
+          sessionStorage.removeItem("customer_cache")
+        } catch {}
+        setError(null)
+      } else if (status === 404 || status === 410 || (typeof message === 'string' && message.toLowerCase().includes('deleted'))) {
+        try {
+          sessionStorage.setItem("account_deleted", "1")
+        } catch {}
+        try {
+          window.localStorage.removeItem("auth_token")
+        } catch {}
+        try {
+          if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+            const q = new URLSearchParams({ reason: "deleted" }).toString()
             // window.location.replace(`/login?${q}`)
           }
         } catch {}
-        setError('Your account has been deleted')
+        setError("Your account has been deleted")
       } else {
         setError(message || "Failed to load customer")
       }
@@ -181,22 +195,23 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Serve cached customer if present; otherwise fetch fresh data
-    try {
-      const raw = sessionStorage.getItem('customer_cache')
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (parsed?.customer) {
-          setCustomer(parsed.customer as Customer)
-          setFavoriteProductIds(Array.isArray(parsed?.favoriteProductIds) ? parsed.favoriteProductIds : [])
-          // parsed.version is optional; retained in cache for consumers if needed
-          setLoading(false)
-          return
+    // With a token, always revalidate on load so admin deactivation is picked up on refresh.
+    const hasToken = typeof window !== "undefined" && !!window.localStorage.getItem("auth_token")
+    if (!hasToken) {
+      try {
+        const raw = sessionStorage.getItem("customer_cache")
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (parsed?.customer) {
+            setCustomer(parsed.customer as Customer)
+            setFavoriteProductIds(Array.isArray(parsed?.favoriteProductIds) ? parsed.favoriteProductIds : [])
+            setLoading(false)
+            return
+          }
         }
-      }
-    } catch {}
-    
-    // No cached data available, fetch fresh data
+      } catch {}
+    }
+
     fetchCustomer()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => App\Http\Middleware\PermissionMiddleware::class,
             'sidebar' => App\Http\Middleware\SidebarMiddleware::class,
             'store.maintenance' => App\Http\Middleware\StoreMaintenanceMiddleware::class,
+            'customer.active' => App\Http\Middleware\EnsureCustomerAccountActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

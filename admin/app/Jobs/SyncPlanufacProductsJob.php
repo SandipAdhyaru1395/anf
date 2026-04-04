@@ -26,7 +26,7 @@ class SyncPlanufacProductsJob implements ShouldQueue
         try {
             $client = new PlanufacClient();
             $service = new PlanufacProductSyncService($client);
-            $service->syncAll(20, $this->brandIdCsv);
+            $service->syncAll(1000, $this->brandIdCsv);
         } catch (\Throwable $e) {
             Log::error('Planufac product sync job failed', [
                 'message' => $e->getMessage(),

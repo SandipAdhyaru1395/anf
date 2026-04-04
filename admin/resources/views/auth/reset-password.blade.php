@@ -49,30 +49,41 @@
     <div class="d-flex col-12 col-xl-4 align-items-center authentication-bg p-6 p-sm-12">
       <div class="w-px-400 mx-auto mt-12 pt-5">
         <h4 class="mb-1">Reset Password 🔒</h4>
-        <p class="mb-6"><span class="fw-medium">Your new password must be different from previously used
-            passwords</span></p>
-        <form id="formAuthentication" class="mb-6" action="{{ url('auth/login-cover') }}" method="GET">
+        <p class="mb-6"><span class="fw-medium">Choose a new password for your admin account (at least 8 characters).</span></p>
+        <form id="formAuthentication" class="mb-6" action="{{ route('password.update') }}" method="POST">
+          @csrf
+          <input type="hidden" name="token" value="{{ $token }}" />
+          <div class="mb-6 form-control-validation">
+            <label class="form-label" for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $email ?? '') }}" autocomplete="username" required />
+            @error('email')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </div>
           <div class="mb-6 form-password-toggle form-control-validation">
             <label class="form-label" for="password">New Password</label>
             <div class="input-group input-group-merge">
-              <input type="password" id="password" class="form-control" name="password"
+              <input type="password" id="password" class="form-control @error('password') is-invalid @enderror" name="password"
                 placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
-                aria-describedby="password" />
+                aria-describedby="password" autocomplete="new-password" required />
               <span class="input-group-text cursor-pointer"><i class="icon-base ti tabler-eye-off"></i></span>
             </div>
+            @error('password')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
           </div>
           <div class="mb-6 form-password-toggle form-control-validation">
-            <label class="form-label" for="confirm-password">Confirm Password</label>
+            <label class="form-label" for="password_confirmation">Confirm Password</label>
             <div class="input-group input-group-merge">
-              <input type="password" id="confirm-password" class="form-control" name="confirm-password"
+              <input type="password" id="password_confirmation" class="form-control" name="password_confirmation"
                 placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
-                aria-describedby="password" />
+                aria-describedby="password_confirmation" autocomplete="new-password" required />
               <span class="input-group-text cursor-pointer"><i class="icon-base ti tabler-eye-off"></i></span>
             </div>
           </div>
-          <button class="btn btn-primary d-grid w-100 mb-6">Set new password</button>
+          <button type="submit" class="btn btn-primary d-grid w-100 mb-6">Set new password</button>
           <div class="text-center">
-            <a href="{{ url('auth/login-cover') }}" class="d-flex justify-content-center">
+            <a href="{{ route('login') }}" class="d-flex justify-content-center">
               <i class="icon-base ti tabler-chevron-left scaleX-n1-rtl me-1_5"></i>
               Back to login
             </a>

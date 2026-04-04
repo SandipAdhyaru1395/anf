@@ -20,6 +20,7 @@ use App\Http\Controllers\pages\UserTeams;
 use App\Http\Controllers\pages\UserProjects;
 use App\Http\Controllers\pages\UserConnections;
 use App\Http\Controllers\Auth\LoginController as AuthLoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController as AuthRegisterController;
 use App\Models\Product;
 
@@ -400,6 +401,11 @@ Route::get('/', [AuthLoginController::class, 'show']);
 Route::post('/logout', [AuthLoginController::class, 'logout'])->name('logout');
 Route::get('/login', [AuthLoginController::class, 'show'])->name('login');
 Route::post('/login', [AuthLoginController::class, 'login'])->name('login.post');
+
+Route::get('/auth/forgot-password-cover', [PasswordResetController::class, 'showForgotPasswordForm'])->name('password.request');
+Route::post('/auth/forgot-password-cover', [PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/auth/reset-password-cover/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/auth/reset-password-cover', [PasswordResetController::class, 'reset'])->name('password.update');
 
 Route::get('/register', [AuthRegisterController::class, 'show'])->name('register');
 Route::post('/register', [AuthRegisterController::class, 'register'])->name('register.post');

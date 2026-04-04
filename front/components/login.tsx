@@ -14,6 +14,7 @@ import { useCustomer } from "@/components/customer-provider";
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { settings, refresh: refreshSettings } = useSettings();
   const { toast } = useToast();
   const { refresh } = useCustomer();
@@ -30,8 +31,6 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null;
-
     try {
       const deleted = sessionStorage.getItem("account_deleted");
       if (deleted === "1") {
@@ -44,7 +43,43 @@ export default function Login() {
         });
       }
     } catch { }
-  }, []);
+  }, [toast]);
+
+  useEffect(() => {
+    const reason = searchParams.get("reason");
+    if (!reason) return;
+    const messages: Record<
+      string,
+      { title: string; description: string; variant: "default" | "destructive" }
+    > = {
+      inactive: {
+        variant: "destructive",
+        title: "Account deactivated",
+        description:
+          "Your account has been deactivated. Please contact support if you need access again.",
+      },
+      rejected: {
+        variant: "destructive",
+        title: "Registration not approved",
+        description: "Your registration was not approved. Please contact support if you have questions.",
+      },
+      pending: {
+        variant: "destructive",
+        title: "Account pending approval",
+        description: "Your account is not approved yet. Please wait for an administrator to approve your registration.",
+      },
+      session: {
+        variant: "default",
+        title: "Session ended",
+        description: "Please sign in again to continue.",
+      },
+    };
+    const m = messages[reason];
+    if (m) {
+      toast({ variant: m.variant, title: m.title, description: m.description });
+    }
+    router.replace(buildPath("/login"));
+  }, [searchParams, router, toast]);
 
   async function onSubmit(values: { email: string; password: string }) {
     setError(null);

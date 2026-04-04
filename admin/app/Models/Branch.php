@@ -10,7 +10,6 @@ class Branch extends Model
 
     protected $fillable = [
         'customer_id',
-        'is_default',
         'is_default_delivery',
         'is_default_billing',
         'name',
@@ -23,7 +22,6 @@ class Branch extends Model
     ];
 
     protected $casts = [
-        'is_default' => 'boolean',
         'is_default_delivery' => 'boolean',
         'is_default_billing' => 'boolean',
     ];

@@ -20,8 +20,9 @@ interface Branch {
   city: string;
   zip_code: string;
   country: string;
-  state: string;
-  is_default: boolean;
+  state?: string;
+  is_default_delivery?: boolean;
+  is_default_billing?: boolean;
 }
 
 interface MobileBranchesProps {

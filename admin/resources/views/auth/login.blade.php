@@ -47,6 +47,9 @@
       <div class="w-px-400 mx-auto mt-12 pt-5">
         <h4 class="mb-1">Welcome to {{ config('variables.templateName') }}! 👋</h4>
         <p class="mb-6">Please sign-in to your account and start the adventure</p>
+        @if (session('status'))
+          <div class="alert alert-success mb-4" role="alert">{{ session('status') }}</div>
+        @endif
 
         <form id="loginFormAuthentication" class="mb-6" action="{{ route('login.post') }}" method="POST">
           @csrf
@@ -76,7 +79,7 @@
                 <input class="form-check-input" type="checkbox" id="remember-me" name="remember" />
                 <label class="form-check-label" for="remember-me"> Remember Me </label>
               </div>
-              <a href="{{ url('auth/forgot-password-cover') }}">
+              <a href="{{ route('password.request') }}">
                 <p class="mb-0">Forgot Password?</p>
               </a>
             </div>

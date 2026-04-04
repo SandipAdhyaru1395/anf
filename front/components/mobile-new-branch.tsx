@@ -80,7 +80,6 @@ export function MobileNewBranch({ onNavigate, onBack, onBranchSaved }: MobileNew
                 city: data.city,
                 country: data.county,
                 zip_code: data.postcode,
-                is_default: false,
             });
 
             if (response.data.success) {

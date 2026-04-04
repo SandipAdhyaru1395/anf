@@ -25,7 +25,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::get('/settings', [SettingController::class, 'show']);
 // Protected endpoints (blocked when store maintenance is on)
-Route::middleware(['store.maintenance','auth:sanctum'])->group(function () {
+Route::middleware(['store.maintenance', 'auth:sanctum', 'customer.active'])->group(function () {
     
     Route::get('/products',[ProductController::class, 'index']);
     Route::post('/logout', [AuthController::class, 'logout']);

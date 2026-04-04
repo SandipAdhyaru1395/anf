@@ -22,7 +22,7 @@ class PlanufacProductSyncService
      *
      * @return array{inserted:int,updated:int,processed:int,started_at:string,finished_at:string}
      */
-    public function syncAll(int $pageSize = 1000, ?string $brandIdCsv = null): array
+    public function syncAll(int $pageSize = 20, ?string $brandIdCsv = null): array
     {
         $startedAt = Carbon::now();
 
@@ -35,7 +35,6 @@ class PlanufacProductSyncService
         ];
 
         $start = 0;
-        $filterBrandId = $this->parseSingleBrandFilterId($brandIdCsv);
 
         while (true) {
             $resp = $this->client->listProducts($pageSize, $start, 'products.name', 'asc', '', $brandIdCsv);
@@ -52,10 +51,6 @@ class PlanufacProductSyncService
             $brandNameByErpId = [];
             $brandErpIdByProductErpId = [];
             $categoryPathByErpId = [];
-            /** @var array<string, string> sku => planufac_product_id */
-            $batchSkus = [];
-            /** @var array<string, string> product_unit_sku => planufac_product_id */
-            $batchUnitSkus = [];
 
             foreach ($items as $item) {
                 if (!is_array($item)) {
@@ -67,16 +62,17 @@ class PlanufacProductSyncService
                     continue;
                 }
 
-                $erpIdStr = (string) $erpId;
+                if ($this->hasDiscontinuedTag($item)) {
+                    continue;
+                }
 
                 $name = $this->extractString($item, ['name', 'product_name', 'title']) ?? null;
                 $sku = $this->extractString($item, ['sku', 'code', 'product_code', 'productCode']) ?? null;
-
-                $productUnitSKU = $this->extractString($item, ['product_unit_sku', 'barcode']) ?? null;
-
-                if ($this->shouldSkipDuplicateProductIdentifiers($erpIdStr, $sku, $productUnitSKU, $batchSkus, $batchUnitSkus)) {
+                if ($this->skuOrNameContainsDeleted($name, $sku, $item)) {
                     continue;
                 }
+
+                $productUnitSKU = $this->extractString($item, ['product_unit_sku', 'barcode']) ?? null;
                 $description = $this->extractString($item, ['description', 'product_description', 'productDescription', 'desc']);
                 $price = $this->extractNumber($item, ['retail_price', 'retailPrice']) ?? 0;
                 $costPrice = $this->extractNumber($item, ['cost_price', 'costPrice', 'purchase_price', 'purchasePrice', 'buying_price', 'buyingPrice']);
@@ -84,26 +80,19 @@ class PlanufacProductSyncService
                 $imageUrl = $this->extractImageUrl($item);
                 $isActive = $this->extractActive($item);
 
-                $brandName = $this->extractBrandDisplayName($item);
-                // appproductsapi: group + category are strings; main = group (root), sub = category (child).
+                $brandName = $this->extractNestedName($item, 'brand', ['name']) ?? $this->extractString($item, ['brand_name', 'brandName']);
+                // Hierarchy: group.name = main (root) category, category.name = subcategory under that root; brand sits under the leaf.
                 [$mainCategoryName, $subCategoryName] = $this->extractPlanufacCategoryPath($item);
 
-                $brandNameByErpId[$erpIdStr] = $brandName;
-                $brandErpIdByProductErpId[$erpIdStr] = $this->extractBrandErpId($item) ?? $filterBrandId;
-                $categoryPathByErpId[$erpIdStr] = [
+                $brandNameByErpId[(string) $erpId] = $brandName;
+                $brandErpIdByProductErpId[(string) $erpId] = $this->extractBrandErpId($item);
+                $categoryPathByErpId[(string) $erpId] = [
                     'main' => $mainCategoryName,
                     'sub' => $subCategoryName,
                 ];
 
-                if ($sku !== null && $sku !== '') {
-                    $batchSkus[$sku] = $erpIdStr;
-                }
-                if ($productUnitSKU !== null && $productUnitSKU !== '') {
-                    $batchUnitSkus[$productUnitSKU] = $erpIdStr;
-                }
-
                 $rows[] = [
-                    'planufac_product_id' => $erpIdStr,
+                    'planufac_product_id' => (string) $erpId,
                     'planufac_synced_at' => $now,
                     'planufac_payload' => json_encode($item, JSON_UNESCAPED_SLASHES),
                     'name' => $name,
@@ -145,13 +134,31 @@ class PlanufacProductSyncService
             } catch (QueryException $e) {
                 // Fallback path: if sku has a unique constraint and conflicts, update by sku instead.
                 foreach ($rows as $row) {
-                    try {
-                        $this->upsertProductRowFallback($row);
-                    } catch (QueryException $fallbackEx) {
-                        if ($this->isMysqlDuplicateKeyError($fallbackEx)) {
-                            continue;
-                        }
-                        throw $fallbackEx;
+                    $sku = (string) ($row['sku'] ?? '');
+                    if ($sku === '') {
+                        continue;
+                    }
+
+                    $existing = DB::table('products')->where('sku', $sku)->first();
+                    if ($existing) {
+                        DB::table('products')->where('id', $existing->id)->update([
+                            'planufac_product_id' => $row['planufac_product_id'],
+                            'planufac_synced_at' => $row['planufac_synced_at'],
+                            'planufac_payload' => $row['planufac_payload'],
+                            'name' => $row['name'],
+                            'product_unit_sku' => $row['product_unit_sku'],
+                            'description' => $row['description'],
+                            'price' => $row['price'],
+                            'cost_price' => $row['cost_price'],
+                            'weight' => $row['weight'],
+                            'image_url' => $row['image_url'],
+                            'is_active' => $row['is_active'],
+                            'updated_at' => $row['updated_at'],
+                        ]);
+                    } else {
+                        // Last resort insert with a de-conflicted sku
+                        $row['sku'] = $sku . '-' . $row['planufac_product_id'];
+                        DB::table('products')->insert($row);
                     }
                 }
             }
@@ -184,43 +191,13 @@ class PlanufacProductSyncService
         return $summary;
     }
 
-    /**
-     * Skip when sku or product_unit_sku (barcode) is already used by another planufac product
-     * or by another row in the current API batch.
-     *
-     * @param  array<string, string>  $batchSkus
-     * @param  array<string, string>  $batchUnitSkus
-     */
-    private function shouldSkipDuplicateProductIdentifiers(
-        string $erpIdStr,
-        ?string $sku,
-        ?string $productUnitSku,
-        array $batchSkus,
-        array $batchUnitSkus
-    ): bool {
-        $skuT = ($sku !== null && trim((string) $sku) !== '') ? trim((string) $sku) : '';
-        $unitT = ($productUnitSku !== null && trim((string) $productUnitSku) !== '') ? trim((string) $productUnitSku) : '';
-
-        if ($skuT !== '') {
-            if (isset($batchSkus[$skuT]) && $batchSkus[$skuT] !== $erpIdStr) {
-                return true;
-            }
-            if (DB::table('products')
-                ->where('sku', $skuT)
-                ->where('planufac_product_id', '!=', $erpIdStr)
-                ->exists()) {
-                return true;
-            }
+    private function hasDiscontinuedTag(array $item): bool
+    {
+        if (!array_key_exists('tags', $item) || !is_array($item['tags'])) {
+            return false;
         }
-
-        if ($unitT !== '') {
-            if (isset($batchUnitSkus[$unitT]) && $batchUnitSkus[$unitT] !== $erpIdStr) {
-                return true;
-            }
-            if (DB::table('products')
-                ->where('product_unit_sku', $unitT)
-                ->where('planufac_product_id', '!=', $erpIdStr)
-                ->exists()) {
+        foreach ($item['tags'] as $tag) {
+            if (is_string($tag) && strcasecmp(trim($tag), 'discontinued') === 0) {
                 return true;
             }
         }
@@ -228,123 +205,29 @@ class PlanufacProductSyncService
         return false;
     }
 
-    private function isMysqlDuplicateKeyError(QueryException $e): bool
+    /**
+     * Skip products whose name or SKU (including Planufac formatted fields) contains "deleted" (case-insensitive).
+     */
+    private function skuOrNameContainsDeleted(?string $name, ?string $sku, array $item): bool
     {
-        $msg = $e->getMessage();
-        if (str_contains($msg, 'Duplicate entry') || str_contains($msg, '1062')) {
-            return true;
+        $haystacks = [
+            (string) ($name ?? ''),
+            (string) ($sku ?? ''),
+        ];
+        foreach (['formattedSku', 'formatted_sku', 'formattedName', 'formatted_name'] as $k) {
+            if (array_key_exists($k, $item) && is_string($item[$k])) {
+                $haystacks[] = $item[$k];
+            }
         }
-        $info = $e->errorInfo;
-        if (is_array($info) && array_key_exists(1, $info)) {
-            return (int) $info[1] === 1062;
+
+        foreach ($haystacks as $h) {
+            $h = trim($h);
+            if ($h !== '' && stripos($h, 'deleted') !== false) {
+                return true;
+            }
         }
 
         return false;
-    }
-
-    /**
-     * Per-row fallback when bulk upsert fails (e.g. sku unique). Skips row on duplicate product_unit_sku / sku.
-     *
-     * @param  array<string, mixed>  $row
-     */
-    private function upsertProductRowFallback(array $row): void
-    {
-        $sku = (string) ($row['sku'] ?? '');
-        $planufacId = (string) ($row['planufac_product_id'] ?? '');
-        $unitSku = isset($row['product_unit_sku']) && $row['product_unit_sku'] !== null && $row['product_unit_sku'] !== ''
-            ? trim((string) $row['product_unit_sku'])
-            : '';
-
-        if ($sku === '') {
-            if ($unitSku !== '' && DB::table('products')->where('product_unit_sku', $unitSku)->exists()) {
-                return;
-            }
-            try {
-                DB::table('products')->insert($row);
-            } catch (QueryException $e) {
-                if ($this->isMysqlDuplicateKeyError($e)) {
-                    return;
-                }
-                throw $e;
-            }
-
-            return;
-        }
-
-        $existing = DB::table('products')->where('sku', $sku)->first();
-        if ($existing) {
-            if ($unitSku !== '') {
-                $taken = DB::table('products')
-                    ->where('product_unit_sku', $unitSku)
-                    ->where('id', '!=', $existing->id)
-                    ->exists();
-                if ($taken) {
-                    return;
-                }
-            }
-            DB::table('products')->where('id', $existing->id)->update([
-                'planufac_product_id' => $row['planufac_product_id'],
-                'planufac_synced_at' => $row['planufac_synced_at'],
-                'planufac_payload' => $row['planufac_payload'],
-                'name' => $row['name'],
-                'product_unit_sku' => $row['product_unit_sku'],
-                'description' => $row['description'],
-                'price' => $row['price'],
-                'cost_price' => $row['cost_price'],
-                'weight' => $row['weight'],
-                'image_url' => $row['image_url'],
-                'is_active' => $row['is_active'],
-                'updated_at' => $row['updated_at'],
-            ]);
-
-            return;
-        }
-
-        $row['sku'] = $sku . '-' . $planufacId;
-
-        if ($unitSku !== '' && DB::table('products')->where('product_unit_sku', $unitSku)->exists()) {
-            return;
-        }
-
-        try {
-            DB::table('products')->insert($row);
-        } catch (QueryException $e) {
-            if ($this->isMysqlDuplicateKeyError($e)) {
-                return;
-            }
-            throw $e;
-        }
-    }
-
-    /**
-     * When sync is scoped to a single brand_id query param, use it as erp_brand_id if the row has no id.
-     */
-    private function parseSingleBrandFilterId(?string $brandIdCsv): ?int
-    {
-        if ($brandIdCsv === null || trim($brandIdCsv) === '') {
-            return null;
-        }
-        $s = trim($brandIdCsv);
-        if (!preg_match('/^\d+$/', $s)) {
-            return null;
-        }
-
-        return (int) $s;
-    }
-
-    /**
-     * appproductsapi returns "brand" as a string; older payloads may use nested brand.name.
-     */
-    private function extractBrandDisplayName(array $item): ?string
-    {
-        if (array_key_exists('brand', $item) && is_string($item['brand'])) {
-            $t = trim($item['brand']);
-
-            return $t !== '' ? $t : null;
-        }
-
-        return $this->extractNestedName($item, 'brand', ['name'])
-            ?? $this->extractString($item, ['brand_name', 'brandName']);
     }
 
     private function extractId(array $item): ?string
@@ -445,27 +328,6 @@ class PlanufacProductSyncService
                     return (int) $v;
                 }
             }
-        }
-
-        return null;
-    }
-
-    /**
-     * Group / category from appproductsapi are plain strings; legacy payloads may nest { name: "..." }.
-     */
-    private function extractScalarGroupOrCategory(array $item, string $key): ?string
-    {
-        if (!array_key_exists($key, $item)) {
-            return null;
-        }
-        $v = $item[$key];
-        if (is_string($v)) {
-            $s = trim($v);
-
-            return $s !== '' ? $s : null;
-        }
-        if (is_array($v)) {
-            return $this->extractNestedName($item, $key, ['name']);
         }
 
         return null;
@@ -585,13 +447,18 @@ class PlanufacProductSyncService
      */
     private function extractPlanufacCategoryPath(array $item): array
     {
-        $main = $this->extractScalarGroupOrCategory($item, 'group');
-        $sub = $this->extractScalarGroupOrCategory($item, 'category');
+        $groupName = $this->extractNestedName($item, 'group', ['name']);
+        $categoryName = $this->extractNestedName($item, 'category', ['name']);
 
+        $main = $groupName !== null && trim($groupName) !== '' ? trim($groupName) : null;
+        $sub = $categoryName !== null && trim($categoryName) !== '' ? trim($categoryName) : null;
+
+        // Payloads with only category (no group): keep previous flat behaviour (single root).
         if ($main === null && $sub !== null) {
             return [$sub, null];
         }
 
+        // Same name on group and category: one level only (avoid redundant parent/child with identical names).
         if ($main !== null && $sub !== null && strcasecmp($main, $sub) === 0) {
             return [$main, null];
         }
@@ -687,7 +554,22 @@ class PlanufacProductSyncService
 
     private function extractActive(array $item): int
     {
-       
+        $v = $item['is_active'] ?? $item['active'] ?? $item['status'] ?? null;
+        if (is_bool($v)) {
+            return $v ? 1 : 0;
+        }
+        if (is_numeric($v)) {
+            return ((int) $v) === 1 ? 1 : 0;
+        }
+        if (is_string($v)) {
+            $s = strtolower(trim($v));
+            if (in_array($s, ['1', 'true', 'active', 'published', 'yes'], true)) {
+                return 1;
+            }
+            if (in_array($s, ['0', 'false', 'inactive', 'unpublished', 'no'], true)) {
+                return 0;
+            }
+        }
         // default active on sync
         return 1;
     }
