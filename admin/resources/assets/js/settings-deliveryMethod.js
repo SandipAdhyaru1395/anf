@@ -24,6 +24,7 @@ $(function () {
         { data: 'id' },
         { data: 'name',width: '30%'  },
         { data: 'time',width: '30%'  },
+        { data: 'minimum_amount' },
         { data: 'rate' },
         { data: 'status' },
         { data: null, defaultContent: '' }
@@ -52,6 +53,10 @@ $(function () {
         },
         {
           targets: 4,
+          render: function (data) { return data !== null && data !== undefined ? Number(data).toFixed(2) : '-'; }
+        },
+        {
+          targets: 5,
           render: function (data) {
             if (data === 'Active') {
               return '<span class="badge bg-label-success">Active</span>';
@@ -61,7 +66,7 @@ $(function () {
           }
         },
         {
-          targets: 5,
+          targets: 6,
           orderable: false,
           searchable: false,
           render: function (data, type, full) {
@@ -90,6 +95,7 @@ $(function () {
             $('#ajaxEditDeliveryMethodForm').find('#id').val(response.id);
             $('#ajaxEditDeliveryMethodForm').find('#dmName').val(response.name);
             $('#ajaxEditDeliveryMethodForm').find('#dmTime').val(response.time);
+            $('#ajaxEditDeliveryMethodForm').find('#editDmMinimumAmount').val(response.minimum_amount ?? '0');
             $('#ajaxEditDeliveryMethodForm').find('#dmPrice').val(response.rate);
             $('#ajaxEditDeliveryMethodForm').find('#dmStatus').val(response.status).trigger('change');
             $('#ajaxEditDeliveryMethodForm').find('#dmSortOrder').val(response.sort_order || '');
@@ -131,6 +137,7 @@ $(function () {
         dmName: { validators: { notEmpty: { message: 'Please enter name' } } },
         dmTime: { validators: { notEmpty: { message: 'Please enter delivery time' } } },
         dmPrice: { validators: { notEmpty: { message: 'Please enter rate' }, numeric: { message: 'Rate must be a number' } } },
+        dmMinimumAmount: { validators: { notEmpty: { message: 'Please enter minimum amount' }, numeric: { message: 'Minimum amount must be a number' } } },
         dmStatus: { validators: { notEmpty: { message: 'Please select status' } } },
         dmSortOrder: { validators: { integer: { message: 'Sort order must be an integer' } } }
       },
@@ -152,6 +159,7 @@ $(function () {
         dmName: { validators: { notEmpty: { message: 'Please enter name' } } },
         dmTime: { validators: { notEmpty: { message: 'Please enter delivery time' } } },
         dmPrice: { validators: { notEmpty: { message: 'Please enter rate' }, numeric: { message: 'Rate must be a number' } } },
+        dmMinimumAmount: { validators: { notEmpty: { message: 'Please enter minimum amount' }, numeric: { message: 'Minimum amount must be a number' } } },
         dmStatus: { validators: { notEmpty: { message: 'Please select status' } } },
         dmSortOrder: { validators: { integer: { message: 'Sort order must be an integer' } } }
       },

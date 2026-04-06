@@ -8,6 +8,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PlanufacProductSyncService
 {
@@ -25,7 +26,10 @@ class PlanufacProductSyncService
     public function syncAll(int $pageSize = 1000, ?string $brandIdCsv = null): array
     {
         $startedAt = Carbon::now();
-
+        Log::info('Syncing Planufac products', [
+            'pageSize' => $pageSize,
+            'brandIdCsv' => $brandIdCsv,
+        ]);
         $summary = [
             'inserted' => 0,
             'updated' => 0,
@@ -36,6 +40,10 @@ class PlanufacProductSyncService
 
         $start = 0;
         $filterBrandId = $this->parseSingleBrandFilterId($brandIdCsv);
+
+        $defaultUnitId = DB::table('units')->orderBy('id')->value('id');
+        $defaultUnitId = $defaultUnitId !== null ? (int) $defaultUnitId : null;
+        $defaultVatMethod = DB::table('vat_methods')->orderBy('id')->first();
 
         while (true) {
             $resp = $this->client->listProducts($pageSize, $start, 'products.name', 'asc', '', $brandIdCsv);
@@ -102,7 +110,9 @@ class PlanufacProductSyncService
                     $batchUnitSkus[$productUnitSKU] = $erpIdStr;
                 }
 
-                $rows[] = [
+                $vatSnapshot = $this->vatSnapshotFromDefaultMethod($defaultVatMethod, (float) $price);
+
+                $rows[] = array_merge([
                     'planufac_product_id' => $erpIdStr,
                     'planufac_synced_at' => $now,
                     'planufac_payload' => json_encode($item, JSON_UNESCAPED_SLASHES),
@@ -115,9 +125,10 @@ class PlanufacProductSyncService
                     'weight' => $weight,
                     'image_url' => $imageUrl,
                     'is_active' => $isActive,
+                    'unit_id' => $defaultUnitId,
                     'updated_at' => $now,
                     'created_at' => $now,
-                ];
+                ], $vatSnapshot);
             }
 
             if (count($rows) === 0) {
@@ -140,7 +151,26 @@ class PlanufacProductSyncService
                 DB::table('products')->upsert(
                     $rows,
                     ['planufac_product_id'],
-                    ['planufac_synced_at', 'planufac_payload', 'name', 'sku', 'product_unit_sku','description', 'price', 'cost_price', 'weight', 'image_url', 'is_active', 'updated_at']
+                    [
+                        'planufac_synced_at',
+                        'planufac_payload',
+                        'name',
+                        'sku',
+                        'product_unit_sku',
+                        'description',
+                        'price',
+                        'cost_price',
+                        'weight',
+                        'image_url',
+                        'is_active',
+                        'unit_id',
+                        'vat_method_id',
+                        'vat_method_name',
+                        'vat_method_type',
+                        'vat_percentage',
+                        'vat_amount',
+                        'updated_at',
+                    ]
                 );
             } catch (QueryException $e) {
                 // Fallback path: if sku has a unique constraint and conflicts, update by sku instead.
@@ -294,6 +324,12 @@ class PlanufacProductSyncService
                 'weight' => $row['weight'],
                 'image_url' => $row['image_url'],
                 'is_active' => $row['is_active'],
+                'unit_id' => $row['unit_id'] ?? null,
+                'vat_method_id' => $row['vat_method_id'] ?? null,
+                'vat_method_name' => $row['vat_method_name'] ?? null,
+                'vat_method_type' => $row['vat_method_type'] ?? null,
+                'vat_percentage' => $row['vat_percentage'] ?? 0,
+                'vat_amount' => $row['vat_amount'] ?? 0,
                 'updated_at' => $row['updated_at'],
             ]);
 
@@ -690,6 +726,51 @@ class PlanufacProductSyncService
        
         // default active on sync
         return 1;
+    }
+
+    /**
+     * Match admin product save logic: derive VAT fields from the default vat_methods row (if any).
+     *
+     * @param  object|null  $vat  first row from vat_methods ordered by id asc
+     * @return array{vat_method_id: ?int, vat_method_name: ?string, vat_method_type: ?string, vat_percentage: float, vat_amount: float}
+     */
+    private function vatSnapshotFromDefaultMethod(?object $vat, float $price): array
+    {
+        if ($vat === null) {
+            return [
+                'vat_method_id' => null,
+                'vat_method_name' => null,
+                'vat_method_type' => null,
+                'vat_percentage' => 0,
+                'vat_amount' => 0,
+            ];
+        }
+
+        $vatMethodId = (int) $vat->id;
+        $vatMethodName = isset($vat->name) ? (string) $vat->name : null;
+        $vatMethodType = isset($vat->type) ? (string) $vat->type : null;
+        $amount = isset($vat->amount) ? (float) $vat->amount : 0.0;
+
+        $vatPercentage = 0.0;
+        $vatAmount = 0.0;
+
+        if ($vatMethodType === 'Percentage') {
+            $vatPercentage = $amount;
+            $vatAmount = $price * $amount / 100;
+        } else {
+            $vatAmount = $amount;
+            if ($price > 0) {
+                $vatPercentage = ($amount / $price) * 100;
+            }
+        }
+
+        return [
+            'vat_method_id' => $vatMethodId,
+            'vat_method_name' => $vatMethodName,
+            'vat_method_type' => $vatMethodType,
+            'vat_percentage' => $vatPercentage,
+            'vat_amount' => $vatAmount,
+        ];
     }
 }
 

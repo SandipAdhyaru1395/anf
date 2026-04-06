@@ -25,7 +25,7 @@
 
   // ! Don't change it unless you really know what you are doing
 
-  const defaultImagePath = baseUrl + 'public/public/assets/img/default_product.png';
+  const defaultImagePath = baseUrl + 'assets/img/default_product.png';
   const previewTemplate = `<div class="dz-preview dz-file-preview">
 <div class="dz-details">
   <div class="dz-thumbnail">

@@ -82,9 +82,14 @@ class Customer extends Model implements CanResetPasswordContract
         return $this->belongsTo(User::class, 'rep_id', 'id');
     }
 
-    public function customerGroup()
+    public function customerGroup(): BelongsTo
     {
-        return $this->belongsTo(CustomerGroup::class);
+        return $this->belongsTo(CustomerGroup::class, 'customer_group_id');
+    }
+
+    public function priceList(): BelongsTo
+    {
+        return $this->belongsTo(PriceList::class, 'price_list_id');
     }
 
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void

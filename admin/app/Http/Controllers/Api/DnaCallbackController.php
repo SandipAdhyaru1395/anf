@@ -90,7 +90,6 @@ class DnaCallbackController extends Controller
         }
 
         // Map cached context into "inputs" equivalent to store()
-        $deliveryMethodId = $context['delivery_method_id'] ?? null;
         $deliveryNote     = $context['delivery_note'] ?? null;
         $customerPoNumber = trim((string) ($context['customer_po_number'] ?? ''));
         $customerPoNumber = $customerPoNumber !== '' ? $customerPoNumber : null;
@@ -130,7 +129,6 @@ class DnaCallbackController extends Controller
                 $customer,
                 $shippingBranch,
                 $billingBranch,
-                $deliveryMethodId,
                 $deliveryNote,
                 $customerPoNumber,
                 $invoiceId,
@@ -233,8 +231,8 @@ class DnaCallbackController extends Controller
 
                 // Auto-apply available wallet credit to this purchase (partial or full)
                 $availableCredit = (float)($customer->credit_balance ?? 0.0);
-                $deliveryMethod = $deliveryMethodId ? \App\Models\DeliveryMethod::find($deliveryMethodId) : null;
-                $deliveryCharge = $deliveryMethod ? (float)$deliveryMethod->rate : 0;
+                $deliveryMethod = \App\Models\DeliveryMethod::resolveForSubtotal((float) $subtotal);
+                $deliveryCharge = $deliveryMethod ? (float) $deliveryMethod->rate : 0;
                 $totalAmount = $subtotal + $vatAmount + $deliveryCharge;
                 $walletCreditUsed = min($subtotal, $availableCredit);
                 if (is_float($cachedWalletUsed) || is_int($cachedWalletUsed)) {

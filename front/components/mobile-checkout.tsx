@@ -66,6 +66,28 @@ interface DeliveryMethod {
   time: string;
   rate: number;
   status: string;
+  minimum_amount?: number | string | null;
+  sort_order?: number | string | null;
+}
+
+/** Matches server: tier applies only if subtotal >= its minimum; among those, pick highest minimum. Otherwise null. */
+function resolveDeliveryMethodForSubtotal(
+  methods: DeliveryMethod[],
+  orderSubtotal: number
+): DeliveryMethod | null {
+  if (!methods.length) return null;
+  const eligible = methods.filter((m) => Number(m.minimum_amount ?? 0) <= orderSubtotal);
+  if (!eligible.length) return null;
+  const sorted = [...eligible].sort((a, b) => {
+    const minA = Number(a.minimum_amount ?? 0);
+    const minB = Number(b.minimum_amount ?? 0);
+    let c = minB - minA;
+    if (c !== 0) return c;
+    c = Number(a.sort_order ?? 9999) - Number(b.sort_order ?? 9999);
+    if (c !== 0) return c;
+    return b.id - a.id;
+  });
+  return sorted[0] ?? null;
 }
 
 interface BankOption {
@@ -101,7 +123,6 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [poNumber, setPoNumber] = useState("");
   const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>([]);
-  const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<DeliveryMethod | null>(null);
   const { toast } = useToast();
   const { refresh, customer } = useCustomer();
   const { format, symbol } = useCurrency();
@@ -159,10 +180,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
       const resp = await api.get("/delivery-methods");
       if (resp.data.success && Array.isArray(resp.data.delivery_methods) && resp.data.delivery_methods.length > 0) {
         setDeliveryMethods(resp.data.delivery_methods);
-        // Do NOT setSelectedDeliveryMethod here: let the useEffect on deliveryMethods handle default selection!
       } else {
         setDeliveryMethods([]);
-        setSelectedDeliveryMethod(null);
       }
     } catch (err) {
       setDeliveryMethods([]);
@@ -185,14 +204,17 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
   // Always show summary even if no delivery method exists; use 0 as default
   const showSummary = typeof cartTotals?.subtotal === 'number';
 
-  // All summary values always from very latest state, guaranteed numbers
-  const deliveryRate = Number(selectedDeliveryMethod?.rate) || 0;
   const subtotal = Number(cartTotals?.subtotal) || 0;
+  const resolvedDeliveryMethod = useMemo(
+    () => resolveDeliveryMethodForSubtotal(deliveryMethods, subtotal),
+    [deliveryMethods, subtotal]
+  );
+
+  const deliveryRate = Number(resolvedDeliveryMethod?.rate) || 0;
   const discount = Number(walletDiscount) || 0;
   const vat = Number(totalVatAmount) || 0;
   const paymentTotal = subtotal - discount + deliveryRate + vat;
 
-  // Ensure selectedDeliveryMethod is only set after deliveryMethods are loaded, and not on every re-render
   useEffect(() => {
     fetchBranches();
     fetchDeliveryMethods();
@@ -238,12 +260,6 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
       }
     }
   }, []);
-  useEffect(() => {
-    // Only auto-select first delivery method on load if none already selected
-    if (!selectedDeliveryMethod && deliveryMethods.length > 0) {
-      setSelectedDeliveryMethod(deliveryMethods[0]);
-    }
-  }, [deliveryMethods]);
 
   const payLaterAllowed = !!customer?.pay_later_allowed;
   const initialGatewayAvailable = typeof settings?.payment_gateway_available === 'boolean' ? settings.payment_gateway_available : true;
@@ -315,10 +331,10 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         delivery_instructions: deliveryInstructions,
         delivery_note: deliveryInstructions,
         customer_po_number: poNumber.trim() || undefined,
-        delivery_method_id: selectedDeliveryMethod?.id ?? null,
-        delivery_method_name: selectedDeliveryMethod?.name ?? null,
-        delivery_time: selectedDeliveryMethod?.time ?? null,
-        delivery_charge: selectedDeliveryMethod?.rate ?? null,
+        delivery_method_id: resolvedDeliveryMethod?.id ?? null,
+        delivery_method_name: resolvedDeliveryMethod?.name ?? null,
+        delivery_time: resolvedDeliveryMethod?.time ?? null,
+        delivery_charge: resolvedDeliveryMethod?.rate ?? null,
         payment_mode: paymentMode,
       };
       if (paymentMode === "gateway_bank" && selectedBankId) {
@@ -555,11 +571,11 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
             <div className="flex-1 text-left">
               <span className="block text-[13px] font-bold text-[#4E5667] leading-none">Delivery Method:</span>
               <div className="text-[13px] text-[#4E5667] font-semibold mt-1">
-                {selectedDeliveryMethod ? selectedDeliveryMethod.name : "Select method"}
+                {resolvedDeliveryMethod ? resolvedDeliveryMethod.name : "No delivery options"}
               </div>
-              {selectedDeliveryMethod?.time && (
+              {resolvedDeliveryMethod?.time && (
                 <div className="text-[12px] text-[#5A9AEC] font-semibold leading-none mt-1">
-                  Estimated: {selectedDeliveryMethod.time} ({format(selectedDeliveryMethod.rate)})
+                  Estimated: {resolvedDeliveryMethod.time} ({format(resolvedDeliveryMethod.rate)})
                 </div>
               )}
             </div>
@@ -568,21 +584,35 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
           </button>
           {isDeliveryExpanded && (
             <div className="px-3 pb-3 pt-1 space-y-2 border-t border-[#EEF1F7]">
-              {deliveryMethods.map((method) => (
-                <label key={method.id} className="flex items-center gap-2.5 cursor-pointer group rounded-[4px] border border-[#E7EBF4] p-2.5">
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    checked={selectedDeliveryMethod?.id === method.id}
-                    onChange={() => setSelectedDeliveryMethod(method)}
-                    className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
-                  />
-                  <div className="flex-1 text-[12px] leading-tight">
-                    <span className="font-bold text-[#4E5667] block">{method.name}</span>
-                    <span className="text-[#5A9AEC] font-semibold">{method.time} ({format(method.rate)})</span>
-                  </div>
-                </label>
-              ))}
+              <p className="text-[11px] text-[#68676E] leading-snug px-0.5 pb-1">
+                A tier applies only after your subtotal (excl. VAT) reaches its minimum. If several apply, the highest minimum wins. Below all minimums, delivery is not applied.
+              </p>
+              {deliveryMethods.map((method) => {
+                const isApplied = resolvedDeliveryMethod?.id === method.id;
+                const minAmt = Number(method.minimum_amount ?? 0);
+                return (
+                  <label
+                    key={method.id}
+                    className={`flex items-center gap-2.5 rounded-[4px] border p-2.5 ${
+                      isApplied ? "border-[#5A9AEC] bg-[#F7FAFF] cursor-default" : "border-[#E7EBF4] opacity-70 cursor-not-allowed"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
+                      checked={isApplied}
+                      disabled={!isApplied}
+                      className="w-4 h-4 text-[#4A90E5] focus:ring-[#4A90E5]"
+                    />
+                    <div className="flex-1 text-[12px] leading-tight">
+                      <span className="font-bold text-[#4E5667] block">{method.name}</span>
+                      <span className="text-[#5A9AEC] font-semibold">
+                        From {format(minAmt)} · {method.time} ({format(method.rate)})
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           )}
         </div>
@@ -631,7 +661,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
           <div className="px-5 py-3 border-t border-[#E5EAF3]">
             <div className="flex justify-between items-start mb-1">
               <h4 className="font-bold text-[#3F4B63] text-[13px]">Delivery</h4>
-              <span className="font-bold text-[#3F4B63] text-[13px] leading-none">{selectedDeliveryMethod?.name} - {format(deliveryRate)}</span>
+              <span className="font-bold text-[#3F4B63] text-[13px] leading-none">{resolvedDeliveryMethod?.name ?? "—"} - {format(deliveryRate)}</span>
             </div>
             <div className="text-[#3F4B63] leading-[1.25] text-[13px] text-right">
               {selectedShippingBranch ? (

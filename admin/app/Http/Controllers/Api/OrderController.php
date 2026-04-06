@@ -291,11 +291,10 @@ class OrderController extends Controller
 
 			// Auto-apply available wallet credit to this purchase (partial or full)
 			$availableCredit = (float) optional($customer)->credit_balance ?? 0.0;
-            // Only trust delivery_method_id from user, fetch method in secure server-side
-            $deliveryMethod = $request->input('delivery_method_id') ? 
-                \App\Models\DeliveryMethod::find($request->input('delivery_method_id')) : null;
+            // Delivery tier from subtotal: highest minimum_amount that is still <= subtotal (server-side)
+            $deliveryMethod = \App\Models\DeliveryMethod::resolveForSubtotal((float) $subtotal);
 
-            $deliveryCharge = $deliveryMethod ? (float)$deliveryMethod->rate : 0;
+            $deliveryCharge = $deliveryMethod ? (float) $deliveryMethod->rate : 0;
             $totalAmount = $subtotal + $vatAmount + $deliveryCharge;
 			$walletCreditUsed = min($subtotal, $availableCredit);
 			$outstandingAmount = $totalAmount - $walletCreditUsed; // total - wallet_used = outstanding

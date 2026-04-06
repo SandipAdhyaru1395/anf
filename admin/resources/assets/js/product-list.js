@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
               id = full['id'],
               image_url = full['image_url'];
 
-            const defaultImagePath = baseUrl + 'public/assets/img/default_product.png';
+            const defaultImagePath = baseUrl + 'assets/img/default_product.png';
             const output = `<img src="${image_url}" alt="Product-${id}" class="rounded" onerror="this.onerror=null; this.src='${defaultImagePath}';">`;
 
             // Creates full output for Product name and product_brand

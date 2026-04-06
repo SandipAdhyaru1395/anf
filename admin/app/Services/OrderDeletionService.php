@@ -125,15 +125,15 @@ class OrderDeletionService
                 try {
                     if ($order->type === 'SO') {
                         $qty = (float) $item->quantity;
-                        // If order was still open (not completed), just remove from ordered bucket
-                        if ($order->status !== 'Completed') {
+                        // If order was still open (not Fulfilled), just remove from ordered bucket
+                        if ($order->status !== 'Fulfilled') {
                             WarehouseProductSyncService::adjustOrdered(
                                 $item->product_id,
                                 'subtraction',
                                 $qty
                             );
                         } else {
-                            // If order was completed, reverse the physical shipment
+                            // If order was Fulfilled, reverse the physical shipment
                             WarehouseProductSyncService::adjustQuantity(
                                 $item->product_id,
                                 'addition',

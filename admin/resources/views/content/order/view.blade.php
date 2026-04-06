@@ -17,9 +17,9 @@
             $soldItems = $order->items;
         }
         $totalQty = (float) $soldItems->sum('quantity');
-        $dispatchedQty = $order->status === 'Completed' ? $totalQty : 0;
+        $dispatchedQty = $order->status === 'Fulfilled' ? $totalQty : 0;
         $dispatchDate =
-            $order->status === 'Completed'
+            $order->status === 'Fulfilled'
                 ? optional($order->order_date)->format('d M Y') ?? optional($order->updated_at)->format('d M Y')
                 : null;
         $shippingBranch = $order->shippingBranch;
@@ -153,7 +153,7 @@
                                         $unitPrice = (float) ($item->unit_price ?? 0);
                                         $total = (float) ($item->total ?? 0);
                                         $grandTotal += $total;
-                                        $dispatched = $order->status === 'Completed' ? $qty : 0;
+                                        $dispatched = $order->status === 'Fulfilled' ? $qty : 0;
                                         $invoiced = $order->type === 'EST' ? 0 : $qty;
                                         $paid = 0;
                                         if (

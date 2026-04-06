@@ -118,9 +118,9 @@ class SettingController extends Controller
 
     public function deliveryMethods()
     {
-        $methods = \App\Models\DeliveryMethod::where('status', 'active')
+        $methods = \App\Models\DeliveryMethod::whereRaw('LOWER(TRIM(COALESCE(status, \'\'))) = ?', ['active'])
             ->orderByRaw('COALESCE(sort_order, 9999), name')
-            ->get(['id', 'name', 'time', 'rate', 'status']);
+            ->get(['id', 'name', 'time', 'rate', 'minimum_amount', 'status', 'sort_order']);
         return response()->json([
             'success' => true,
             'delivery_methods' => $methods,

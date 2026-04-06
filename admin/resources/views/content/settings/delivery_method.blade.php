@@ -54,6 +54,7 @@
                       <th>ID</th>
                       <th>Name</th>
                       <th>Delivery Time</th>
+                      <th>Minimum Amount</th>
                       <th>Rate</th>
                       <th>Status</th>
                       <th>Actions</th>

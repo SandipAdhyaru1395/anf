@@ -228,7 +228,7 @@
                                     @endphp
                                     <select class="form-select" id="status" name="status">
                                         <option value="New" {{ $currentStatus === 'New' ? 'selected' : '' }}>New</option>
-                                        <option value="Completed" {{ $currentStatus === 'Completed' ? 'selected' : '' }}>Completed</option>
+                                        <option value="Fulfilled" {{ $currentStatus === 'Fulfilled' ? 'selected' : '' }}>Fulfilled</option>
                                         <option value="Cancelled" {{ $currentStatus === 'Cancelled' ? 'selected' : '' }}>Cancelled</option>
                                         <option value="Returned" {{ $currentStatus === 'Returned' ? 'selected' : '' }}>Returned</option>
                                     </select>

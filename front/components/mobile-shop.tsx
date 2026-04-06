@@ -751,8 +751,8 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
     return rawBase.replace(/\/api$/, '').replace(/\/$/, '');
   };
 
-  const defaultImagePath = `${getApiBaseUrl()}/public/assets/img/default_product.png`;
-  const defaultBrandImagePath = `${getApiBaseUrl()}/public/assets/img/default_brand.png`;
+  const defaultImagePath = `${getApiBaseUrl()}/assets/img/default_product.png`;
+  const defaultBrandImagePath = `${getApiBaseUrl()}/assets/img/default_brand.png`;
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;

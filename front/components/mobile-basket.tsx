@@ -51,7 +51,7 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
     return rawBase.replace(/\/api$/, '').replace(/\/$/, '');
   };
 
-  const defaultImagePath = `${getApiBaseUrl()}/public/assets/img/default_product.png`;
+  const defaultImagePath = `${getApiBaseUrl()}/assets/img/default_product.png`;
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;
@@ -231,7 +231,9 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
         sessionStorage.removeItem('cart_adjustments');
       }
     } catch { }
-    const onProductsCacheUpdated = () => { loadCart(); };
+    const onProductsCacheUpdated = () => {
+      loadCart();
+    };
     if (typeof window !== 'undefined') {
       window.addEventListener('products_cache_updated', onProductsCacheUpdated);
     }
@@ -339,7 +341,9 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
         </div>
       )}
 
-      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto bg-[#FAFBFD] pb-[220px] pt-1">
+      <div
+        className={`scrollbar-hide min-h-0 flex-1 overflow-y-auto bg-[#FAFBFD] pt-1 ${items.length > 0 ? "pb-[220px]" : "pb-[100px]"}`}
+      >
         {items.map(({ product, quantity }) => {
           const unitPrice = parseFloat((product.price ?? "0").replace(/[^\d.\-]+/g, "")) || 0;
           const lineTotal = unitPrice * quantity;
@@ -420,35 +424,37 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
         ) : null}
       </div>
 
-      {/* Sticky summary — Figma: gradient #E8E8ED → #F4F2F9, shadow, px 23, Shop nav below */}
-      <div
-        className="fixed bottom-[64px] left-1/2 z-40 w-full max-w-[402px] -translate-x-1/2 bg-gradient-to-b from-[#E8E8ED] to-[#F4F2F9] px-[23px] pb-[13px] pt-4 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
-        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
-      >
-        <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-[13px] font-bold leading-none text-[#3D495E]">
-          <span>{cartTotals.units} Units</span>
-          <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
-          <span>{cartTotals.skus} SKUs</span>
-          <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
-          <span>{format(cartTotals.total)}</span>
-          <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
-          <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#4A90E5]">
-            <FontAwesomeIcon icon={faTruck} className="text-[12px]" aria-hidden />
-            <span>
-              +{symbol}
-              {totalWalletCredit.toFixed(2)}
-            </span>
-          </span>
-        </div>
-        <p className="mt-2 text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]">Includes FREE delivery</p>
-        <button
-          type="button"
-          onClick={handleCheckout}
-          className="mt-3 flex h-12 w-full items-center justify-center rounded-[25px] bg-gradient-to-b from-[#2868C0] to-[#4C92E9] text-[16px] font-bold leading-none text-white shadow-[0_2px_10px_rgba(40,104,192,0.35)] transition-opacity hover:opacity-95 active:opacity-90"
+      {/* Sticky summary + checkout — only when basket has line items */}
+      {items.length > 0 ? (
+        <div
+          className="fixed bottom-[64px] left-1/2 z-40 w-full max-w-[402px] -translate-x-1/2 bg-gradient-to-b from-[#E8E8ED] to-[#F4F2F9] px-[23px] pb-[13px] pt-4 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+          style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
         >
-          Checkout
-        </button>
-      </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-[13px] font-bold leading-none text-[#3D495E]">
+            <span>{cartTotals.units} Units</span>
+            <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+            <span>{cartTotals.skus} SKUs</span>
+            <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+            <span>{format(cartTotals.total)}</span>
+            <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+            <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#4A90E5]">
+              <FontAwesomeIcon icon={faTruck} className="text-[12px]" aria-hidden />
+              <span>
+                +{symbol}
+                {totalWalletCredit.toFixed(2)}
+              </span>
+            </span>
+          </div>
+          <p className="mt-2 text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]">Includes FREE delivery</p>
+          <button
+            type="button"
+            onClick={handleCheckout}
+            className="mt-3 flex h-12 w-full items-center justify-center rounded-[25px] bg-gradient-to-b from-[#2868C0] to-[#4C92E9] text-[16px] font-bold leading-none text-white shadow-[0_2px_10px_rgba(40,104,192,0.35)] transition-opacity hover:opacity-95 active:opacity-90"
+          >
+            Checkout
+          </button>
+        </div>
+      ) : null}
 
       <nav
         className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"

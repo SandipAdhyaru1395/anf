@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import api from "@/lib/axios"
 import { MobileDashboard } from "@/components/mobile-dashboard"
 import { MobileShop } from "@/components/mobile-shop"
 import { MobileBasket } from "@/components/mobile-basket"
@@ -31,29 +32,70 @@ type PageKey =
   | "contact-us"
   | "terms-and-conditions"
 
+function findProductInProductsCache(productId: number): any | null {
+  try {
+    const raw = sessionStorage.getItem("products_cache")
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    const categories = Array.isArray(parsed) ? parsed : parsed?.categories
+    if (!Array.isArray(categories)) return null
+    const walk = (nodes: any[]): any => {
+      for (const n of nodes) {
+        if (Array.isArray(n?.products)) {
+          for (const p of n.products) {
+            if (Number(p?.id) === productId) return p
+          }
+        }
+        if (Array.isArray(n?.subcategories)) {
+          const found = walk(n.subcategories)
+          if (found) return found
+        }
+      }
+      return null
+    }
+    return walk(categories)
+  } catch {
+    return null
+  }
+}
+
+/** Align server cart with parent state so dashboard sticky totals work on first paint / refresh. */
+function mapCartApiResponseToCartRecord(res: any): Record<number, { product: any; quantity: number }> {
+  const items: any[] = res?.data?.cart?.items || []
+  const next: Record<number, { product: any; quantity: number }> = {}
+  for (const it of items) {
+    const productId = Number(it?.product?.id ?? it?.product_id)
+    if (!Number.isFinite(productId)) continue
+    const p = it?.product ?? findProductInProductsCache(productId)
+    if (!p) continue
+    const baseUnit = Number(p?.price ?? it?.original_unit_price ?? it?.unit_price ?? 0)
+    const effectiveUnit = Number(p?.effective_price ?? it?.unit_price ?? baseUnit)
+    const stepQty = Number(p?.step_quantity) > 0 ? Number(p.step_quantity) : 1
+    next[productId] = {
+      product: {
+        id: productId,
+        name: String(p?.name ?? ""),
+        image: String(p?.image ?? ""),
+        price: String(Number.isFinite(effectiveUnit) ? effectiveUnit : baseUnit),
+        discount: p?.discount != null ? String(p.discount) : undefined,
+        wallet_credit: Number(p?.wallet_credit ?? 0),
+        step_quantity: stepQty,
+      },
+      quantity: Number(it?.quantity) || 0,
+    }
+  }
+  return next
+}
+
 export default function Home() {
   const [hasToken, setHasToken] = useState<boolean | null>(null)
   const [currentPage, setCurrentPage] = useState<PageKey>("dashboard")
   const [showFavorites, setShowFavorites] = useState(false)
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<string | null>(null)
   const [cart, setCart] = useState<Record<number, { product: any; quantity: number }>>({})
-  const basketEnteredAtRef = useRef<number>(0)
 
   // Navigation and State Helpers
   const handleNavigate = (page: PageKey, favorites = false) => {
-    const now = Date.now()
-    // Guard against unintended immediate redirects from basket -> shop.
-    if (
-      currentPage === "basket" &&
-      page === "shop" &&
-      Object.keys(cart).length > 0 &&
-      now - basketEnteredAtRef.current < 5000
-    ) {
-      return
-    }
-    if (page === "basket") {
-      basketEnteredAtRef.current = now
-    }
     setCurrentPage(page)
     setShowFavorites(favorites)
   }
@@ -137,6 +179,34 @@ export default function Home() {
       // ignore
     }
   }, [])
+
+  // Hydrate cart from API so dashboard (and other pages) show correct sticky totals after refresh.
+  useEffect(() => {
+    if (hasToken !== true) return
+    let cancelled = false
+    const loadCart = async () => {
+      try {
+        const res = await api.get("/cart")
+        if (cancelled) return
+        setCart(mapCartApiResponseToCartRecord(res))
+      } catch {
+        /* unauthenticated or network */
+      }
+    }
+    loadCart()
+    const onProductsCacheUpdated = () => {
+      loadCart()
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("products_cache_updated", onProductsCacheUpdated)
+    }
+    return () => {
+      cancelled = true
+      if (typeof window !== "undefined") {
+        window.removeEventListener("products_cache_updated", onProductsCacheUpdated)
+      }
+    }
+  }, [hasToken])
 
   const totals = useMemo(() => {
     const entries = Object.values(cart)

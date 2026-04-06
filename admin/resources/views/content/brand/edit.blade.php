@@ -16,7 +16,7 @@
     <script>
         $(document).ready(function() {
             // Handle image URL preview with fallback
-            const defaultImagePath = '{{ asset('public/public/assets/img/default_brand.png') }}';
+            const defaultImagePath = '{{ asset('assets/img/default_brand.png') }}';
             const $imageUrlInput = $('#brandImageUrl');
             const $imagePreview = $('#imagePreview');
             const $imagePreviewContainer = $('#imagePreviewContainer');

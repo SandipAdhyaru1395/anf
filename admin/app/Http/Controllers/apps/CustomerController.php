@@ -8,6 +8,7 @@ use App\traits\BulkDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Customer;
+use App\Models\SyncUpdate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -51,7 +52,9 @@ class CustomerController extends Controller
       return redirect()->route('customer.list');
     }
 
-    $customer = Customer::query()->findOrFail($id);
+    $customer = Customer::query()
+      ->with(['customerGroup', 'priceList'])
+      ->findOrFail($id);
 
     $orderAgg = Order::query()
       ->where('customer_id', $id)
@@ -510,6 +513,16 @@ class CustomerController extends Controller
 
     $customer = Customer::findOrFail($request->id);
 
+    $normalizePriceListId = static function ($v): ?int {
+      if ($v === null || $v === '') {
+        return null;
+      }
+
+      return (int) $v;
+    };
+    $priceListChanged = $normalizePriceListId($customer->price_list_id)
+      !== $normalizePriceListId($request->input('price_list_id'));
+
     $data = [
       'company_name' => $request->companyName,
       'email' => $request->email,
@@ -537,6 +550,10 @@ class CustomerController extends Controller
     }
 
     $customer->update($data);
+
+    if ($priceListChanged) {
+      SyncUpdate::bumpEntity('Product');
+    }
 
     if (!(int) ($data['is_active'] ?? 0)) {
       $customer->tokens()->delete();

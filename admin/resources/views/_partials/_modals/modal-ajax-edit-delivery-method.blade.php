@@ -29,6 +29,16 @@
                           @enderror
                       </div>
                       <div class="col-12 mb-6 form-control-validation">
+                          <label class="form-label" for="editDmMinimumAmount">Minimum Amount</label>
+                          <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="editDmMinimumAmount"
+                              name="dmMinimumAmount" class="form-control" placeholder="Min. order subtotal for this tier"
+                              value="{{ old('dmMinimumAmount') }}" />
+                          <div class="form-text">Highest tier where minimum ≤ order subtotal is applied at checkout.</div>
+                          @error('dmMinimumAmount', 'editModal')
+                              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+                          @enderror
+                      </div>
+                      <div class="col-12 mb-6 form-control-validation">
                           <label class="form-label" for="dmPrice">Rate</label>
                           <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="dmPrice"
                               name="dmPrice" class="form-control" placeholder="Rate" value="{{ old('dmPrice') }}" />

@@ -22,6 +22,14 @@
           @enderror
         </div>
         <div class="col-12 mb-6 form-control-validation">
+          <label class="form-label" for="addDmMinimumAmount">Minimum Amount</label>
+          <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" class="form-control" id="addDmMinimumAmount" name="dmMinimumAmount" placeholder="Min. order subtotal for this tier" value="{{ old('dmMinimumAmount', '0') }}" />
+          <div class="form-text">Shipping tier applies when order subtotal (excl. VAT &amp; delivery) is at least this amount. The highest matching tier is used.</div>
+          @error('dmMinimumAmount')
+          <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+          @enderror
+        </div>
+        <div class="col-12 mb-6 form-control-validation">
           <label class="form-label" for="dmPrice">Rate</label>
           <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" class="form-control" id="dmPrice" name="dmPrice" placeholder="Rate" value="{{ old('dmPrice') }}" />
           @error('dmPrice', 'addModal')

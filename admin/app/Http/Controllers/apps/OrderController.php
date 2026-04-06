@@ -627,7 +627,7 @@ class OrderController extends Controller
       'products.*.product_id' => ['required', 'exists:products,id'],
       'products.*.quantity' => ['required', 'numeric', 'min:1'],
       'products.*.unit_cost' => ['required', 'numeric', 'min:0'],
-      'status' => ['required', 'string', 'in:New,Completed,Cancelled,Returned'],
+      'status' => ['required', 'string', 'in:New,Fulfilled,Cancelled,Returned'],
     ], [
       'id.required' => 'Order ID is required',
       'id.exists' => 'Order not found',
@@ -647,7 +647,7 @@ class OrderController extends Controller
       'products.*.unit_cost.min' => 'Sale price must be 0 or greater',
       'shipping_charge.numeric' => 'Shipping charge must be a number',
       'shipping_charge.min' => 'Shipping charge must be 0 or greater',
-      'status.in' => 'Status must be New, Completed, Cancelled, or Returned',
+      'status.in' => 'Status must be New, Fulfilled, Cancelled, or Returned',
     ]);
 
     $order = Order::with('items')->findOrFail($validated['id']);
@@ -922,9 +922,9 @@ class OrderController extends Controller
             WarehouseProductSyncService::adjustOrdered($productId, 'subtraction', abs($deltaOrdered));
           }
 
-          // Shipped quantities (affect physical onhand_qty) – when status is Completed
-          $oldShipped = ($oldStatus === 'Completed') ? $oldQty : 0.0;
-          $newShipped = ($newStatus === 'Completed') ? $newQty : 0.0;
+          // Shipped quantities (affect physical onhand_qty) – when status is Fulfilled
+          $oldShipped = ($oldStatus === 'Fulfilled') ? $oldQty : 0.0;
+          $newShipped = ($newStatus === 'Fulfilled') ? $newQty : 0.0;
           $deltaShipped = $newShipped - $oldShipped;
 
           if ($deltaShipped > 0) {

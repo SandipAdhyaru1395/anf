@@ -1708,8 +1708,8 @@ class ProductController extends Controller
             $priceList = PriceList::firstOrCreate(
               ['name' => $listName],
               [
-                'conversion_rate' => 1,
-                'price_list_type' => 1,
+                'conversion_rate' => 100,
+                'price_list_type' => 0,
               ]
             );
             $listIdCache[$listName] = $priceList->id;

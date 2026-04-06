@@ -144,13 +144,14 @@ class SettingController extends Controller
   }
   public function deliveryMethodListAjax()
   {
-    $methods = DeliveryMethod::orderBy('id', 'desc')->get(['id', 'name', 'time', 'rate', 'status']);
+    $methods = DeliveryMethod::orderBy('id', 'desc')->get(['id', 'name', 'time', 'rate', 'minimum_amount', 'status']);
 
     $data = [];
     foreach ($methods as $key => $method) {
       $data[$key]['id'] = $method->id;
       $data[$key]['name'] = $method->name;
       $data[$key]['time'] = $method->time;
+      $data[$key]['minimum_amount'] = $method->minimum_amount;
       $data[$key]['rate'] = $method->rate;
       $data[$key]['status'] = $method->status;
     }
@@ -599,7 +600,7 @@ class SettingController extends Controller
 
   public function deliveryMethodShow(Request $request)
   {
-    $method = DeliveryMethod::select('id', 'name', 'time', 'rate', 'status', 'sort_order')
+    $method = DeliveryMethod::select('id', 'name', 'time', 'rate', 'minimum_amount', 'status', 'sort_order')
       ->where('id', $request->id)
       ->first();
 
@@ -660,12 +661,14 @@ class SettingController extends Controller
       'dmName' => 'required|string|max:255',
       'dmTime' => 'required|string|max:255',
       'dmPrice' => 'required|numeric|min:0',
+      'dmMinimumAmount' => 'required|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
       'dmSortOrder' => 'nullable|integer',
     ], [
       'dmName.required' => 'Delivery Name is required.',
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
+      'dmMinimumAmount.required' => 'Minimum Amount is required.',
       'dmStatus.required' => 'Status is required.',
       'dmSortOrder.integer' => 'The sort order field must be an integer.',
     ]);
@@ -678,6 +681,7 @@ class SettingController extends Controller
       'name' => $request->dmName,
       'time' => $request->dmTime,
       'rate' => $request->dmPrice,
+      'minimum_amount' => $request->dmMinimumAmount,
       'status' => $request->dmStatus,
       'sort_order' => $request->dmSortOrder,
     ]);
@@ -746,12 +750,14 @@ class SettingController extends Controller
       'dmName' => 'required|string|max:255',
       'dmTime' => 'required|string|max:255',
       'dmPrice' => 'required|numeric|min:0',
+      'dmMinimumAmount' => 'required|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
       'dmSortOrder' => 'nullable|integer',
     ], [
       'dmName.required' => 'Delivery Name is required.',
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
+      'dmMinimumAmount.required' => 'Minimum Amount is required.',
       'dmStatus.required' => 'Status is required.',
       'dmSortOrder.integer' => 'The sort order field must be an integer.',
     ]);
@@ -764,6 +770,7 @@ class SettingController extends Controller
     $method->name = $request->dmName;
     $method->time = $request->dmTime;
     $method->rate = $request->dmPrice;
+    $method->minimum_amount = $request->dmMinimumAmount;
     $method->status = $request->dmStatus;
     $method->sort_order = $request->dmSortOrder;
     $method->save();

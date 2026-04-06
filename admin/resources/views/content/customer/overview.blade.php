@@ -79,6 +79,13 @@
       'ZIP' => $defaultBilling->zip_code ?? ($customer->company_zip_code ?? '-'),
       'Country' => $defaultBilling->country ?? ($customer->company_country ?? '-'),
     ];
+
+    $groups = collect($customer_groups ?? []);
+    $lists = collect($price_lists ?? []);
+    $overviewCustomerGroup = $customer->customerGroup
+      ?? ($customer->customer_group_id ? $groups->firstWhere('id', (int) $customer->customer_group_id) : null);
+    $overviewPriceList = $customer->priceList
+      ?? ($customer->price_list_id ? $lists->firstWhere('id', (int) $customer->price_list_id) : null);
   @endphp
 
   <style>
@@ -299,9 +306,9 @@
                 <div class="row-item">
                   <div class="k">Group</div>
                   <div class="v">
-                    @if($customer->customerGroup)
-                      <a href="{{ route('settings.customerGroup.edit', $customer->customerGroup->id) }}">
-                        {{ $customer->customerGroup->name }}
+                    @if($overviewCustomerGroup)
+                      <a href="{{ route('settings.customerGroup.edit', $overviewCustomerGroup->id) }}">
+                        {{ $overviewCustomerGroup->name }}
                       </a>
                     @else
                       -
@@ -330,7 +337,7 @@
                 </div>
                 <div class="row-item">
                   <div class="k">Price List</div>
-                  <div class="v">{{ optional($customer->priceList)->name ?? '-' }}</div>
+                  <div class="v">{{ optional($overviewPriceList)->name ?? '-' }}</div>
                 </div>
               </div>
 

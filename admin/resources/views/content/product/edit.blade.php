@@ -81,7 +81,7 @@
             updateVatAmount(); // Run initially in case fields are pre-filled
             
             // Handle image URL preview with fallback
-            const defaultImagePath = '{{ asset('public/public/assets/img/default_product.png') }}';
+            const defaultImagePath = '{{ asset('assets/img/default_product.png') }}';
             const $imageUrlInput = $('#productImageUrl');
             const $imagePreview = $('#imagePreview');
             const $imagePreviewContainer = $('#imagePreviewContainer');
