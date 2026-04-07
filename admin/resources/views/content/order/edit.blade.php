@@ -171,7 +171,7 @@
                                 <div class="col-md-3 mb-4 form-control-validation">
                                     <label class="form-label" for="date">Date <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control flatpickr" id="date" name="date" 
-                                        value="{{ old('date', $order->order_date ? \Carbon\Carbon::parse($order->order_date)->format('d/m/Y H:i') : '') }}">
+                                        value="{{ old('date', $order->order_date ? \App\Helpers\Helpers::displayDateTime($order->order_date) : '') }}">
                                     @error('date')
                                         <span class="text-danger" role="alert">
                                             <strong>{{ $message }}</strong>

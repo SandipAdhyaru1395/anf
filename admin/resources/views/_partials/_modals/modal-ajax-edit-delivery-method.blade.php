@@ -39,6 +39,16 @@
                           @enderror
                       </div>
                       <div class="col-12 mb-6 form-control-validation">
+                          <label class="form-label" for="editDmMaximumAmount">Maximum Amount</label>
+                          <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="editDmMaximumAmount"
+                              name="dmMaximumAmount" class="form-control" placeholder="Optional — no upper limit if empty"
+                              value="{{ old('dmMaximumAmount') }}" />
+                          <div class="form-text">Empty = no cap. Otherwise subtotal must be ≤ this amount.</div>
+                          @error('dmMaximumAmount', 'editModal')
+                              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+                          @enderror
+                      </div>
+                      <div class="col-12 mb-6 form-control-validation">
                           <label class="form-label" for="dmPrice">Rate</label>
                           <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="dmPrice"
                               name="dmPrice" class="form-control" placeholder="Rate" value="{{ old('dmPrice') }}" />

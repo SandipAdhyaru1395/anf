@@ -14,6 +14,7 @@ class DeliveryMethod extends Model
         'time',
         'rate',
         'minimum_amount',
+        'maximum_amount',
         'status',
         'sort_order',
     ];
@@ -23,13 +24,14 @@ class DeliveryMethod extends Model
         return [
             'rate' => 'decimal:2',
             'minimum_amount' => 'decimal:2',
+            'maximum_amount' => 'decimal:2',
             'sort_order' => 'integer',
         ];
     }
 
     /**
      * Pick the active delivery method for a basket subtotal (excl. VAT & shipping).
-     * A tier applies only when subtotal has reached its minimum (subtotal >= minimum_amount).
+     * A tier applies when subtotal >= minimum_amount and (maximum_amount is null or subtotal <= maximum_amount).
      * Among all qualifying tiers, the one with the highest minimum_amount wins (e.g. 100 vs mins 10,50,90,200 → 90).
      * If subtotal is below every tier’s minimum, returns null (no delivery charge).
      */
@@ -44,13 +46,60 @@ class DeliveryMethod extends Model
             return null;
         }
 
-        $eligible = $methods->filter(fn (self $m) => (float) ($m->minimum_amount ?? 0) <= $subtotal);
+        $eligible = $methods->filter(function (self $m) use ($subtotal) {
+            if ((float) ($m->minimum_amount ?? 0) > $subtotal) {
+                return false;
+            }
+            if ($m->maximum_amount === null) {
+                return true;
+            }
+
+            return $subtotal <= (float) $m->maximum_amount;
+        });
 
         if ($eligible->isEmpty()) {
             return null;
         }
 
         return static::sortEligibleByBestTier($eligible)->first();
+    }
+
+    /**
+     * Active tiers are selectable at checkout (same rule as resolveForSubtotal query).
+     */
+    public function isActive(): bool
+    {
+        return strtolower(trim((string) ($this->status ?? ''))) === 'active';
+    }
+
+    /**
+     * Whether this method’s min/max band includes the given subtotal (excl. VAT & shipping).
+     */
+    public function matchesSubtotal(float $subtotal): bool
+    {
+        if ((float) ($this->minimum_amount ?? 0) > $subtotal) {
+            return false;
+        }
+        if ($this->maximum_amount === null) {
+            return true;
+        }
+
+        return $subtotal <= (float) $this->maximum_amount;
+    }
+
+    /**
+     * DNA callback / legacy: use frozen client id when it still matches cart subtotal; else server default tier.
+     */
+    public static function resolveForCheckout(float $subtotal, ?int $preferredId): ?self
+    {
+        if ($preferredId !== null && $preferredId > 0) {
+            $preferred = static::query()->where('id', $preferredId)->first();
+            if ($preferred instanceof self && $preferred->isActive() && $preferred->matchesSubtotal($subtotal)) {
+                return $preferred;
+            }
+        }
+
+        return static::resolveForSubtotal($subtotal);
     }
 
     /**

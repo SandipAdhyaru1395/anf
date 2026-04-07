@@ -26,6 +26,7 @@ import { useCustomer } from "@/components/customer-provider";
 import { startLoading, stopLoading } from "@/lib/loading";
 import { Thumbnail } from "@/components/thumbnail";
 import { useSettings } from "@/components/settings-provider";
+import { formatDisplayDateTime } from "@/lib/format-date-time";
 
 /** Primary actions — matches order-details / brand gradient */
 const PRIMARY_BUTTON_GRADIENT: React.CSSProperties = {
@@ -44,8 +45,22 @@ function formatOrderDate(raw: any) {
   if (!raw) return "N/A";
   if (typeof raw === "string") {
     const trimmed = raw.trim();
-    // If backend already sends a readable date, keep it.
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) return trimmed;
+    const m = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+    if (m) {
+      let a = Number(m[1]);
+      let b = Number(m[2]);
+      const y = Number(m[3].length === 2 ? `20${m[3]}` : m[3]);
+      // If second part cannot be a month, input is likely mm/dd -> swap.
+      if (a <= 12 && b > 12) {
+        const mm = String(a).padStart(2, "0");
+        const dd = String(b).padStart(2, "0");
+        return `${dd}/${mm}/${y}`;
+      }
+      // Otherwise treat first part as day (dd/mm).
+      const dd = String(a).padStart(2, "0");
+      const mm = String(b).padStart(2, "0");
+      return `${dd}/${mm}/${y}`;
+    }
     const d = new Date(trimmed);
     if (!Number.isNaN(d.getTime())) {
       const dd = String(d.getDate()).padStart(2, "0");
@@ -654,7 +669,7 @@ export function MobileDashboard({
                             className="text-[11px] text-[#6B7A9C]"
                             aria-hidden
                           />
-                          {formatOrderDate(o.ordered_at || o.created_at || o.date)}
+                          {formatDisplayDateTime(o.ordered_at || o.created_at || o.date, "N/A")}
                         </span>
                       </div>
                     </div>

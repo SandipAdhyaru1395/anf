@@ -102,7 +102,7 @@ export function MobileShop({
   // Track expanded nodes by path key (e.g., "Vaping", "Vaping::Disposables", "Vaping::Disposables::Brand X")
   const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
   const { toast } = useToast();
-  const { isFavorite, setFavorite } = useCustomer();
+  const { isFavorite, setFavorite, refreshFavorites } = useCustomer();
   const [cartQuantities, setCartQuantities] = useState<Record<number, number>>({});
   const [cartTotals, setCartTotals] = useState<{ units: number; skus: number; subtotal: number; totalDiscount: number; total: number }>({ units: 0, skus: 0, subtotal: 0, totalDiscount: 0, total: 0 });
   const [walletCreditTotal, setWalletCreditTotal] = useState<number>(0);
@@ -131,6 +131,12 @@ export function MobileShop({
       // ignore
     }
   }, []);
+
+  // Lazy-load favourites only when user opens favourites view.
+  useEffect(() => {
+    if (!showFavorites) return;
+    void refreshFavorites();
+  }, [showFavorites, refreshFavorites]);
 
   useEffect(() => {
     let isMounted = true;

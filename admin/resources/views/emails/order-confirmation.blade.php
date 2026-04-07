@@ -21,7 +21,7 @@
         </tr>
         <tr>
             <td><strong>Order Date</strong></td>
-            <td>{{ optional($order->created_at)->format('d M Y') }}</td>
+            <td>{{ \App\Helpers\Helpers::displayDateTime($order->created_at) }}</td>
         </tr>
         <tr>
             <td><strong>Payment</strong></td>
@@ -53,7 +53,7 @@
             <td style="text-align:right;">£{{ number_format((float) $order->vat_amount, 2) }}</td>
         </tr>
         <tr>
-            <td colspan="2">Shipping</td>
+            <td colspan="2">Shipping @if (!empty($order->delivery_method_name)) ({{ $order->delivery_method_name }})@endif</td>
             <td style="text-align:right;">
                 @if ((float) $order->delivery_charge === 0.0) FREE
                 @else £{{ number_format((float) $order->delivery_charge, 2) }}
@@ -86,7 +86,7 @@
     <p>You'll receive another email with your tracking details once your order has been dispatched.</p>
 
     <div class="btn-wrapper">
-        <a href="{{ url('/orders/' . $order->order_number) }}" class="btn">View My Order</a>
+        <a href="{{ $view_order_url }}" class="btn">View My Order</a>
     </div>
 
     <p style="font-size:13px; color:#888; text-align:center;">

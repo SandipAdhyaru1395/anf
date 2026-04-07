@@ -25,7 +25,7 @@
                     {{ $purchase->deliver ? ucfirst(str_replace('_', ' ', $purchase->deliver)) : 'N/A' }}
                 </div>
                 <div class="col">
-                    <b>Date:</b> {{ optional($purchase->date)->format('d/m/Y H:i') }}<br>
+                    <b>Date:</b> {{ \App\Helpers\Helpers::displayDateTime($purchase->date) }}<br>
                 </div>
                 <div class="col">
                     <b>Reference:</b> {{ $purchase->reference_no ? '#PO' . $purchase->reference_no : 'N/A' }}
@@ -99,7 +99,7 @@
                         <div class="fw-bold mb-2">Created by:</div>
                         <div class="small text-black">
                             {{ $purchase->user ? $purchase->user->name : 'N/A' }}<br>
-                            Date: {{ optional($purchase->created_at)->format('d/m/Y H:i') }}
+                            Date: {{ \App\Helpers\Helpers::displayDateTime($purchase->created_at) }}
                         </div>
                     </div>
                 </div>

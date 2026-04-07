@@ -95,7 +95,7 @@
                                     <label class="form-label fs-6">Customer: <strong>{{ $order->customer->name ?? ($order->customer->company_name ?? 'N/A') }}</strong></label>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fs-6">Order Date: <strong>{{ $order->order_date ? \Carbon\Carbon::parse($order->order_date)->format('d/m/Y H:i') : 'N/A' }}</strong></label>
+                                    <label class="form-label fs-6">Order Date: <strong>{{ $order->order_date ? \App\Helpers\Helpers::displayDateTime($order->order_date) : 'N/A' }}</strong></label>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fs-6">Order Number: <strong>#{{ ($order->type ?? 'SO') . $order->order_number }}</strong></label>

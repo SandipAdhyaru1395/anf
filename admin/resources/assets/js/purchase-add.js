@@ -10,7 +10,8 @@
     // Initialize flatpickr for date
     $('.flatpickr').flatpickr({
       enableTime: true,
-      dateFormat: 'd/m/Y H:i',
+      enableSeconds: true,
+      dateFormat: 'd/m/Y H:i:S',
       time_24hr: true,
       allowInput: true,
       defaultDate: new Date()
@@ -452,16 +453,15 @@
                 message: 'Date is required'
               },
               callback: {
-                message: 'Enter a valid date in dd/mm/yyyy hh:mm format',
+                message: 'Enter a valid date in dd/mm/yyyy hh:mm:ss format',
                 callback: function(input) {
                   const value = (input.value || '').trim();
                   if (!value) return false;
-                  // Basic format check: dd/mm/yyyy hh:mm
-                  const re = /^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}$/;
+                  const re = /^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}(:\d{2})?$/;
                   if (!re.test(value)) return false;
-                  // Use flatpickr to parse/validate
                   try {
-                    const parsed = flatpickr.parseDate(value, 'd/m/Y H:i');
+                    const parsed =
+                      flatpickr.parseDate(value, 'd/m/Y H:i:S') || flatpickr.parseDate(value, 'd/m/Y H:i');
                     return parsed instanceof Date && !isNaN(parsed.getTime());
                   } catch (e) {
                     return false;

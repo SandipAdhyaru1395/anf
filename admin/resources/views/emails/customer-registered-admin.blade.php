@@ -20,7 +20,7 @@
             </tr>
             <tr>
                 <th>Registered at</th>
-                <td>{{ optional($customer->created_at)->format('d M Y, H:i') ?? '—' }}</td>
+                <td>{{ \App\Helpers\Helpers::displayDateTime($customer->created_at) }}</td>
             </tr>
             <tr>
                 <th>Company name</th>

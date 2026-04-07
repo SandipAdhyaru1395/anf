@@ -6,6 +6,7 @@ use App\Models\CustomerGroup;
 use App\Models\PriceList;
 use App\Models\Setting;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -387,5 +388,45 @@ CSS;
     public static function getPriceLists(){
         
         return PriceList::all();
+    }
+
+    /** Display format: dd/mm/yyyy HH:mm:ss (e.g. 06/04/2026 20:39:06) */
+    public const DISPLAY_DATETIME_FORMAT = 'd/m/Y H:i:s';
+
+    /**
+     * @param  \DateTimeInterface|string|null  $value
+     */
+    public static function displayDateTime(mixed $value, string $empty = '—'): string
+    {
+        if ($value === null || $value === '') {
+            return $empty;
+        }
+        try {
+            return Carbon::parse($value)->format(self::DISPLAY_DATETIME_FORMAT);
+        } catch (\Throwable $e) {
+            return $empty;
+        }
+    }
+
+    /**
+     * Parse admin datetime fields from flatpickr / forms (with or without seconds).
+     */
+    public static function parseAdminDateTime(?string $value): ?Carbon
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+        $value = trim($value);
+        foreach (['d/m/Y H:i:s', 'd/m/Y H:i', 'd/m/Y'] as $fmt) {
+            try {
+                return Carbon::createFromFormat($fmt, $value);
+            } catch (\Throwable $e) {
+            }
+        }
+        try {
+            return Carbon::parse($value);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

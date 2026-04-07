@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
+use App\Helpers\Helpers;
 use App\Services\QuantityAdjustmentDeletionService;
 use Carbon\Carbon;
 
@@ -52,30 +53,13 @@ class QuantityAdjustmentController extends Controller
                     if (empty($value)) {
                         return;
                     }
-                    // Try to parse d/m/Y H:i format (e.g., "12/11/2025 12:06")
                     if (strpos($value, '/') !== false) {
-                        try {
-                            $parsed = Carbon::createFromFormat('d/m/Y H:i', $value);
-                            if ($parsed === false) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm format');
-                            }
-                        } catch (\Exception $e) {
-                            try {
-                                $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                                if ($parsed === false) {
-                                    $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                                }
-                            } catch (\Exception $e2) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                            }
+                        if (Helpers::parseAdminDateTime($value) === null) {
+                            $fail('Date must be in dd/mm/yyyy hh:mm:ss, dd/mm/yyyy hh:mm, or dd/mm/yyyy format');
                         }
                     } else {
-                        // Try standard date formats
                         try {
-                            $parsed = Carbon::parse($value);
-                            if ($parsed === false) {
-                                $fail('Date must be a valid date');
-                            }
+                            Carbon::parse($value);
                         } catch (\Exception $e) {
                             $fail('Date must be a valid date');
                         }
@@ -109,16 +93,13 @@ class QuantityAdjustmentController extends Controller
             $documentPath = $request->file('document')->store('adjustments/documents', 'public');
         }
 
-        // Parse date (support d/m/Y H:i and d/m/Y)
-        $date = $validated['date'];
-        if (strpos($date, '/') !== false) {
+        $date = Helpers::parseAdminDateTime($validated['date']);
+        if ($date === null) {
             try {
-                $date = Carbon::createFromFormat('d/m/Y H:i', $date);
+                $date = Carbon::parse($validated['date']);
             } catch (\Exception $e) {
-                $date = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+                $date = now();
             }
-        } else {
-            $date = Carbon::parse($date);
         }
 
         // Get reference_no from order_ref table (qa column) and increment it
@@ -194,30 +175,13 @@ class QuantityAdjustmentController extends Controller
                     if (empty($value)) {
                         return;
                     }
-                    // Try to parse d/m/Y H:i format (e.g., "12/11/2025 12:06")
                     if (strpos($value, '/') !== false) {
-                        try {
-                            $parsed = Carbon::createFromFormat('d/m/Y H:i', $value);
-                            if ($parsed === false) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm format');
-                            }
-                        } catch (\Exception $e) {
-                            try {
-                                $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                                if ($parsed === false) {
-                                    $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                                }
-                            } catch (\Exception $e2) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                            }
+                        if (Helpers::parseAdminDateTime($value) === null) {
+                            $fail('Date must be in dd/mm/yyyy hh:mm:ss, dd/mm/yyyy hh:mm, or dd/mm/yyyy format');
                         }
                     } else {
-                        // Try standard date formats
                         try {
-                            $parsed = Carbon::parse($value);
-                            if ($parsed === false) {
-                                $fail('Date must be a valid date');
-                            }
+                            Carbon::parse($value);
                         } catch (\Exception $e) {
                             $fail('Date must be a valid date');
                         }
@@ -268,16 +232,13 @@ class QuantityAdjustmentController extends Controller
             $documentPath = $request->file('document')->store('adjustments/documents', 'public');
         }
 
-        // Parse date (support d/m/Y H:i and d/m/Y)
-        $date = $validated['date'];
-        if (strpos($date, '/') !== false) {
+        $date = Helpers::parseAdminDateTime($validated['date']);
+        if ($date === null) {
             try {
-                $date = Carbon::createFromFormat('d/m/Y H:i', $date);
+                $date = Carbon::parse($validated['date']);
             } catch (\Exception $e) {
-                $date = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+                $date = now();
             }
-        } else {
-            $date = Carbon::parse($date);
         }
 
         // Update adjustment (reference_no is not updated, it remains as originally set from order_ref)
@@ -447,7 +408,7 @@ class QuantityAdjustmentController extends Controller
                 return $adjustment->user ? $adjustment->user->name : 'N/A';
             })
             ->addColumn('date_formatted', function ($adjustment) {
-                return optional($adjustment->date)->format('d/m/Y H:i');
+                return Helpers::displayDateTime($adjustment->date);
             })
             ->addColumn('note_display', function ($adjustment) {
                 return $adjustment->note ? strip_tags($adjustment->note) : '';
@@ -481,7 +442,7 @@ class QuantityAdjustmentController extends Controller
                     }
                 } catch (\Exception $e) {
                     // If parsing fails, search in formatted date string
-                    $query->whereRaw("DATE_FORMAT(date, '%d/%m/%Y %H:%i') LIKE ?", ["%{$keyword}%"]);
+                    $query->whereRaw("DATE_FORMAT(date, '%d/%m/%Y %H:%i:%s') LIKE ?", ["%{$keyword}%"]);
                 }
             })
             ->filterColumn('user_name', function ($query, $keyword) {

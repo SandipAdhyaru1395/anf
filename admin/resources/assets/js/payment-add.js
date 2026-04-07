@@ -384,7 +384,8 @@
           // Initialize flatpickr when modal is shown
           paymentDatePicker = flatpickr(paymentDateEl, {
             enableTime: true,
-            dateFormat: 'd/m/Y H:i',
+            enableSeconds: true,
+            dateFormat: 'd/m/Y H:i:S',
             time_24hr: true,
             allowInput: true,
             clickOpens: true,

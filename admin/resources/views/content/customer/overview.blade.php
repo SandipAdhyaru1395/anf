@@ -325,11 +325,11 @@
                 </div>
                 <div class="row-item">
                   <div class="k">Created On</div>
-                  <div class="v">{{ optional($customer->created_at)->format('d M Y') ?? '-' }}</div>
+                  <div class="v">{{ \App\Helpers\Helpers::displayDateTime($customer->created_at, '-') }}</div>
                 </div>
                 <div class="row-item">
                   <div class="k">Last Seen</div>
-                  <div class="v">{{ optional($customer->last_login)->format('d M Y') ?? '-' }}</div>
+                  <div class="v">{{ \App\Helpers\Helpers::displayDateTime($customer->last_login, '-') }}</div>
                 </div>
                 <div class="row-item">
                   <div class="k">Phone</div>

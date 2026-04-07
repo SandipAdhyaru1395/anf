@@ -186,10 +186,10 @@ class CustomerController extends Controller
         $date = $row->last_login instanceof \Carbon\Carbon
           ? $row->last_login
           : Carbon::parse($row->last_login);
-        return $date->format('d M Y');
+        return Helpers::displayDateTime($date);
       })
       ->addColumn('last_order', function ($row) {
-        return $row->last_order_at ? Carbon::parse($row->last_order_at)->format('d M Y') : '';
+        return $row->last_order_at ? Helpers::displayDateTime($row->last_order_at) : '';
       })
       ->addColumn('min_spend', function () {
         return '-';

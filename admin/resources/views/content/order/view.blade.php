@@ -4,9 +4,7 @@
 
 @section('content')
     @php
-        $orderedOn =
-            optional($order->order_date)->format('d M Y H:i') ??
-            (optional($order->created_at)->format('d M Y H:i') ?? '—');
+        $orderedOn = \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at);
         $customerLabel = optional($order->customer)->company_name ?? (optional($order->customer)->email ?? '—');
         $contactName = optional($order->customer)->email
             ? \Illuminate\Support\Str::before($order->customer->email, '@')
@@ -20,7 +18,7 @@
         $dispatchedQty = $order->status === 'Fulfilled' ? $totalQty : 0;
         $dispatchDate =
             $order->status === 'Fulfilled'
-                ? optional($order->order_date)->format('d M Y') ?? optional($order->updated_at)->format('d M Y')
+                ? \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->updated_at)
                 : null;
         $shippingBranch = $order->shippingBranch;
         $billingBranch = $order->billingBranch ?: $shippingBranch;
@@ -209,7 +207,7 @@
                         @if ($payment)
                             <div class="ov-row">
                                 <div class="ov-label">Paid on</div>
-                                <div class="ov-value">{{ optional($payment->date)->format('d M Y H:i') ?? '—' }}</div>
+                                <div class="ov-value">{{ \App\Helpers\Helpers::displayDateTime($payment->date) }}</div>
                             </div>
                             <div class="ov-row">
                                 <div class="ov-label">Payment reference</div>

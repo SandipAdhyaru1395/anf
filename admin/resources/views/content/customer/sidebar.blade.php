@@ -86,7 +86,7 @@
             @if(!empty($customer->approved_at))
             <li class="mb-2">
               <span class="h6 me-1">Approved At:</span>
-              <span>{{ $customer->approved_at->format('M d, Y, g:i A') }}</span>
+              <span>{{ \App\Helpers\Helpers::displayDateTime($customer->approved_at) }}</span>
             </li>
             @endif
           </ul>

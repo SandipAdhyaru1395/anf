@@ -14,6 +14,7 @@ use App\Models\WalletTransaction;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\OrderRef;
+use App\Models\DeliveryMethod;
 use App\Helpers\Helpers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -43,7 +44,7 @@ class OrderController extends Controller
         $data = $orders->map(function(Order $order)use($setting){
             return [
                 'order_number' => $order->order_number,
-                'ordered_at' => optional($order->created_at)->format('H:i d/m/Y'),
+                'ordered_at' => optional($order->created_at)->toIso8601String(),
                 'payment_status' => strtoupper($order->payment_status),
                 'fulfillment_status' => strtoupper($order->status),
                 'units' => (int)($order->units_count ?? 0),
@@ -104,7 +105,7 @@ class OrderController extends Controller
             'success' => true,
             'order' => [
                 'order_number' => $order->order_number,
-                'ordered_at' => optional($order->created_at)->format('H:i d/m/Y'),
+                'ordered_at' => optional($order->created_at)->toIso8601String(),
                 'payment_status' => strtoupper($order->payment_status),
                 'fulfillment_status' => strtoupper($order->status),
                 'units' => (int)($order->units_count ?? 0),
@@ -157,7 +158,7 @@ class OrderController extends Controller
             $rules = [
                 'shipping_branch_id' => 'required|integer|exists:branches,id',
                 'billing_branch_id' => 'required|integer|exists:branches,id',
-                'delivery_method_id' => 'nullable|integer',
+                'delivery_method_id' => 'required|integer|exists:delivery_methods,id',
                 'delivery_note' => 'nullable|string',
                 'customer_po_number' => 'nullable|string|max:191',
             ];
@@ -291,10 +292,42 @@ class OrderController extends Controller
 
 			// Auto-apply available wallet credit to this purchase (partial or full)
 			$availableCredit = (float) optional($customer)->credit_balance ?? 0.0;
-            // Delivery tier from subtotal: highest minimum_amount that is still <= subtotal (server-side)
-            $deliveryMethod = \App\Models\DeliveryMethod::resolveForSubtotal((float) $subtotal);
 
-            $deliveryCharge = $deliveryMethod ? (float) $deliveryMethod->rate : 0;
+            $subtotalFloat = round((float) $subtotal, 2);
+            $preferredDeliveryId = (int) $request->input('delivery_method_id');
+            $chosen = DeliveryMethod::query()->find($preferredDeliveryId);
+            if (!$chosen) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid delivery method.',
+                    'errors' => [
+                        'delivery_method_id' => ['The selected delivery method does not exist.'],
+                    ],
+                ], 200);
+            }
+            if (!$chosen->isActive()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This delivery method is not available.',
+                    'errors' => [
+                        'delivery_method_id' => ['The selected delivery method is not active.'],
+                    ],
+                ], 200);
+            }
+            if (!$chosen->matchesSubtotal($subtotalFloat)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This delivery option does not apply to your order subtotal.',
+                    'errors' => [
+                        'delivery_method_id' => [
+                            'Your cart subtotal (excluding VAT) is outside the minimum/maximum range for this delivery option.',
+                        ],
+                    ],
+                ], 200);
+            }
+            $deliveryMethod = $chosen;
+
+            $deliveryCharge = (float) $deliveryMethod->rate;
             $totalAmount = $subtotal + $vatAmount + $deliveryCharge;
 			$walletCreditUsed = min($subtotal, $availableCredit);
 			$outstandingAmount = $totalAmount - $walletCreditUsed; // total - wallet_used = outstanding

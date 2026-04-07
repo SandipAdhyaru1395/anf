@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         { data: 'order_date', orderable: true, searchable: true }, // order date
         { data: 'total_amount', orderable: true, searchable: true }, // grand total
         { data: 'order_status', orderable: true, searchable: true }, // sale status
-        { data: 'id' } // actions
+        { data: 'id', orderable: true } // actions (sort uses row id = newest first on load)
       ],
       columnDefs: [
         {
@@ -100,18 +100,14 @@ document.addEventListener('DOMContentLoaded', function (e) {
           searchable: true,
           render: function (data, type, full, meta) {
             const date = new Date(full.order_date);
+            if (isNaN(date.getTime())) return '';
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = date.getFullYear();
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
             const seconds = String(date.getSeconds()).padStart(2, '0');
-            const formattedDate = `${day}/${month}/${year}`;
-            const formattedTime = `${hours}:${minutes}:${seconds}`;
-            return `<div class="d-flex flex-column">
-              <span>${formattedDate}</span>
-              <small class="text-muted">${formattedTime}</small>
-            </div>`;
+            return `<span>${day}/${month}/${year} ${hours}:${minutes}:${seconds}</span>`;
           }
         },
         {
@@ -141,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
           targets: -1,
           title: 'Actions',
           searchable: false,
-          orderable: false,
+          orderable: true,
           render: function (data, type, full, meta) {
             // ${(!full['has_credit_note'] || full['has_credit_note'] == 0) && full['type'] !== 'CN' && full['type'] !== 'EST' ? `<a href="${baseUrl}order/credit-note/add/${full['id']}" class="dropdown-item">Credit Note</a>` : ''}
               return `
@@ -161,7 +157,12 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         }
       ],
-      // order: [2, 'desc'],
+      order: [[5, 'desc']],
+      stateLoadParams: function (settings, data) {
+        if (data && data.order) {
+          data.order = [[5, 'desc']];
+        }
+      },
       layout: {
         topStart: null,
         topEnd: {

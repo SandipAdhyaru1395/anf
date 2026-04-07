@@ -25,6 +25,7 @@ $(function () {
         { data: 'name',width: '30%'  },
         { data: 'time',width: '30%'  },
         { data: 'minimum_amount' },
+        { data: 'maximum_amount' },
         { data: 'rate' },
         { data: 'status' },
         { data: null, defaultContent: '' }
@@ -53,10 +54,14 @@ $(function () {
         },
         {
           targets: 4,
-          render: function (data) { return data !== null && data !== undefined ? Number(data).toFixed(2) : '-'; }
+          render: function (data) { return data !== null && data !== undefined && data !== '' ? Number(data).toFixed(2) : '—'; }
         },
         {
           targets: 5,
+          render: function (data) { return data !== null && data !== undefined ? Number(data).toFixed(2) : '-'; }
+        },
+        {
+          targets: 6,
           render: function (data) {
             if (data === 'Active') {
               return '<span class="badge bg-label-success">Active</span>';
@@ -66,7 +71,7 @@ $(function () {
           }
         },
         {
-          targets: 6,
+          targets: 7,
           orderable: false,
           searchable: false,
           render: function (data, type, full) {
@@ -96,6 +101,9 @@ $(function () {
             $('#ajaxEditDeliveryMethodForm').find('#dmName').val(response.name);
             $('#ajaxEditDeliveryMethodForm').find('#dmTime').val(response.time);
             $('#ajaxEditDeliveryMethodForm').find('#editDmMinimumAmount').val(response.minimum_amount ?? '0');
+            $('#ajaxEditDeliveryMethodForm').find('#editDmMaximumAmount').val(
+              response.maximum_amount !== null && response.maximum_amount !== undefined ? response.maximum_amount : ''
+            );
             $('#ajaxEditDeliveryMethodForm').find('#dmPrice').val(response.rate);
             $('#ajaxEditDeliveryMethodForm').find('#dmStatus').val(response.status).trigger('change');
             $('#ajaxEditDeliveryMethodForm').find('#dmSortOrder').val(response.sort_order || '');

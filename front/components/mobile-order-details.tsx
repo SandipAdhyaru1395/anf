@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Banner } from "@/components/banner";
 import { MobilePageHeader } from "@/components/mobile-page-header";
 import { resolveBackendAssetUrl } from "@/lib/utils";
+import { formatDisplayDateTime } from "@/lib/format-date-time";
 
 interface MobileOrderDetailsProps {
   orderNumber: string;
@@ -69,32 +70,11 @@ type OrderDetails = {
   }>;
 };
 
-function formatPlacedAt(apiValue: string): string {
-  const s = String(apiValue || "").trim();
-  const m = s.match(/^(\d{1,2}:\d{2})\s+(.+)$/);
-  if (m) return `${m[2]} ${m[1]}`;
-  return s;
-}
-
 function formatStatusLabel(status: string): string {
   return String(status || "")
     .replace(/_/g, " ")
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function formatPaymentDate(iso: string | null | undefined): string {
-  const s = String(iso || "").trim();
-  if (!s) return "—";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function statusBadgeClass(status: string): string {
@@ -220,7 +200,7 @@ export function MobileOrderDetails({
                   Order: {order.order_number}
                 </span>
                 <span className="shrink-0 text-right text-[12px] font-medium text-[#8F98AD]">
-                  Placed: {formatPlacedAt(order.ordered_at)}
+                  Placed: {formatDisplayDateTime(order.ordered_at)}
                 </span>
               </div>
 
@@ -304,7 +284,7 @@ export function MobileOrderDetails({
                     <div className={rowClass}>
                       <div className="flex justify-between gap-3">
                         <span className="shrink-0 text-[#8F98AD]">Paid on</span>
-                        <span className="text-right font-medium">{formatPaymentDate(p.date)}</span>
+                        <span className="text-right font-medium">{formatDisplayDateTime(p.date)}</span>
                       </div>
                       <div className="flex justify-between gap-3">
                         <span className="shrink-0 text-[#8F98AD]">Payment reference</span>

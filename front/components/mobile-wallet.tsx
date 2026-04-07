@@ -12,6 +12,7 @@ import api from "@/lib/axios";
 
 import { useEffect, useState } from "react";
 import { MobilePageHeader } from "@/components/mobile-page-header";
+import { formatDisplayDateTime } from "@/lib/format-date-time";
 
 interface ProductItem {
   id: number;
@@ -123,7 +124,6 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
 
   const groupedTransactions = (() => {
     const monthFmt = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
-    const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
     const groups: Record<string, WalletTransactionRow[]> = {};
     const orderedKeys: string[] = [];
 
@@ -138,7 +138,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
       groups[key].push(tx);
     }
 
-    return { groups, orderedKeys, dateFmt };
+    return { groups, orderedKeys };
   })();
 
   if (showIntro) {
@@ -252,7 +252,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
                       const type: "used" | "earned" = String(tx.type).toLowerCase() === "debit" ? "used" : "earned";
                       const dt = tx.created_at ? new Date(tx.created_at) : null;
                       const dateText =
-                        dt && !isNaN(dt.getTime()) ? groupedTransactions.dateFmt.format(dt) : "—";
+                        dt && !isNaN(dt.getTime()) ? formatDisplayDateTime(dt) : "—";
                       return (
                         <TransactionItem
                           key={tx.id}

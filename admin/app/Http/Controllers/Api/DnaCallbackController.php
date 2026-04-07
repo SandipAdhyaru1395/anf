@@ -94,6 +94,10 @@ class DnaCallbackController extends Controller
         $customerPoNumber = trim((string) ($context['customer_po_number'] ?? ''));
         $customerPoNumber = $customerPoNumber !== '' ? $customerPoNumber : null;
         $cachedWalletUsed = isset($context['wallet_credit_used']) ? (float)$context['wallet_credit_used'] : null;
+        $cachedDeliveryMethodId = isset($context['delivery_method_id']) ? (int) $context['delivery_method_id'] : null;
+        if ($cachedDeliveryMethodId <= 0) {
+            $cachedDeliveryMethodId = null;
+        }
 
         try {
             // Validate that the selected branches belong to the customer
@@ -135,6 +139,7 @@ class DnaCallbackController extends Controller
                 $paidAmount,
                 $paidCurrency,
                 $cachedWalletUsed,
+                $cachedDeliveryMethodId,
                 $dnaId,
                 $dnaRrn,
                 $dnaScheme,
@@ -231,7 +236,7 @@ class DnaCallbackController extends Controller
 
                 // Auto-apply available wallet credit to this purchase (partial or full)
                 $availableCredit = (float)($customer->credit_balance ?? 0.0);
-                $deliveryMethod = \App\Models\DeliveryMethod::resolveForSubtotal((float) $subtotal);
+                $deliveryMethod = \App\Models\DeliveryMethod::resolveForCheckout((float) $subtotal, $cachedDeliveryMethodId);
                 $deliveryCharge = $deliveryMethod ? (float) $deliveryMethod->rate : 0;
                 $totalAmount = $subtotal + $vatAmount + $deliveryCharge;
                 $walletCreditUsed = min($subtotal, $availableCredit);

@@ -23,7 +23,8 @@
             // Initialize flatpickr for date & time
             $('.flatpickr').flatpickr({
                 enableTime: true,
-                dateFormat: 'd/m/Y H:i',
+                enableSeconds: true,
+                dateFormat: 'd/m/Y H:i:S',
                 time_24hr: true,
                 allowInput: true
             });
@@ -290,7 +291,7 @@
                                         const re = /^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}$/;
                                         if (!re.test(value)) return false;
                                         try {
-                                            const parsed = flatpickr.parseDate(value, 'd/m/Y H:i');
+                                            const parsed = flatpickr.parseDate(value, 'd/m/Y H:i:S') || flatpickr.parseDate(value, 'd/m/Y H:i');
                                             return parsed instanceof Date && !isNaN(parsed.getTime());
                                         } catch (e) {
                                             return false;
@@ -381,7 +382,7 @@
                                 <div class="col-md-3 mb-4 form-control-validation">
                                     <label class="form-label" for="date">Date <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control flatpickr" id="date" name="date" 
-                                        value="{{ old('date', $adjustment->date->format('d/m/Y H:i')) }}" required>
+                                        value="{{ old('date', \App\Helpers\Helpers::displayDateTime($adjustment->date)) }}" required>
                                     @error('date')
                                         <span class="text-danger" role="alert">
                                             <strong>{{ $message }}</strong>

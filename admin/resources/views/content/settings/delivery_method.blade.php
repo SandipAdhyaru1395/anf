@@ -55,6 +55,7 @@
                       <th>Name</th>
                       <th>Delivery Time</th>
                       <th>Minimum Amount</th>
+                      <th>Maximum Amount</th>
                       <th>Rate</th>
                       <th>Status</th>
                       <th>Actions</th>

@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Support\MailSettingsHelper;
+use App\Support\StorefrontUrlHelper;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -35,6 +36,8 @@ class OrderCancelledMail extends Mailable implements ShouldQueue
         $companyTitle = (string) ($settings['company_title'] ?? config('app.name'));
         $companyEmail = MailSettingsHelper::fromAddress($settings);
         $fromName = MailSettingsHelper::fromName($settings);
+        $storefrontBase = StorefrontUrlHelper::baseUrl($settings);
+        $viewOrderUrl = $storefrontBase . '/?order=' . rawurlencode((string) $order->order_number);
 
         $mail = $this
             ->subject('Order Update - #' . $order->order_number . ' | ' . $companyTitle)
@@ -47,6 +50,7 @@ class OrderCancelledMail extends Mailable implements ShouldQueue
                 'statusMessage' => 'Your order has been cancelled by our team. If this was unexpected, please contact us and we will help immediately.',
                 'company_title' => $companyTitle,
                 'company_email' => $companyEmail,
+                'view_order_url' => $viewOrderUrl,
             ]);
 
         if ($companyEmail !== '') {

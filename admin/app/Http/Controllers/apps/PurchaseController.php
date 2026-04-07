@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
+use App\Helpers\Helpers;
 use App\Services\PurchaseDeletionService;
 use Carbon\Carbon;
 
@@ -57,30 +58,13 @@ class PurchaseController extends Controller
                     if (empty($value)) {
                         return;
                     }
-                    // Try to parse d/m/Y H:i format (e.g., "12/11/2025 12:06")
                     if (strpos($value, '/') !== false) {
-                        try {
-                            $parsed = Carbon::createFromFormat('d/m/Y H:i', $value);
-                            if ($parsed === false) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm format');
-                            }
-                        } catch (\Exception $e) {
-                            try {
-                                $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                                if ($parsed === false) {
-                                    $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                                }
-                            } catch (\Exception $e2) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                            }
+                        if (Helpers::parseAdminDateTime($value) === null) {
+                            $fail('Date must be in dd/mm/yyyy hh:mm:ss, dd/mm/yyyy hh:mm, or dd/mm/yyyy format');
                         }
                     } else {
-                        // Try standard date formats
                         try {
-                            $parsed = Carbon::parse($value);
-                            if ($parsed === false) {
-                                $fail('Date must be a valid date');
-                            }
+                            Carbon::parse($value);
                         } catch (\Exception $e) {
                             $fail('Date must be a valid date');
                         }
@@ -121,16 +105,13 @@ class PurchaseController extends Controller
             $documentPath = $request->file('document')->store('purchases/documents', 'public');
         }
 
-        // Parse date (support d/m/Y H:i and d/m/Y)
-        $date = $validated['date'];
-        if (strpos($date, '/') !== false) {
+        $date = Helpers::parseAdminDateTime($validated['date']);
+        if ($date === null) {
             try {
-                $date = Carbon::createFromFormat('d/m/Y H:i', $date);
+                $date = Carbon::parse($validated['date']);
             } catch (\Exception $e) {
-                $date = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+                $date = now();
             }
-        } else {
-            $date = Carbon::parse($date);
         }
 
         // Get reference_no from order_ref table (po column) and increment it
@@ -262,30 +243,13 @@ class PurchaseController extends Controller
                     if (empty($value)) {
                         return;
                     }
-                    // Try to parse d/m/Y H:i format (e.g., "12/11/2025 12:06")
                     if (strpos($value, '/') !== false) {
-                        try {
-                            $parsed = Carbon::createFromFormat('d/m/Y H:i', $value);
-                            if ($parsed === false) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm format');
-                            }
-                        } catch (\Exception $e) {
-                            try {
-                                $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                                if ($parsed === false) {
-                                    $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                                }
-                            } catch (\Exception $e2) {
-                                $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                            }
+                        if (Helpers::parseAdminDateTime($value) === null) {
+                            $fail('Date must be in dd/mm/yyyy hh:mm:ss, dd/mm/yyyy hh:mm, or dd/mm/yyyy format');
                         }
                     } else {
-                        // Try standard date formats
                         try {
-                            $parsed = Carbon::parse($value);
-                            if ($parsed === false) {
-                                $fail('Date must be a valid date');
-                            }
+                            Carbon::parse($value);
                         } catch (\Exception $e) {
                             $fail('Date must be a valid date');
                         }
@@ -344,16 +308,13 @@ class PurchaseController extends Controller
             $documentPath = $request->file('document')->store('purchases/documents', 'public');
         }
 
-        // Parse date (support d/m/Y H:i and d/m/Y)
-        $date = $validated['date'];
-        if (strpos($date, '/') !== false) {
+        $date = Helpers::parseAdminDateTime($validated['date']);
+        if ($date === null) {
             try {
-                $date = Carbon::createFromFormat('d/m/Y H:i', $date);
+                $date = Carbon::parse($validated['date']);
             } catch (\Exception $e) {
-                $date = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+                $date = now();
             }
-        } else {
-            $date = Carbon::parse($date);
         }
 
         // Update purchase (reference_no is not updated, it remains as originally set from order_ref)
@@ -623,33 +584,21 @@ class PurchaseController extends Controller
 
                                 ->orWhere(function ($dateQuery) use ($searchValue) {
 
+                                    $trim = trim($searchValue);
+                                    $parsed = Helpers::parseAdminDateTime($trim);
+
                                     try {
-
-                                        // Check if it contains time
-                                        if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}(:\d{2})?/', $searchValue)) {
-
-                                            // Format: d/m/Y H:i:s
-                                            $date = Carbon::createFromFormat('d/m/Y H:i:s', $searchValue);
-
-                                            $dateQuery->where('purchases.date', $date->format('Y-m-d H:i:s'));
-
-                                        } elseif (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $searchValue, $matches)) {
-
-                                            // Date only
-                                            $date = Carbon::createFromFormat('d/m/Y', $matches[0]);
-
-                                            $dateQuery->whereDate('purchases.date', $date->format('Y-m-d'));
-
+                                        if ($parsed !== null) {
+                                            if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}\s+/', $trim) && str_contains($trim, ':')) {
+                                                $dateQuery->where('purchases.date', $parsed->format('Y-m-d H:i:s'));
+                                            } else {
+                                                $dateQuery->whereDate('purchases.date', $parsed->format('Y-m-d'));
+                                            }
                                         } else {
-
-                                            // Try generic parsing
-                                            $date = Carbon::parse($searchValue);
-
+                                            $date = Carbon::parse($trim);
                                             $dateQuery->whereDate('purchases.date', $date->format('Y-m-d'));
                                         }
-
                                     } catch (\Exception $e) {
-
                                         $dateQuery->whereRaw(
                                             "DATE_FORMAT(purchases.date, '%d/%m/%Y %H:%i:%s') LIKE ?",
                                             ["%{$searchValue}%"]
@@ -705,7 +654,7 @@ class PurchaseController extends Controller
             ->addColumn(
                 'date_formatted',
                 fn($purchase) =>
-                optional($purchase->date)->format('d/m/Y H:i')
+                Helpers::displayDateTime($purchase->date)
             )
 
             ->addColumn(

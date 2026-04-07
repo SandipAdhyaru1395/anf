@@ -677,7 +677,7 @@
                 @if($order->type === 'CN')
                     <tr>
                         <td>CN DATE:</td>
-                        <td>{{ optional($order->order_date)->format('d/m/Y H:i') ?? optional($order->created_at)->format('d/m/Y H:i') }}</td>
+                        <td>{{ \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at) }}</td>
                     </tr>
                     <tr>
                         <td>CN NO.:</td>
@@ -686,7 +686,7 @@
                 @elseif($order->type === 'EST')
                     <tr>
                         <td>ORDER DATE:</td>
-                        <td>{{ optional($order->order_date)->format('d/m/Y H:i') ?? optional($order->created_at)->format('d/m/Y H:i') }}</td>
+                        <td>{{ \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at) }}</td>
                     </tr>
                     <tr>
                         <td>ORDER NO.:</td>
@@ -695,7 +695,7 @@
                 @else
                     <tr>
                         <td>INVOICE DATE:</td>
-                        <td>{{ optional($order->order_date)->format('d/m/Y H:i') ?? optional($order->created_at)->format('d/m/Y H:i') }}</td>
+                        <td>{{ \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at) }}</td>
                     </tr>
                     
                     <tr>
@@ -816,7 +816,7 @@
         <tbody>
             <tr>
                 <td style="font-weight: 600;">Date</td>
-                <td>{{ optional($invoicePayment->date)->format('d/m/Y H:i') ?? '' }}</td>
+                <td>{{ \App\Helpers\Helpers::displayDateTime($invoicePayment->date, '') }}</td>
             </tr>
             <tr>
                 <td style="font-weight: 600;">Reference</td>

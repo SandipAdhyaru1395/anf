@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\apps;
 
+use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Customer;
@@ -278,7 +279,7 @@ class ReportController extends Controller
         $query->where('orders.payment_status', 'like', "%{$keyword}%");
       })
       ->editColumn('order_date', function ($order) {
-        return $order->order_date ? Carbon::parse($order->order_date)->format('d/m/Y H:i') : '';
+        return $order->order_date ? Helpers::displayDateTime($order->order_date) : '';
       })
       ->editColumn('order_number', function ($order) {
         return '#' . ($order->type ?? 'SO') . ($order->order_number ?? '');
@@ -477,8 +478,8 @@ class ReportController extends Controller
     $startDate = Carbon::now()->subDays(30);
 
     return view('content.report.net-vat', [
-      'startDate' => $startDate->format('d/m/Y H:i'),
-      'endDate' => $endDate->format('d/m/Y H:i')
+      'startDate' => $startDate->format(Helpers::DISPLAY_DATETIME_FORMAT),
+      'endDate' => $endDate->format(Helpers::DISPLAY_DATETIME_FORMAT)
     ]);
   }
 
@@ -492,12 +493,8 @@ class ReportController extends Controller
       try {
         $startDateStr = trim($request->start_date);
         if (strpos($startDateStr, '/') !== false) {
-          // Try parsing with time first (d/m/Y H:i)
-          if (strpos($startDateStr, ':') !== false) {
-            $startDate = Carbon::createFromFormat('d/m/Y H:i', $startDateStr)->startOfDay();
-          } else {
-            $startDate = Carbon::createFromFormat('d/m/Y', $startDateStr)->startOfDay();
-          }
+          $parsed = Helpers::parseAdminDateTime($startDateStr);
+          $startDate = ($parsed ?? Carbon::parse($startDateStr))->copy()->startOfDay();
         } else {
           $startDate = Carbon::parse($startDateStr)->startOfDay();
         }
@@ -511,12 +508,8 @@ class ReportController extends Controller
       try {
         $endDateStr = trim($request->end_date);
         if (strpos($endDateStr, '/') !== false) {
-          // Try parsing with time first (d/m/Y H:i)
-          if (strpos($endDateStr, ':') !== false) {
-            $endDate = Carbon::createFromFormat('d/m/Y H:i', $endDateStr)->endOfDay();
-          } else {
-            $endDate = Carbon::createFromFormat('d/m/Y', $endDateStr)->endOfDay();
-          }
+          $parsed = Helpers::parseAdminDateTime($endDateStr);
+          $endDate = ($parsed ?? Carbon::parse($endDateStr))->copy()->endOfDay();
         } else {
           $endDate = Carbon::parse($endDateStr)->endOfDay();
         }

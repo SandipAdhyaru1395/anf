@@ -144,7 +144,7 @@ class SettingController extends Controller
   }
   public function deliveryMethodListAjax()
   {
-    $methods = DeliveryMethod::orderBy('id', 'desc')->get(['id', 'name', 'time', 'rate', 'minimum_amount', 'status']);
+    $methods = DeliveryMethod::orderBy('id', 'desc')->get(['id', 'name', 'time', 'rate', 'minimum_amount', 'maximum_amount', 'status']);
 
     $data = [];
     foreach ($methods as $key => $method) {
@@ -152,6 +152,7 @@ class SettingController extends Controller
       $data[$key]['name'] = $method->name;
       $data[$key]['time'] = $method->time;
       $data[$key]['minimum_amount'] = $method->minimum_amount;
+      $data[$key]['maximum_amount'] = $method->maximum_amount;
       $data[$key]['rate'] = $method->rate;
       $data[$key]['status'] = $method->status;
     }
@@ -600,7 +601,7 @@ class SettingController extends Controller
 
   public function deliveryMethodShow(Request $request)
   {
-    $method = DeliveryMethod::select('id', 'name', 'time', 'rate', 'minimum_amount', 'status', 'sort_order')
+    $method = DeliveryMethod::select('id', 'name', 'time', 'rate', 'minimum_amount', 'maximum_amount', 'status', 'sort_order')
       ->where('id', $request->id)
       ->first();
 
@@ -662,6 +663,7 @@ class SettingController extends Controller
       'dmTime' => 'required|string|max:255',
       'dmPrice' => 'required|numeric|min:0',
       'dmMinimumAmount' => 'required|numeric|min:0',
+      'dmMaximumAmount' => 'nullable|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
       'dmSortOrder' => 'nullable|integer',
     ], [
@@ -669,9 +671,19 @@ class SettingController extends Controller
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
       'dmMinimumAmount.required' => 'Minimum Amount is required.',
+      'dmMaximumAmount.numeric' => 'Maximum Amount must be a number.',
       'dmStatus.required' => 'Status is required.',
       'dmSortOrder.integer' => 'The sort order field must be an integer.',
     ]);
+
+    $validator->after(function (\Illuminate\Validation\Validator $v) use ($request) {
+      if (!$request->filled('dmMaximumAmount')) {
+        return;
+      }
+      if ((float) $request->dmMaximumAmount < (float) $request->dmMinimumAmount) {
+        $v->errors()->add('dmMaximumAmount', 'Maximum amount must be greater than or equal to minimum amount.');
+      }
+    });
 
     if ($validator->fails()) {
       return redirect()->back()->withErrors($validator)->withInput();
@@ -682,6 +694,7 @@ class SettingController extends Controller
       'time' => $request->dmTime,
       'rate' => $request->dmPrice,
       'minimum_amount' => $request->dmMinimumAmount,
+      'maximum_amount' => $request->filled('dmMaximumAmount') ? $request->dmMaximumAmount : null,
       'status' => $request->dmStatus,
       'sort_order' => $request->dmSortOrder,
     ]);
@@ -751,6 +764,7 @@ class SettingController extends Controller
       'dmTime' => 'required|string|max:255',
       'dmPrice' => 'required|numeric|min:0',
       'dmMinimumAmount' => 'required|numeric|min:0',
+      'dmMaximumAmount' => 'nullable|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
       'dmSortOrder' => 'nullable|integer',
     ], [
@@ -758,9 +772,19 @@ class SettingController extends Controller
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
       'dmMinimumAmount.required' => 'Minimum Amount is required.',
+      'dmMaximumAmount.numeric' => 'Maximum Amount must be a number.',
       'dmStatus.required' => 'Status is required.',
       'dmSortOrder.integer' => 'The sort order field must be an integer.',
     ]);
+
+    $validator->after(function (\Illuminate\Validation\Validator $v) use ($request) {
+      if (!$request->filled('dmMaximumAmount')) {
+        return;
+      }
+      if ((float) $request->dmMaximumAmount < (float) $request->dmMinimumAmount) {
+        $v->errors()->add('dmMaximumAmount', 'Maximum amount must be greater than or equal to minimum amount.');
+      }
+    });
 
     if ($validator->fails()) {
       return redirect()->back()->withErrors($validator, 'editModal')->withInput();
@@ -771,6 +795,7 @@ class SettingController extends Controller
     $method->time = $request->dmTime;
     $method->rate = $request->dmPrice;
     $method->minimum_amount = $request->dmMinimumAmount;
+    $method->maximum_amount = $request->filled('dmMaximumAmount') ? $request->dmMaximumAmount : null;
     $method->status = $request->dmStatus;
     $method->sort_order = $request->dmSortOrder;
     $method->save();

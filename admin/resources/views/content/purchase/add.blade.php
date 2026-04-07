@@ -115,7 +115,7 @@
                                 <div class="col-md-4 mb-4 form-control-validation">
                                     <label class="form-label" for="date">Date <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control flatpickr" id="date" name="date" 
-                                        value="{{ old('date', date('d/m/Y H:i')) }}">
+                                        value="{{ old('date', date(\App\Helpers\Helpers::DISPLAY_DATETIME_FORMAT)) }}">
                                     @error('date')
                                         <span class="text-danger" role="alert">
                                             <strong>{{ $message }}</strong>

@@ -297,7 +297,7 @@
                                 </div>
                                 <div class="col-lg-4 mb-5 form-control-validation">
                                     <label class="form-label" for="expiry_date">Expiry Date</label>
-                                    <input type="text" class="form-control flatpickr" id="expiry_date" name="expiry_date" placeholder="dd/mm/yyyy" value="{{ $product->expiry_date ? \Carbon\Carbon::parse($product->expiry_date)->format('d/m/Y') : '' }}" readonly />
+                                    <input type="text" class="form-control flatpickr" id="expiry_date" name="expiry_date" placeholder="dd/mm/yyyy" value="{{ $product->expiry_date ? \App\Helpers\Helpers::displayDateTime($product->expiry_date) : '' }}" readonly />
                                     @error('expiry_date')
                                         <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
                                     @enderror

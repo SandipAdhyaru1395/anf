@@ -16,6 +16,12 @@ import { MobileBranches } from "@/components/mobile-branches"
 import { MobileContactUs } from "@/components/mobile-contact-us"
 import { MobileTermsAndConditions } from "@/components/mobile-terms-and-conditions"
 import SplashScreen from "./welcome-screen"
+import {
+  coerceVersion,
+  fetchProductsAndStoreCacheDeduped,
+  SETTINGS_VERSIONS_CACHE_KEY,
+  shouldFetchProductsFromServer,
+} from "@/lib/products-cache"
 
 type PageKey =
   | "dashboard"
@@ -98,6 +104,21 @@ export default function Home() {
   const handleNavigate = (page: PageKey, favorites = false) => {
     setCurrentPage(page)
     setShowFavorites(favorites)
+    if (page === "shop") {
+      ;(async () => {
+        try {
+          const raw = sessionStorage.getItem(SETTINGS_VERSIONS_CACHE_KEY)
+          if (!raw) return
+          const parsed = JSON.parse(raw)
+          const productVersion = coerceVersion(parsed?.Product)
+          if (shouldFetchProductsFromServer(productVersion)) {
+            await fetchProductsAndStoreCacheDeduped(productVersion)
+          }
+        } catch {
+          // ignore cache refresh errors; shop still opens with current cache
+        }
+      })()
+    }
   }
 
   const openOrder = (orderNumber: string) => {
@@ -179,6 +200,24 @@ export default function Home() {
       // ignore
     }
   }, [])
+
+  // Deep link from emails: storefront base URL with ?order=ORDER_NUMBER
+  useEffect(() => {
+    if (hasToken !== true || typeof window === "undefined") return
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const orderParam = params.get("order")?.trim()
+      if (!orderParam) return
+      const url = new URL(window.location.href)
+      url.searchParams.delete("order")
+      const nextSearch = url.searchParams.toString()
+      window.history.replaceState({}, "", nextSearch ? `${url.pathname}?${nextSearch}` : url.pathname)
+      setSelectedOrderNumber(orderParam)
+      handleNavigate("order-details")
+    } catch {
+      // ignore
+    }
+  }, [hasToken])
 
   // Hydrate cart from API so dashboard (and other pages) show correct sticky totals after refresh.
   useEffect(() => {

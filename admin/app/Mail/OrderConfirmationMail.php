@@ -2,9 +2,11 @@
 
 namespace App\Mail;
 
+use App\Helpers\Helpers;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Support\MailSettingsHelper;
+use App\Support\StorefrontUrlHelper;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -37,6 +39,8 @@ class OrderConfirmationMail extends Mailable implements ShouldQueue
         $companyTitle = (string) ($settings['company_title'] ?? config('app.name'));
         $companyEmail = MailSettingsHelper::fromAddress($settings);
         $fromName = MailSettingsHelper::fromName($settings);
+        $storefrontBase = StorefrontUrlHelper::baseUrl($settings);
+        $viewOrderUrl = $storefrontBase . '/?order=' . rawurlencode((string) $order->order_number);
 
         $mail = $this
             ->subject('Order Confirmed - #' . $order->order_number)
@@ -46,9 +50,12 @@ class OrderConfirmationMail extends Mailable implements ShouldQueue
                 'user' => (object) ['name' => $displayName],
                 'payment_summary' => $paymentSummary,
                 'shipping_address' => $shippingBranch,
-                'estimated_delivery' => optional($order->estimated_delivery_date)->format('d M Y'),
+                'estimated_delivery' => $order->estimated_delivery_date
+                    ? Helpers::displayDateTime($order->estimated_delivery_date)
+                    : '',
                 'company_title' => $companyTitle,
                 'company_email' => $companyEmail,
+                'view_order_url' => $viewOrderUrl,
             ]);
 
         if ($companyEmail !== '') {

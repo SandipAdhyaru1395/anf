@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use App\Helpers\Helpers;
 use App\Services\OrderDeletionService;
 use App\Services\OrderStatusEmailService;
 use App\Support\MailSettingsHelper;
@@ -228,22 +229,10 @@ class OrderController extends Controller
             $fail('Date is required');
             return;
           }
-          // Try to parse d/m/Y H:i format (e.g., "12/11/2025 12:06")
           if (strpos($value, '/') !== false) {
-            try {
-              $parsed = Carbon::createFromFormat('d/m/Y H:i', $value);
-              if ($parsed === false) {
-                $fail('Date must be in dd/mm/yyyy hh:mm format');
-              }
-            } catch (\Exception $e) {
-              try {
-                $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                if ($parsed === false) {
-                  $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                }
-              } catch (\Exception $e2) {
-                $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-              }
+            $parsed = Helpers::parseAdminDateTime($value);
+            if ($parsed === null) {
+              $fail('Date must be in dd/mm/yyyy hh:mm:ss, dd/mm/yyyy hh:mm, or dd/mm/yyyy format');
             }
           } else {
             // Try standard date formats
@@ -288,16 +277,13 @@ class OrderController extends Controller
       'shipping_charge.min' => 'Shipping charge must be 0 or greater',
     ]);
 
-    // Parse date (support d/m/Y H:i and d/m/Y)
-    $date = $validated['date'];
-    if (strpos($date, '/') !== false) {
+    $date = Helpers::parseAdminDateTime($validated['date']);
+    if ($date === null) {
       try {
-        $date = Carbon::createFromFormat('d/m/Y H:i', $date);
+        $date = Carbon::parse($validated['date']);
       } catch (\Exception $e) {
-        $date = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+        $date = now();
       }
-    } else {
-      $date = Carbon::parse($date);
     }
 
     // Normalize products array (in case keys are product IDs)
@@ -590,22 +576,10 @@ class OrderController extends Controller
             $fail('Date is required');
             return;
           }
-          // Try to parse d/m/Y H:i format (e.g., "12/11/2025 12:06")
           if (strpos($value, '/') !== false) {
-            try {
-              $parsed = Carbon::createFromFormat('d/m/Y H:i', $value);
-              if ($parsed === false) {
-                $fail('Date must be in dd/mm/yyyy hh:mm format');
-              }
-            } catch (\Exception $e) {
-              try {
-                $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                if ($parsed === false) {
-                  $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-                }
-              } catch (\Exception $e2) {
-                $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format');
-              }
+            $parsed = Helpers::parseAdminDateTime($value);
+            if ($parsed === null) {
+              $fail('Date must be in dd/mm/yyyy hh:mm:ss, dd/mm/yyyy hh:mm, or dd/mm/yyyy format');
             }
           } else {
             // Try standard date formats
@@ -653,16 +627,13 @@ class OrderController extends Controller
     $order = Order::with('items')->findOrFail($validated['id']);
     $oldStatus = $order->status;
 
-    // Parse date (support d/m/Y H:i and d/m/Y)
-    $date = $validated['date'];
-    if (strpos($date, '/') !== false) {
+    $date = Helpers::parseAdminDateTime($validated['date']);
+    if ($date === null) {
       try {
-        $date = Carbon::createFromFormat('d/m/Y H:i', $date);
+        $date = Carbon::parse($validated['date']);
       } catch (\Exception $e) {
-        $date = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+        $date = now();
       }
-    } else {
-      $date = Carbon::parse($date);
     }
 
     // Normalize products array (in case keys are product IDs)
@@ -1165,33 +1136,21 @@ class OrderController extends Controller
               ->orWhere('customers.company_name', 'like', "%{$searchValue}%")
               ->orWhere(function ($dateQuery) use ($searchValue) {
 
+              $trim = trim($searchValue);
+              $parsed = Helpers::parseAdminDateTime($trim);
+
               try {
-
-                // Check if it contains time
-                if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}(:\d{2})?/', $searchValue)) {
-
-                  // Format: d/m/Y H:i:s
-                  $date = Carbon::createFromFormat('d/m/Y H:i:s', $searchValue);
-
-                  $dateQuery->where('orders.order_date', $date->format('Y-m-d H:i:s'));
-
-                } elseif (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $searchValue, $matches)) {
-
-                  // Date only
-                  $date = Carbon::createFromFormat('d/m/Y', $matches[0]);
-
-                  $dateQuery->whereDate('orders.order_date', $date->format('Y-m-d'));
-
+                if ($parsed !== null) {
+                  if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}\s+/', $trim) && str_contains($trim, ':')) {
+                    $dateQuery->where('orders.order_date', $parsed->format('Y-m-d H:i:s'));
+                  } else {
+                    $dateQuery->whereDate('orders.order_date', $parsed->format('Y-m-d'));
+                  }
                 } else {
-
-                  // Try generic parsing
-                  $date = Carbon::parse($searchValue);
-
+                  $date = Carbon::parse($trim);
                   $dateQuery->whereDate('orders.order_date', $date->format('Y-m-d'));
                 }
-
               } catch (\Exception $e) {
-
                 $dateQuery->whereRaw(
                   "DATE_FORMAT(orders.order_date, '%d/%m/%Y %H:%i:%s') LIKE ?",
                   ["%{$searchValue}%"]
@@ -1217,33 +1176,22 @@ class OrderController extends Controller
           ? $order->credit_note_type . $order->credit_note_number
           : null;
       })
-      // Dynamic column-wise ordering
+      // Dynamic column-wise ordering (must match order-list.js columns: 0–5)
       ->order(function ($query) use ($request) {
         if ($request->has('order')) {
-          $columnIndex = $request->order[0]['column'];
-          $dir = $request->order[0]['dir'];
+          $columnIndex = (int) ($request->order[0]['column'] ?? 0);
+          $dir = strtolower((string) ($request->order[0]['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
-          // Map your column indexes to database columns
           $columns = [
-            0 => 'orders.id',              // id
-            // 1 => not orderable (select), skip
-            2 => 'orders.order_date',      // order_date
-            3 => 'orders.order_number',    // order_number
-            4 => 'customers.company_name', // customer_name
-            5 => 'orders.total_amount',    // total_amount
-            6 => 'orders.paid_amount',     // paid_amount
-            7 => 'orders.unpaid_amount',   // unpaid_amount
-            8 => 'orders.vat_amount',      // vat_amount
-            9 => 'orders.status',          // order_status
-            10 => 'orders.payment_status',  // payment_status
-            // 11 => has_credit_note (computed), skip
-            12 => 'orders.id'               // last id column
+            0 => 'orders.order_number',
+            1 => 'customers.company_name',
+            2 => 'orders.order_date',
+            3 => 'orders.total_amount',
+            4 => 'orders.status',
+            5 => 'orders.id',
           ];
 
-          // If the requested column is 2 (order_date), override to id
-          if ($columnIndex == 2) {
-            $query->orderBy('orders.id', $dir);
-          } elseif (isset($columns[$columnIndex])) {
+          if (isset($columns[$columnIndex])) {
             $query->orderBy($columns[$columnIndex], $dir);
           } else {
             $query->orderBy('orders.id', 'desc');
@@ -1452,7 +1400,9 @@ class OrderController extends Controller
       $subject = $invoiceType . ' #' . $invoiceNumber;
 
       // Prepare email body
-      $invoiceDate = optional($order->order_date)->format('d/m/Y') ?? optional($order->created_at)->format('d/m/Y');
+      $invoiceDate = $order->order_date
+        ? Helpers::displayDateTime($order->order_date)
+        : Helpers::displayDateTime($order->created_at);
       $body = "Dear " . ($order->customer->company_name ?? 'Customer') . ",\n\n";
       if ($order->type !== 'EST') {
         $body .= "Please find attached your " . strtolower($invoiceType) . " #" . $invoiceNumber . " dated " . $invoiceDate . ".\n\n";
@@ -1972,37 +1922,13 @@ class OrderController extends Controller
             if (empty($value)) {
               return;
             }
-            // Try to parse d/m/Y H:i format (e.g., "12/11/2025 12:06")
             if (strpos($value, '/') !== false) {
-              try {
-                $parsed = Carbon::createFromFormat('d/m/Y H:i', $value);
-                if ($parsed === false) {
-                  try {
-                    $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                    if ($parsed === false) {
-                      $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format.');
-                    }
-                  } catch (\Exception $e) {
-                    $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format.');
-                  }
-                }
-              } catch (\Exception $e) {
-                try {
-                  $parsed = Carbon::createFromFormat('d/m/Y', $value);
-                  if ($parsed === false) {
-                    $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format.');
-                  }
-                } catch (\Exception $e2) {
-                  $fail('Date must be in dd/mm/yyyy hh:mm or dd/mm/yyyy format.');
-                }
+              if (Helpers::parseAdminDateTime($value) === null) {
+                $fail('Date must be in dd/mm/yyyy hh:mm:ss, dd/mm/yyyy hh:mm, or dd/mm/yyyy format.');
               }
             } else {
-              // Try standard date formats
               try {
-                $parsed = Carbon::parse($value);
-                if ($parsed === false) {
-                  $fail('Date must be a valid date.');
-                }
+                Carbon::parse($value);
               } catch (\Exception $e) {
                 $fail('Date must be a valid date.');
               }
@@ -2050,16 +1976,13 @@ class OrderController extends Controller
         ], 422);
       }
 
-      // Parse date
-      $date = $validated['date'];
-      if (strpos($date, '/') !== false) {
+      $date = Helpers::parseAdminDateTime($validated['date']);
+      if ($date === null) {
         try {
-          $date = Carbon::createFromFormat('d/m/Y H:i', $date);
+          $date = Carbon::parse($validated['date']);
         } catch (\Exception $e) {
-          $date = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+          $date = now();
         }
-      } else {
-        $date = Carbon::parse($date);
       }
 
       // Get reference number from order_ref table (pay column)

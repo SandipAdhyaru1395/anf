@@ -257,7 +257,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (window.flatpickr && customFromInput && customToInput) {
     customFromPicker = flatpickr(customFromInput, {
       enableTime: true,
-      dateFormat: 'd/m/Y H:i',
+      enableSeconds: true,
+      dateFormat: 'd/m/Y H:i:S',
       time_24hr: true,
       allowInput: true,
       defaultDate: currentStartDate
@@ -265,7 +266,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     customToPicker = flatpickr(customToInput, {
       enableTime: true,
-      dateFormat: 'd/m/Y H:i',
+      enableSeconds: true,
+      dateFormat: 'd/m/Y H:i:S',
       time_24hr: true,
       allowInput: true,
       defaultDate: currentEndDate

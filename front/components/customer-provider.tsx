@@ -46,10 +46,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     setError(null)
     try {
-      const [res, favRes] = await Promise.all([
-        api.get("/customer"),
-        api.get("/favorites")
-      ])
+      const res = await api.get("/customer")
       const c = res?.data?.customer
       if (c && typeof c.wallet_balance !== "undefined") {
         const normalized: Customer = {
@@ -72,8 +69,6 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
           pay_later_allowed: !!c.pay_later_allowed,
         }
         setCustomer(normalized)
-        const ids: number[] = Array.isArray(favRes?.data?.product_ids) ? favRes.data.product_ids.map((n: any) => Number(n)) : []
-        setFavoriteProductIds(ids)
         try {
           // Carry forward version set by login flow (if present)
           let version: number | undefined = undefined;
@@ -84,7 +79,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
               if (!Number.isNaN(num) && num >= 0) version = num;
             }
           } catch {}
-          const payload: any = { customer: normalized, favoriteProductIds: ids };
+          const payload: any = { customer: normalized, favoriteProductIds };
           if (typeof version === 'number') payload.version = version;
           sessionStorage.setItem('customer_cache', JSON.stringify(payload));
           // Clear the temporary version flag once persisted into customer_cache
@@ -138,6 +133,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       const res = await api.get('/favorites')
       const ids: number[] = Array.isArray(res?.data?.product_ids) ? res.data.product_ids.map((n: any) => Number(n)) : []
       setFavoriteProductIds(ids)
+      persistFavoriteIdsToCache(ids)
     } catch {
       // ignore
     }

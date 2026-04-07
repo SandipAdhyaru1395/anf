@@ -120,7 +120,7 @@ class SettingController extends Controller
     {
         $methods = \App\Models\DeliveryMethod::whereRaw('LOWER(TRIM(COALESCE(status, \'\'))) = ?', ['active'])
             ->orderByRaw('COALESCE(sort_order, 9999), name')
-            ->get(['id', 'name', 'time', 'rate', 'minimum_amount', 'status', 'sort_order']);
+            ->get(['id', 'name', 'time', 'rate', 'minimum_amount', 'maximum_amount', 'status', 'sort_order']);
         return response()->json([
             'success' => true,
             'delivery_methods' => $methods,

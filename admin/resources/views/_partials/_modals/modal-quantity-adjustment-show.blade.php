@@ -18,7 +18,7 @@
                 <div>
                     <div class="row">
                       <div class="col">
-                        <b>Date:</b> {{ optional($adjustment->date)->format('d/m/Y H:i') }}<br>
+                        <b>Date:</b> {{ \App\Helpers\Helpers::displayDateTime($adjustment->date) }}<br>
                       </div>
                     </div> 
                     <div class="row">
@@ -70,7 +70,7 @@
                         <div class="fw-bold mb-2">Created by:</div>
                         <div class="small text-black">
                             {{ $adjustment->user ? $adjustment->user->name : 'N/A' }}<br>
-                            Date: {{ optional($adjustment->created_at)->format('d/m/Y H:i') }}
+                            Date: {{ \App\Helpers\Helpers::displayDateTime($adjustment->created_at) }}
                         </div>
                     </div>
                 </div>

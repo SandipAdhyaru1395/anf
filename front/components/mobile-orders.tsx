@@ -16,6 +16,7 @@ import {
   faWallet,
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
+import { formatDisplayDateTime } from "@/lib/format-date-time";
 
 interface MobileOrdersProps {
   onNavigate: (page: any, favorites?: boolean) => void;
@@ -40,18 +41,6 @@ function formatStatusLabel(status: string): string {
     .replace(/_/g, " ")
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-/** Figma list date e.g. 01/02/2026 */
-function formatOrderListDate(apiValue: string): string {
-  const s = String(apiValue || "").trim();
-  const d = new Date(s);
-  if (!Number.isNaN(d.getTime())) {
-    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-  }
-  const m = s.match(/(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/);
-  if (m) return m[1].replace(/-/g, "/");
-  return s;
 }
 
 export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersProps) {
@@ -210,7 +199,7 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
                           <span className="text-[#C5CEDE]">•</span>
                           <span className="inline-flex items-center gap-1">
                             <FontAwesomeIcon icon={faCalendarDays} className="text-[11px] opacity-90" aria-hidden />
-                            {formatOrderListDate(o.ordered_at)}
+                            {formatDisplayDateTime(o.ordered_at)}
                           </span>
                         </div>
                       </div>

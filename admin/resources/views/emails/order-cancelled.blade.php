@@ -27,7 +27,7 @@
         </tr>
         <tr>
             <td><strong>Updated On</strong></td>
-            <td>{{ optional($order->updated_at)->format('d M Y') }}</td>
+            <td>{{ \App\Helpers\Helpers::displayDateTime($order->updated_at) }}</td>
         </tr>
     </table>
 
@@ -43,7 +43,7 @@
     </p>
 
     <div class="btn-wrapper">
-        <a href="{{ url('/orders/' . $order->order_number) }}" class="btn">View My Order</a>
+        <a href="{{ $view_order_url }}" class="btn">View My Order</a>
     </div>
 
     <p style="text-align:center; margin-top:20px;">

@@ -367,10 +367,10 @@
                 </td>
                 <td class="addr" aria-label="Payment details">
                     @if($order->type === 'CN')
-                        <p><b>CN Date:</b> {{ optional($order->order_date)->format('d/m/Y H:i') ?? optional($order->created_at)->format('d/m/Y H:i') }}</p>
+                        <p><b>CN Date:</b> {{ \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at) }}</p>
                         <p><b>CN No.:</b> #CN{{ $order->order_number }}</p>
                     @else
-                        <p><b>Invoice Date:</b> {{ optional($order->order_date)->format('d/m/Y H:i') ?? optional($order->created_at)->format('d/m/Y H:i') }}</p>
+                        <p><b>Invoice Date:</b> {{ \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at) }}</p>
                         <p><b>Invoice No.:</b> #SO{{ $order->order_number }}</p>
                     @endif
                     @if($order->invoice_ref)
@@ -501,7 +501,7 @@
             <tbody>
                 <tr>
                     <td style="width:22%; font-weight:700;">Date</td>
-                    <td>{{ optional($invoicePayment->date)->format('d/m/Y') ?? optional($invoicePayment->created_at)->format('d/m/Y') }}</td>
+                    <td>{{ \App\Helpers\Helpers::displayDateTime($invoicePayment->date ?? $invoicePayment->created_at) }}</td>
                 </tr>
                 <tr>
                     <td style="font-weight:700;">Reference</td>

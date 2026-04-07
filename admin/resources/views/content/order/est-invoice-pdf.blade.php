@@ -330,7 +330,7 @@
             </tr>
             <tr>
                 <td class="addr" aria-label="Payment details">
-                    <p><b>Order Date:</b> {{ optional($order->order_date)->format('d/m/Y H:i') ?? optional($order->created_at)->format('d/m/Y H:i') }}</p>
+                    <p><b>Order Date:</b> {{ \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at) }}</p>
                     <p><b>Payment status:</b> {{ strtoupper($order->payment_status ?? '—') }}</p>
                 </td>
             </tr>
@@ -427,7 +427,7 @@
             <tbody>
                 <tr>
                     <td style="width:22%; font-weight:700;">Date</td>
-                    <td>{{ optional($invoicePayment->date)->format('d/m/Y') ?? optional($invoicePayment->created_at)->format('d/m/Y') }}</td>
+                    <td>{{ \App\Helpers\Helpers::displayDateTime($invoicePayment->date ?? $invoicePayment->created_at) }}</td>
                 </tr>
                 <tr>
                     <td style="font-weight:700;">Reference</td>
