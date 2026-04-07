@@ -171,6 +171,454 @@
     margin-inline: auto;
   }
 
+  /* Terms & Conditions desktop frame (1000x1024). Mobile stays unchanged. */
+  @media (min-width: 1000px) {
+    .terms-desktop-frame {
+      width: 1000px !important;
+      max-width: 1000px !important;
+      height: min(1024px, 100dvh) !important;
+      max-height: min(1024px, 100dvh) !important;
+      margin-inline: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+    }
+
+    .terms-desktop-frame > main {
+      flex: 1 1 0 !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+      padding-top: 16px !important;
+      padding-bottom: 32px !important;
+    }
+
+    .terms-desktop-frame .terms-card {
+      max-width: 968px !important;
+      padding: 20px !important;
+    }
+  }
+
+  /* Desktop dashboard frame (Figma 1000x1024). Mobile stays unchanged. */
+  @media (min-width: 1000px) {
+    /* Dashboard root container */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] {
+      width: 1000px !important;
+      max-width: 1000px !important;
+      height: min(1024px, 100dvh) !important;
+      max-height: min(1024px, 100dvh) !important;
+      margin-inline: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+    }
+
+    /* Header */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] > header {
+      height: 107.84px !important;
+      min-height: 107.84px !important;
+      padding-top: 65px !important;
+      padding-right: 14px !important;
+      padding-bottom: 16px !important;
+      padding-left: 14px !important;
+      gap: 8px !important;
+    }
+
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] > header > div {
+      min-height: 26.84px !important;
+      width: 100% !important;
+      padding-top: 4px !important;
+      padding-right: 15px !important;
+      padding-left: 15px !important;
+      justify-content: center !important;
+    }
+
+    /* Scrollable content area (middle section must scroll) */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] > main {
+      flex: 1 1 0 !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      padding-top: 16px !important;
+      padding-right: 16px !important;
+      padding-bottom: 150px !important;
+      padding-left: 16px !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] > main > div:first-child {
+      padding: 0 !important;
+    }
+
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] .mx-auto.h-\[93px\].w-full.max-w-\[370px\] {
+      max-width: 968px !important;
+      width: 100% !important;
+      min-height: 242px !important;
+      height: 242px !important;
+    }
+
+    /* Main content wrapper and cards */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] > main > div:last-child {
+      max-width: 1000px !important;
+      padding: 0 !important;
+      gap: 10px !important;
+      min-height: max-content !important;
+    }
+
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] section.w-full.max-w-\[370px\].self-center {
+      width: 100% !important;
+      max-width: 968px !important;
+    }
+
+    /* Dashboard card under banner (Figma: 968 x 146, padding 8, gap 8) */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] .flex.w-full.max-w-\[370px\].flex-col.gap-2\.5.self-center.rounded-sm.bg-\[\#EEF1F4\].p-2\.5 {
+      width: 100% !important;
+      max-width: 968px !important;
+      padding: 8px !important;
+      gap: 8px !important;
+    }
+
+    /* Wallet row under Referral Rewards (Figma: 952 x 34) */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] button.h-\[34px\].w-full.max-w-\[354px\].rounded-\[5px\].border.border-\[\#4A90E5\] {
+      width: 100% !important;
+      max-width: 952px !important;
+      height: 34px !important;
+      min-height: 34px !important;
+      border: 1px solid #4a90e5 !important;
+      border-radius: 5px !important;
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+      justify-content: space-between !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Shop/Favourites row (Figma: width 952, height 31, gap 8) */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] .flex.w-full.gap-2 {
+      width: 100% !important;
+      max-width: 952px !important;
+      gap: 8px !important;
+      margin-inline: auto !important;
+      justify-content: space-between !important;
+    }
+
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] .flex.w-full.gap-2 > button {
+      min-height: 31px !important;
+      height: 31px !important;
+      width: 472px !important;
+      min-width: 472px !important;
+      max-width: 472px !important;
+      border-radius: 5px !important;
+      padding: 8px !important;
+      flex: 0 0 472px !important;
+    }
+
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] .brand-scroll-wrapper {
+      width: 100% !important;
+    }
+
+    /* Leading Brands block (Figma: 968 x 148.8, top border, vertical layout) */
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] section.w-full.max-w-\[370px\].self-center:has(.brand-scroll-wrapper) {
+      width: 100% !important;
+      max-width: 968px !important;
+      height: 148.8px !important;
+      min-height: 148.8px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
+      border-top: 1px solid #e2e2e2 !important;
+      box-sizing: border-box !important;
+    }
+
+    [class*="max-h-[874px]"][class*="shadow-sm"][class*="max-w-[402px]"] section.w-full.max-w-\[370px\].self-center:has(.brand-scroll-wrapper) .brand-scroll-wrapper {
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
+    }
+
+    /* Bottom fixed bars */
+    [aria-label="Mobile sticky cart"] {
+      width: min(100vw, 1000px) !important;
+      max-width: 1000px !important;
+      height: 60px !important;
+      min-height: 60px !important;
+      padding-top: 12px !important;
+      padding-right: 16px !important;
+      padding-bottom: 12px !important;
+      padding-left: 16px !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      background: linear-gradient(3.99deg, #e8e8ed -13.48%, #f4f2f9 56.67%) !important;
+      box-shadow: 0 -5px 15px 0 rgba(85, 94, 88, 0.09) !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Sticky cart inner row (Figma: fill 800, h36, space-between) */
+    [aria-label="Mobile sticky cart"] > .mx-auto.flex.h-\[36px\].w-\[386px\] {
+      width: 100% !important;
+      max-width: 800px !important;
+      height: 36px !important;
+      min-height: 36px !important;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+    }
+
+    [aria-label="Mobile sticky cart"] > .mx-auto.flex.h-\[36px\].w-\[386px\] > .flex.min-w-0.flex-col.justify-center {
+      flex: 1 1 384px !important;
+      min-width: 384px !important;
+      max-width: 384px !important;
+      align-items: center !important;
+    }
+
+    [aria-label="Mobile sticky cart"] > .mx-auto.flex.h-\[36px\].w-\[386px\] > .flex.min-w-0.flex-col.justify-center > .flex.min-w-0.items-center.whitespace-nowrap {
+      justify-content: center !important;
+      width: 384px !important;
+      min-width: 384px !important;
+      max-width: 384px !important;
+      min-height: 15px !important;
+      height: 15px !important;
+      padding-left: 5px !important;
+      padding-right: 5px !important;
+      text-align: center !important;
+      column-gap: 0 !important;
+    }
+
+    [aria-label="Mobile sticky cart"] > .mx-auto.flex.h-\[36px\].w-\[386px\] > .flex.min-w-0.flex-col.justify-center > p {
+      margin-top: 4px !important;
+      text-align: center !important;
+      width: 100% !important;
+    }
+
+    /* Tighten metric spacing (Units | SKUs | Total | +Wallet) */
+    [aria-label="Mobile sticky cart"] .mx-3.h-\[12px\].w-px {
+      margin-left: 23px !important;
+      margin-right: 23px !important;
+    }
+
+    [aria-label="Mobile sticky cart"] .inline-flex.h-\[15px\].items-center,
+    [aria-label="Mobile sticky cart"] .inline-flex.h-\[15px\].shrink-0.items-center {
+      letter-spacing: 0 !important;
+    }
+
+    [aria-label="Mobile sticky cart"] > .mx-auto.flex.h-\[36px\].w-\[386px\] > button {
+      width: 300px !important;
+      min-width: 300px !important;
+      max-width: 300px !important;
+      height: 35px !important;
+      min-height: 35px !important;
+      border-radius: 5px !important;
+    }
+
+    /* Figma: Mobile Navigation Bar (desktop frame) */
+    nav[aria-label="Main navigation"] {
+      width: min(100vw, 1000px) !important;
+      max-width: 1000px !important;
+      height: 64px !important;
+      min-height: 64px !important;
+      padding-top: 8px !important;
+      padding-right: 43px !important;
+      padding-bottom: 16px !important;
+      padding-left: 43px !important;
+      border-top-left-radius: 10px !important;
+      border-top-right-radius: 10px !important;
+      background-color: #f6f4fa !important;
+      box-shadow: 0 -5px 15px 0 rgba(85, 94, 88, 0.09) !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Mobile Navigation Bar inner row (Figma: 800 x 40) */
+    nav[aria-label="Main navigation"] > div.flex.min-h-0.w-full.flex-1.items-center.justify-center > div.flex.h-\[40px\].w-\[316px\].max-w-full.items-center.justify-between {
+      width: 100% !important;
+      max-width: 800px !important;
+      height: 40px !important;
+      min-height: 40px !important;
+      justify-content: space-between !important;
+      margin-inline: auto !important;
+    }
+
+    /* Account page nav row variant (uses justify-center + gap-2 in component). */
+    nav[aria-label="Main navigation"] > div.flex.min-h-0.w-full.flex-1.items-center.justify-center > div.flex.h-\[40px\].w-\[316px\].max-w-full.items-center.justify-center.gap-2 {
+      width: 100% !important;
+      max-width: 800px !important;
+      height: 40px !important;
+      min-height: 40px !important;
+      justify-content: space-between !important;
+      gap: 0 !important;
+      margin-inline: auto !important;
+    }
+
+    /* Shop page desktop frame (scoped by search placeholder in shop header). */
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) {
+      width: 1000px !important;
+      max-width: 1000px !important;
+      height: min(1024px, 100dvh) !important;
+      max-height: min(1024px, 100dvh) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      margin-inline: auto !important;
+    }
+
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.flex.w-full.max-w-\[402px\].flex-col.gap-4.px-4.pb-2.pt-8 {
+      max-width: 1000px !important;
+      min-height: 151px !important;
+      height: auto !important;
+      padding-top: 60px !important;
+      padding-right: 14px !important;
+      padding-bottom: 8px !important;
+      padding-left: 14px !important;
+      gap: 8px !important;
+    }
+
+    /* Shop header inner stack (Figma: 972 x 83, gap 16) */
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.flex.w-full.max-w-\[402px\].flex-col.gap-4.px-4.pb-2.pt-8 > div.flex.w-full.flex-col.gap-4 {
+      width: 100% !important;
+      max-width: 972px !important;
+      min-height: 83px !important;
+      height: 83px !important;
+      gap: 16px !important;
+      margin-inline: auto !important;
+    }
+
+    /* Shop logo row (Figma: 168.82 x 22, px 5) */
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.flex.w-full.max-w-\[402px\].flex-col.gap-4.px-4.pb-2.pt-8 > div.flex.w-full.flex-col.gap-4 > div.flex.w-full.items-center.justify-between {
+      justify-content: flex-start !important;
+      gap: 8px !important;
+      padding-left: 5px !important;
+      padding-right: 5px !important;
+      min-height: 22px !important;
+      height: 22px !important;
+    }
+
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.flex.w-full.max-w-\[402px\].flex-col.gap-4.px-4.pb-2.pt-8 > div.flex.w-full.flex-col.gap-4 > div.flex.w-full.items-center.justify-between .h-\[28px\] {
+      width: 168.82px !important;
+      height: 22px !important;
+      min-height: 22px !important;
+      object-fit: contain !important;
+    }
+
+    /* Search bar row (Figma: 972 x 35, gap 8) */
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.flex.w-full.max-w-\[402px\].flex-col.gap-4.px-4.pb-2.pt-8 > div.flex.w-full.flex-col.gap-4 > div.flex.w-full.items-center.gap-2 {
+      width: 100% !important;
+      max-width: 972px !important;
+      min-height: 35px !important;
+      height: 35px !important;
+      gap: 8px !important;
+      margin-inline: auto !important;
+    }
+
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.min-h-0.w-full.max-w-\[402px\].flex-1.overflow-y-auto.px-4.pb-\[150px\].pt-4 {
+      max-width: 1000px !important;
+      flex: 1 1 auto !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      padding-top: 16px !important;
+      padding-right: 16px !important;
+      padding-bottom: 170px !important;
+      padding-left: 16px !important;
+      gap: 10px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.w-full.max-w-\[370px\].space-y-2 {
+      max-width: 968px !important;
+      min-height: max-content !important;
+    }
+
+    /* Shop product grid: exactly 7 items per row on desktop frame */
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.grid.w-full.grid-cols-3.gap-2.pb-4 {
+      grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+    }
+
+    .mx-auto.flex.min-h-screen.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(input[placeholder="Search products, brands, SKUs..."]) .mx-auto.grid.w-full.grid-cols-3.gap-2.pb-4 > .group.relative.mx-auto.flex.h-\[222px\].w-full.min-w-0.max-w-\[118px\].flex-col {
+      max-width: none !important;
+      width: 100% !important;
+    }
+
+    /* Wallet page desktop frame (scoped by wallet info trigger button). */
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) {
+      width: 1000px !important;
+      max-width: 1000px !important;
+      height: min(1024px, 100dvh) !important;
+      max-height: min(1024px, 100dvh) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      margin-inline: auto !important;
+    }
+
+    /* Wallet header (Back + Wallet) exact desktop framing */
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) > header.z-50.h-\[96px\].w-full.shrink-0.bg-\[\#F8F7FC\] {
+      width: 100% !important;
+      max-width: 1000px !important;
+      height: 96px !important;
+      min-height: 96px !important;
+    }
+
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) > header.z-50.h-\[96px\].w-full.shrink-0.bg-\[\#F8F7FC\] > .mx-auto.box-border.h-full.w-full.max-w-\[402px\].px-\[29px\].pb-4.pt-\[65px\] {
+      max-width: 1000px !important;
+      padding-top: 65px !important;
+      padding-right: 29px !important;
+      padding-bottom: 16px !important;
+      padding-left: 29px !important;
+    }
+
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) > header.z-50.h-\[96px\].w-full.shrink-0.bg-\[\#F8F7FC\] > .mx-auto.box-border.h-full.w-full.max-w-\[402px\].px-\[29px\].pb-4.pt-\[65px\] > .relative.mx-auto.flex.h-\[15px\].w-full.max-w-\[344px\].items-center.justify-center {
+      max-width: 942px !important;
+      width: 100% !important;
+    }
+
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) > .shrink-0.bg-\[\#FAFBFD\].px-4.pb-2.pt-2 {
+      max-width: 1000px !important;
+      padding-top: 8px !important;
+      padding-right: 16px !important;
+      padding-bottom: 8px !important;
+      padding-left: 16px !important;
+    }
+
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) > .shrink-0.bg-\[\#FAFBFD\].px-4.pb-2.pt-2 .mx-auto.h-\[93px\].w-full.max-w-\[370px\].\!rounded-\[2px\] {
+      max-width: 968px !important;
+      width: 100% !important;
+      min-height: 242px !important;
+      height: 242px !important;
+    }
+
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) > main.scrollbar-hide.min-h-0.w-full.flex-1.overflow-x-hidden.overflow-y-auto.bg-\[\#FAFBFD\].px-4.pb-\[72px\].pt-4 {
+      max-width: 1000px !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      padding-top: 16px !important;
+      padding-right: 16px !important;
+      padding-bottom: 96px !important;
+      padding-left: 16px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+
+    .relative.mx-auto.flex.h-\[100dvh\].min-h-0.w-full.max-w-\[402px\].flex-col.bg-\[\#FAFBFD\]:has(button[aria-label="Wallet balance information"]) > main.scrollbar-hide.min-h-0.w-full.flex-1.overflow-x-hidden.overflow-y-auto.bg-\[\#FAFBFD\].px-4.pb-\[72px\].pt-4 > .mx-auto.flex.w-full.max-w-\[370px\].flex-col.gap-4 {
+      max-width: 968px !important;
+      width: 100% !important;
+    }
+  }
+
   .register-container {
     width: 402px;
     height: 874px;

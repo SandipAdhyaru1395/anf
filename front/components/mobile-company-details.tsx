@@ -37,10 +37,10 @@ interface MobileCompanyDetailsProps {
  * so use `!` on overridden props (same pattern as `register.tsx` `inputStyle`).
  */
 const inputClass =
-  "box-border block !h-[50px] w-full min-h-[50px] !rounded-[5px] border border-solid !border-[#4A90E5] !bg-white !px-6 !py-0 !text-[14px] !leading-[48px] text-[#1E293B] shadow-none !outline-none transition-[box-shadow,border-color] placeholder:text-[#94A3B8] focus:!border-[#4A90E5] focus:!outline-none focus:ring-2 focus:ring-[#4A90E5]/25";
+  "box-border block !h-[50px] w-full min-h-[50px] !rounded-[5px] border border-solid !border-[#4A90E5] !bg-white !px-6 !py-4 !text-[14px] !leading-[18px] text-[#1E293B] shadow-none !outline-none transition-[box-shadow,border-color] placeholder:text-[#94A3B8] focus:!border-[#4A90E5] focus:!outline-none focus:ring-2 focus:ring-[#4A90E5]/25";
 
 const readOnlyInputClass =
-  "box-border block !h-[50px] w-full min-h-[50px] cursor-not-allowed !rounded-[5px] border border-solid !border-[#4A90E5] !bg-[#F8FAFC] !px-6 !py-0 !text-[14px] !leading-[48px] text-[#64748B] !outline-none placeholder:text-[#94A3B8]";
+  "box-border block !h-[50px] w-full min-h-[50px] cursor-not-allowed !rounded-[5px] border border-solid !border-[#4A90E5] !bg-[#F8FAFC] !px-6 !py-4 !text-[14px] !leading-[18px] text-[#64748B] !outline-none placeholder:text-[#94A3B8]";
 
 export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetailsProps) {
   const { customer, refresh } = useCustomer();
@@ -109,21 +109,22 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
   };
 
   /** Section labels: Company Name, Address, Contact Number, Login Details — bold */
-  const labelClass = "mb-2 text-[16px] font-bold leading-[18px] tracking-normal text-[#3D495E]";
+  const labelClass = "mb-2 block w-full text-[16px] font-medium leading-[18px] tracking-[0] text-[#3D495E] lg:mb-0";
 
   return (
-    <div
-      className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD]"
-      style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
-    >
-      <MobilePageHeader title="My Details" onBack={onBack} />
+    <div className="flex h-[100dvh] w-full justify-center overflow-hidden bg-[#FAFBFD]">
+      <div
+        className="relative mx-auto h-full min-h-0 w-full max-w-[402px] overflow-hidden bg-[#FAFBFD] lg:max-h-[1024px] lg:max-w-[1000px]"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <MobilePageHeader title="My Details" onBack={onBack} />
 
-      <main className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-6 pb-[80px] pt-4">
-        <div className="mx-auto flex w-full max-w-[354px] flex-col gap-6">
-          <Banner className="h-[89px] max-w-[354px] rounded-[10px] border border-[#E2E2E2]" />
+        <main className="scrollbar-hide absolute inset-x-0 bottom-[64px] top-[96px] w-full overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-6 pb-[80px] pt-4 lg:px-4 lg:pb-[60px]">
+          <div className="mx-auto flex w-full max-w-full flex-col gap-6 lg:gap-3">
+            <Banner className="mx-auto h-[89px] w-full max-w-[354px] rounded-[10px] border border-[#E2E2E2] lg:h-[242px] lg:max-w-[968px] lg:border-0 lg:!rounded-[10px]" />
 
-          <form onSubmit={form.handleSubmit(saveCompanyDetails)} noValidate className="flex flex-col gap-6">
-            <div className="flex w-full flex-col">
+            <form onSubmit={form.handleSubmit(saveCompanyDetails)} noValidate className="mx-auto flex w-full max-w-[354px] flex-col gap-6 lg:max-w-[700px]">
+            <div className="flex w-full flex-col lg:gap-2">
               <label htmlFor="cd-company" className={labelClass}>
                 Company Name
               </label>
@@ -139,9 +140,9 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               ) : null}
             </div>
 
-            <div className="flex w-full flex-col">
+            <div className="flex w-full flex-col lg:gap-2">
               <span className={labelClass}>Company Address</span>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 lg:gap-2">
                 <input type="text" placeholder="Address Line 1" {...form.register("address_line1")} className={inputClass} />
                 <input type="text" placeholder="Address Line 2" {...form.register("address_line2")} className={inputClass} />
                 <input type="text" placeholder="Town / City" {...form.register("city")} className={inputClass} />
@@ -153,7 +154,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               ) : null}
             </div>
 
-            <div className="flex w-full flex-col">
+            <div className="flex w-full flex-col lg:gap-2">
               <label htmlFor="cd-contact" className={labelClass}>
                 Phone Number
               </label>
@@ -166,7 +167,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               />
             </div>
 
-            <div className="flex w-full flex-col">
+            <div className="flex w-full flex-col lg:gap-2">
               <label htmlFor="cd-vat" className={labelClass}>
                 VAT Number (if applicable)
               </label>
@@ -182,7 +183,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               ) : null}
             </div>
 
-            <div className="flex w-full flex-col">
+            <div className="flex w-full flex-col lg:gap-2">
               <label htmlFor="cd-your-name" className={labelClass}>
                 Your Name
               </label>
@@ -198,7 +199,7 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               ) : null}
             </div>
 
-            <div className="flex w-full flex-col">
+            <div className="flex w-full flex-col lg:gap-2">
               <span className={labelClass}>Login Details</span>
               <input type="email" placeholder="Please enter your email" value={customer?.email || ""} readOnly className={readOnlyInputClass} />
             </div>
@@ -207,69 +208,67 @@ export function MobileCompanyDetails({ onNavigate, onBack }: MobileCompanyDetail
               <button
                 type="submit"
                 disabled={saving}
-                className="flex h-[48px] w-full min-h-[48px] items-center justify-center rounded-[25px] bg-gradient-to-b from-[#2868C0] to-[#4C92E9] px-[26px] text-[20px] font-bold leading-[18px] tracking-normal text-white shadow-[0_2px_10px_rgba(40,104,192,0.35)] transition-opacity hover:opacity-95 active:opacity-90 disabled:opacity-60 disabled:shadow-none"
+                className="flex h-[48px] w-full min-h-[48px] items-center justify-center rounded-[25px] bg-gradient-to-b from-[#2868C0] to-[#4C92E9] px-[26px] text-[20px] font-bold leading-[18px] tracking-normal text-white shadow-[0_2px_10px_rgba(40,104,192,0.35)] transition-opacity hover:opacity-95 active:opacity-90 disabled:opacity-60 disabled:shadow-none lg:mx-auto lg:max-w-[306px]"
               >
                 {saving ? "Saving..." : "Save"}
               </button>
             </div>
-          </form>
-        </div>
-      </main>
+            </form>
+          </div>
+        </main>
 
-      <nav
-        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
-        aria-label="Main navigation"
-        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
-      >
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
-          <div className="flex h-[40px] w-[316px] max-w-full items-center justify-center gap-2">
+        <nav
+          className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-[#F6F4FA] px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)] lg:max-w-[1000px]"
+          aria-label="Main navigation"
+          style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+        >
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+            <div className="flex h-[40px] w-[316px] max-w-full items-center justify-between">
             <button
               type="button"
               onClick={() => onNavigate("dashboard")}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon icon={faChartSimple} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
-              <span className="text-center text-[10px] font-bold leading-none">Dashboard</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Dashboard</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("shop", false)}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon icon={faShop} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
-              <span className="text-center text-[10px] font-bold leading-none">Shop</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Shop</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("shop", true)}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon icon={faHeart} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
-              <span className="text-center text-[10px] font-bold leading-none">Favourites</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Favourites</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("wallet")}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon icon={faWallet} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
-              <span className="text-center text-[10px] font-bold leading-none">Wallet</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Wallet</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("account")}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[#4A90E5]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
               aria-current="page"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4A90E5]">
-                <FontAwesomeIcon icon={faUser} className="h-[18px] w-[18px] text-[18px] leading-none text-white" aria-hidden />
-              </span>
-              <span className="text-center text-[11px] font-bold leading-none text-[#4A90E5]">Account</span>
-              <span className="h-0.5 w-6 shrink-0 rounded-full bg-[#4A90E5]" aria-hidden />
+              <FontAwesomeIcon icon={faUser} className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]" aria-hidden />
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Account</span>
             </button>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </div>
   );
 }

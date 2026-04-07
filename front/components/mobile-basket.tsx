@@ -319,31 +319,33 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
     }
   };
   return (
-    <div
-      className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD]"
-      style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
-    >
+    <div className="flex h-[100dvh] w-full justify-center overflow-hidden bg-[#FAFBFD]">
+      <div
+        className="relative mx-auto h-full min-h-0 w-full max-w-[402px] overflow-hidden bg-[#FAFBFD] lg:max-h-[1024px] lg:max-w-[1000px]"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
       <MobilePageHeader title="Basket" onBack={onBack} />
 
-      <div className="mx-auto w-full max-w-[354px] px-0 pt-4">
-        <Banner className="h-[89px] w-full max-w-[354px] rounded-[10px] border border-[#E2E2E2]" />
-      </div>
-      {adjustments.length > 0 && (
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[13px] leading-snug text-amber-950">
-          <div className="mb-1 font-bold">We adjusted some items to available stock:</div>
-          <ul className="list-disc pl-5">
-            {adjustments.map((a, idx) => (
-              <li key={idx}>
-                {a.product_name || `#${a.product_id}`}: {a.old_quantity} → {a.new_quantity}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div
-        className={`scrollbar-hide min-h-0 flex-1 overflow-y-auto bg-[#FAFBFD] pt-1 ${items.length > 0 ? "pb-[220px]" : "pb-[100px]"}`}
+      <main
+        className={`scrollbar-hide absolute inset-x-0 bottom-[64px] top-[96px] w-full overflow-y-auto bg-[#FAFBFD] px-4 pt-4 ${items.length > 0 ? "pb-[220px] lg:pb-[188px]" : "pb-[100px]"}`}
       >
+        <div className="mx-auto w-full max-w-[354px] px-0 lg:max-w-full">
+          <Banner className="mx-auto h-[89px] w-full max-w-[354px] rounded-[10px] border border-[#E2E2E2] lg:h-[242px] lg:max-w-[968px] lg:border-0 lg:!rounded-[10px]" />
+        </div>
+        {adjustments.length > 0 && (
+          <div className="mx-auto mt-2 w-full max-w-[968px] border-b border-amber-200 bg-amber-50 px-4 py-2 text-[13px] leading-snug text-amber-950">
+            <div className="mb-1 font-bold">We adjusted some items to available stock:</div>
+            <ul className="list-disc pl-5">
+              {adjustments.map((a, idx) => (
+                <li key={idx}>
+                  {a.product_name || `#${a.product_id}`}: {a.old_quantity} → {a.new_quantity}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-1">
         {items.map(({ product, quantity }) => {
           const unitPrice = parseFloat((product.price ?? "0").replace(/[^\d.\-]+/g, "")) || 0;
           const lineTotal = unitPrice * quantity;
@@ -422,21 +424,22 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
         {items.length === 0 ? (
           <div className="px-4 py-14 text-center text-[15px] font-medium text-[#8F98AD]">Your basket is empty</div>
         ) : null}
-      </div>
+        </div>
+      </main>
 
       {/* Sticky summary + checkout — only when basket has line items */}
       {items.length > 0 ? (
         <div
-          className="fixed bottom-[64px] left-1/2 z-40 w-full max-w-[402px] -translate-x-1/2 bg-gradient-to-b from-[#E8E8ED] to-[#F4F2F9] px-[23px] pb-[13px] pt-4 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+          className="fixed bottom-[64px] left-1/2 z-40 h-[127.2px] w-full max-w-[402px] -translate-x-1/2 bg-gradient-to-b from-[#E8E8ED] to-[#F4F2F9] px-[23px] pb-[13px] pt-4 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)] lg:h-[127.2px] lg:max-w-[1000px] lg:px-[23px] lg:pb-[13px] lg:pt-4"
           style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
         >
-          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-[13px] font-bold leading-none text-[#3D495E]">
+          <div className="mx-auto flex h-[43.2px] w-full max-w-[500px] items-center justify-between rounded-[2px] px-[12px] text-[13px] font-bold leading-none text-[#3D495E] lg:max-w-[500px]">
             <span>{cartTotals.units} Units</span>
-            <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+            <span className="h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
             <span>{cartTotals.skus} SKUs</span>
-            <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+            <span className="h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
             <span>{format(cartTotals.total)}</span>
-            <span className="mx-1 h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
+            <span className="h-3 w-px shrink-0 bg-[#D2D0E1]" aria-hidden />
             <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#4A90E5]">
               <FontAwesomeIcon icon={faTruck} className="text-[12px]" aria-hidden />
               <span>
@@ -445,11 +448,11 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
               </span>
             </span>
           </div>
-          <p className="mt-2 text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]">Includes FREE delivery</p>
+          <p className="mt-0 text-center text-[12px] font-normal leading-none tracking-[0.05em] text-[#68676E]">Includes FREE delivery</p>
           <button
             type="button"
             onClick={handleCheckout}
-            className="mt-3 flex h-12 w-full items-center justify-center rounded-[25px] bg-gradient-to-b from-[#2868C0] to-[#4C92E9] text-[16px] font-bold leading-none text-white shadow-[0_2px_10px_rgba(40,104,192,0.35)] transition-opacity hover:opacity-95 active:opacity-90"
+            className="mt-2 mx-auto flex h-[43px] w-full max-w-[954px] items-center justify-center rounded-[25px] bg-gradient-to-b from-[#2868C0] to-[#4C92E9] px-[7px] py-3 text-[16px] font-bold leading-none text-white shadow-[0_2px_10px_rgba(40,104,192,0.35)] transition-opacity hover:opacity-95 active:opacity-90"
           >
             Checkout
           </button>
@@ -457,7 +460,7 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
       ) : null}
 
       <nav
-        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-[#F6F4FA] px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)] lg:max-w-[1000px]"
         aria-label="Main navigation"
         style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
       >
@@ -509,6 +512,7 @@ export function MobileBasket({ onNavigate, cart, onCartSync, increment, decremen
           </div>
         </div>
       </nav>
+      </div>
     </div>
   );
 }

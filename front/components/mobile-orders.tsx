@@ -128,18 +128,19 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
   }, []);
 
   return (
-    <div
-      className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD]"
-      style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
-    >
-      <MobilePageHeader title="My Orders" onBack={onBack} />
+    <div className="flex h-[100dvh] w-full justify-center overflow-hidden bg-[#FAFBFD]">
+      <div
+        className="relative mx-auto h-full min-h-0 w-full max-w-[402px] overflow-hidden bg-[#FAFBFD] lg:max-h-[1024px] lg:max-w-[1000px]"
+        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+      >
+        <MobilePageHeader title="My Orders" onBack={onBack} />
 
-      <main className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-6 pb-[80px]">
-        <div className="mx-auto flex w-full max-w-[354px] flex-col gap-4">
-          <Banner className="h-[89px] max-w-[354px] rounded-[10px] border border-[#E2E2E2]" />
+        <main className="scrollbar-hide absolute inset-x-0 bottom-[64px] top-[96px] w-full overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-6 pb-[80px] pt-4 lg:px-0 lg:pb-[60px]">
+          <div className="mx-auto flex w-full max-w-[354px] flex-col gap-4 lg:max-w-full">
+            <Banner className="mx-auto h-[89px] max-w-[354px] rounded-[10px] border border-[#E2E2E2] lg:h-[242px] lg:max-w-[968px] lg:border-0 lg:!rounded-[10px]" />
 
           {loading ? (
-            <div className="overflow-hidden rounded-[10px] border border-[#E2E2E2] bg-white">
+            <div className="overflow-hidden rounded-[10px] border border-[#E2E2E2] bg-white lg:w-full">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
@@ -149,7 +150,7 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
               ))}
             </div>
           ) : orders.length === 0 ? (
-            <div className="rounded-[10px] border border-[#E2E2E2] bg-white px-4 py-10 text-center shadow-sm">
+            <div className="rounded-[10px] border border-[#E2E2E2] bg-white px-4 py-10 text-center shadow-sm lg:w-full">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF2FC]">
                 <FontAwesomeIcon icon={faBox} className="text-[22px] text-[#4A90E5]" aria-hidden />
               </div>
@@ -157,13 +158,13 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
               <p className="mt-1 text-[13px] font-medium text-[#8F98AD]">Your orders will appear here</p>
             </div>
           ) : (
-            <ul className="flex list-none flex-col overflow-hidden rounded-[10px] border border-[#E2E2E2] bg-white p-0 shadow-sm">
+            <ul className="flex list-none flex-col overflow-hidden rounded-[10px] border border-[#E2E2E2] bg-white p-0 shadow-sm lg:w-full">
               {orders.map((o, idx) => (
                 <li key={`${o.order_number}-${idx}`} className="border-b border-[#E2E2E2] last:border-b-0">
                   <button
                     type="button"
                     onClick={() => onOpenOrder?.(o.order_number)}
-                    className="flex w-full cursor-pointer items-stretch gap-4 bg-white px-4 py-2 text-left transition-colors hover:bg-[#FAFBFD] active:bg-[#F4F6FA]"
+                    className="flex w-full cursor-pointer items-stretch gap-4 bg-white px-4 py-2 text-left transition-colors hover:bg-[#FAFBFD] active:bg-[#F4F6FA] lg:min-h-[71.52px]"
                   >
                     {/* Figma Order History Item: py-2 px-4, gap 16, min-h ~72 */}
                     <div className="flex min-w-0 flex-1 items-center gap-4">
@@ -216,83 +217,83 @@ export function MobileOrders({ onNavigate, onBack, onOpenOrder }: MobileOrdersPr
               ))}
             </ul>
           )}
-        </div>
-      </main>
+          </div>
+        </main>
 
-      <nav
-        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
-        aria-label="Main navigation"
-        style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
-      >
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
-          <div className="flex h-[40px] w-[316px] max-w-full items-center justify-center gap-2">
+        <nav
+          className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-[#F6F4FA] px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)] lg:max-w-[1000px]"
+          aria-label="Main navigation"
+          style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
+        >
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+            <div className="flex h-[40px] w-[316px] max-w-full items-center justify-between">
             <button
               type="button"
               onClick={() => onNavigate("dashboard")}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faChartSimple}
                 className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
                 aria-hidden
               />
-              <span className="text-center text-[10px] font-bold leading-none">Dashboard</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Dashboard</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("shop", false)}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faShop}
                 className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
                 aria-hidden
               />
-              <span className="text-center text-[10px] font-bold leading-none">Shop</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Shop</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("shop", true)}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faHeart}
                 className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
                 aria-hidden
               />
-              <span className="text-center text-[10px] font-bold leading-none">Favourites</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Favourites</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("wallet")}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 opacity-60 text-[#BDC7DE]"
             >
               <FontAwesomeIcon
                 icon={faWallet}
                 className="h-[20px] w-[20px] shrink-0 text-[20px] leading-none text-[#BDC7DE]"
                 aria-hidden
               />
-              <span className="text-center text-[10px] font-bold leading-none">Wallet</span>
+              <span className="text-center text-[10px] font-bold leading-none tracking-normal">Wallet</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate("account")}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[#4A90E5]"
+              className="flex h-full cursor-pointer min-w-0 flex-col items-center justify-center gap-1 text-[#4A90E5]"
               aria-current="page"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4A90E5]">
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="h-[18px] w-[18px] text-[18px] leading-none text-white"
-                  aria-hidden
-                />
+              <FontAwesomeIcon
+                icon={faUser}
+                className="h-[23px] w-[23px] shrink-0 text-[23px] leading-none text-[#4A90E5]"
+                aria-hidden
+              />
+              <span className="inline-flex h-[13px] min-w-[36px] items-center justify-center text-center text-[11px] font-medium leading-none tracking-normal text-[#4A90E5]">
+                Account
               </span>
-              <span className="text-center text-[11px] font-bold leading-none text-[#4A90E5]">Account</span>
-              <span className="h-0.5 w-6 shrink-0 rounded-full bg-[#4A90E5]" aria-hidden />
             </button>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </div>
   );
 }

@@ -44,18 +44,27 @@ export default function Register() {
       email: "",
       password: "",
       confirmPassword: "",
+      repCode: "",
     },
   });
 
   const [loading, setLoading] = useState(false);
 
-  // Styles based on Figma
+  // Inputs: 1px solid #4A90E5 (Figma); labels: Roboto 500, 16px / 18px, #3D495E
   const inputStyle =
-    "w-full h-[50px] rounded-[5px] bg-[#FFFFFF] px-[16px] text-[14px] leading-[18px] text-[#3D495E] border border-[#4A90E5] focus:outline-none focus:ring-0 placeholder:text-[#A8AFBC] transition-all relative z-10";
+    "register-field relative z-10 box-border block h-[48px] w-full min-h-[48px] rounded-[6px] border border-solid border-[#4A90E5] bg-white px-4 text-[16px] leading-[22px] text-[#1e293b] outline-none transition-[border-color] placeholder:text-[#94A3B8] focus:border-[#2868C0] focus:ring-0 focus:ring-offset-0 [font-family:Roboto]";
 
+  /** Figma "Company Name" etc.: Medium 500, 16px, line 18px, #3D495E */
   const sectionTitleStyle =
-    "block w-full text-[#3D495E] font-semibold text-[14px] leading-[18px] text-left [font-family:Roboto] mb-2 relative z-10";
-  const fieldLabelStyle = "block text-[#3D495E] text-[14px] leading-[18px] mb-1 pt-2";
+    "relative z-10 block min-h-[18px] w-full text-left text-[16px] font-medium leading-[18px] tracking-normal text-[#3D495E] [font-family:Roboto]";
+
+  const fieldLabelStyle =
+    "block text-[14px] font-normal leading-[18px] text-[#3D495E] [font-family:Roboto]";
+
+  const detailLabelStyle =
+    "block w-full text-left text-[16px] font-medium leading-[18px] tracking-normal text-[#3D495E] [font-family:Roboto]";
+
+  const errorTextClass = "text-[13px] text-red-500 [font-family:Roboto]";
 
   async function onSubmit(values: any) {
     setLoading(true);
@@ -81,10 +90,18 @@ export default function Register() {
       });
 
       if (data?.success) {
-        toast({ title: "Thank you", description: "Your application has been received and we will email you once your account has been approved." });
+        toast({
+          title: "Thank you",
+          description:
+            "Your application has been received and we will email you once your account has been approved.",
+        });
         setTimeout(() => router.replace(buildPath("/login")), 3200);
       } else {
-        toast({ variant: "destructive", title: "Error", description: data?.message || "Registration failed" });
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: data?.message || "Registration failed",
+        });
       }
     } catch (err: any) {
       const resp = err?.response?.data;
@@ -101,246 +118,400 @@ export default function Register() {
             averageMonthlySpendExVat: "averageMonthlySpendExVat",
             storesServicedCount: "storesServicedCount",
             yourName: "yourName",
+            email: "email",
           };
           const target = map[field] || field;
           setFormError(target as any, { type: "server", message: msg });
         });
       }
-      toast({ variant: "destructive", title: "Error", description: resp?.message || "Failed" });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: resp?.message || "Failed",
+      });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex justify-center bg-[#F2F5F9]">
-      {/* Main Container with Background Image */}
-      <div 
-        className="relative w-[402px] h-[874px] bg-[#FAFBFD] flex flex-col overflow-hidden shadow-sm"
-      >
+    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-[#FAFBFD] sm:bg-[#F2F5F9] sm:px-4">
+      {/* Mobile: 402 full-bleed #FAFBFD; sm+: Figma 1000×1024, gap 24, pad top 30 bottom 12 */}
+      <div className="relative flex h-[min(874px,100dvh)] w-full max-w-[402px] flex-col overflow-hidden bg-[#FAFBFD] max-sm:shadow-none max-sm:rounded-none sm:h-[min(1024px,100dvh)] sm:max-w-[1000px] sm:gap-6 sm:rounded-lg sm:shadow-sm sm:pt-[calc(30px+env(safe-area-inset-top,0px))] sm:pb-3">
+        {/* Watermark: inline positioning so it always applies (Tailwind arbitrary % can miss in some builds) */}
         <div
-            className="absolute inset-0 z-0 pointer-events-none"
-            style={{
-              backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "auto 90%",
-              backgroundPosition: "top 60px right",
-            }}
-          />
-        
-        {/* Background Overlay Color (#4A90E50D) */}
-        <div 
-          className="absolute inset-0 pointer-events-none z-[1]" 
-          style={{ backgroundColor: "rgba(250, 251, 253, 0.12)" }} 
+          className="pointer-events-none sm:hidden"
+          style={{
+            position: "absolute",
+            zIndex: 0,
+            top: "182px",
+            left: "25%",
+            right: "50%",
+            bottom: "calc(158px + env(safe-area-inset-bottom, 0px))",
+            backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "contain",
+            backgroundPosition: "right center",
+          }}
+        />
+        <div
+          className="pointer-events-none hidden sm:block"
+          style={{
+            position: "absolute",
+            zIndex: 0,
+            top: "104px",
+            left: "25%",
+            right: 0,
+            bottom: "calc(124px + env(safe-area-inset-bottom, 0px))",
+            backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "contain",
+            backgroundPosition: "right center",
+          }}
         />
 
-        {/* Fixed Header */}
-        <div className="relative z-10 pt-[65px] pb-8 flex justify-center items-center">
-          <Thumbnail
-            height={23.41}
-            containerClassName="w-[206.47px] max-w-[206.47px] mx-auto !bg-transparent"
-          />
-        </div>
+        {/* Fixed header — sm+: Figma 30px top; mobile: pela jevu spacing */}
+        <header className="relative z-10 flex shrink-0 justify-center px-6 pb-8 pt-[calc(65px+env(safe-area-inset-top,0px))] max-sm:pb-6 sm:px-10 sm:pb-0 sm:pt-0">
+          <div className="sm:hidden">
+            <Thumbnail
+              height={23.41}
+              containerClassName="mx-auto !bg-transparent w-[206.47px] max-w-[206.47px]"
+            />
+          </div>
+          <div className="hidden sm:block">
+            <Thumbnail
+              height={28}
+              containerClassName="mx-auto !bg-transparent w-[240px] max-w-[240px]"
+            />
+          </div>
+        </header>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="relative z-10 flex flex-1 flex-col overflow-hidden px-4">
-          
-          {/* Scrollable Area */}
-          <div className="flex-1 overflow-y-auto pr-1 space-y-6 pb-6 no-scrollbar">
-            
-            <div className="rounded-[6px] p-4 space-y-3">
-              <h3 className="text-[14px] font-semibold text-[#3D495E]">1. Business Address</h3>
-              <input
-                {...register("company", { required: "Company name is required" })}
-                placeholder="Company Name"
-                className={inputStyle}
-              />
-              {errors.company && <p className="text-red-500 text-[14px]">{errors.company.message as string}</p>}
-              <input
-                {...register("invoice1", { required: "Address line 1 is required" })}
-                placeholder="Address Line 1"
-                className={inputStyle}
-              />
-              {errors.invoice1 && <p className="text-red-500 text-[14px]">{errors.invoice1.message as string}</p>}
-              <input {...register("invoice2")} placeholder="Address Line 2" className={inputStyle} />
-              {errors.invoice2 && <p className="text-red-500 text-[14px]">{errors.invoice2.message as string}</p>}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <input
-                    {...register("city", { required: "City is required" })}
-                    placeholder="Town / City"
-                    className={inputStyle}
-                  />
-                  {errors.city && <p className="text-red-500 text-[14px]">{errors.city.message as string}</p>}
-                </div>
-                <div>
-                  <input
-                    {...register("postcode", { required: "Postcode is required" })}
-                    placeholder="Postcode"
-                    className={inputStyle}
-                  />
-                  {errors.postcode && <p className="text-red-500 text-[14px]">{errors.postcode.message as string}</p>}
-                </div>
-              </div>
-              <input {...register("country")} placeholder="Country" className={inputStyle} />
-            </div>
+        <form
+          id="register-page-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="register-form-fields relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-10"
+        >
+          {/* Middle — Figma gap 24px between sections; only this scrolls */}
+          <div className="no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-2 pr-1">
+            <div className="mx-auto flex w-full max-w-[700px] flex-col gap-6">
+              <section className="flex flex-col gap-2">
+                <h3 className={sectionTitleStyle}>Company Name</h3>
+                <input
+                  {...register("company", {
+                    required: "Company name is required",
+                  })}
+                  placeholder="Please enter your company name"
+                  className={inputStyle}
+                />
+                {errors.company && (
+                  <p className={errorTextClass}>
+                    {errors.company.message as string}
+                  </p>
+                )}
+              </section>
 
-            <div className="rounded-[6px] p-4 space-y-3">
-              <h3 className="text-[14px] font-semibold text-[#3D495E]">2. Company Details</h3>
-              <input
-                type="text"
-                inputMode="text"
-                autoComplete="tel"
-                maxLength={20}
-                placeholder="Phone Number"
-                className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5]`}
-                style={{ border: "1px solid #4A90E5" }}
-                onKeyDown={(e) => {
-                  if (e.ctrlKey || e.metaKey || e.altKey) return;
-                  if (e.key.length === 1 && !/^[a-zA-Z0-9]$/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                {...register("mobile", {
-                  required: "Contact number is required",
-                  setValueAs: contactSetValueAs,
-                  minLength: {
-                    value: 10,
-                    message: "Contact must be at least 10 characters.",
-                  },
-                  maxLength: {
-                    value: 20,
-                    message: "Contact must be at most 20 characters.",
-                  },
-                  pattern: {
-                    value: /^[a-zA-Z0-9]+$/,
-                    message: "Contact must contain only letters and numbers.",
-                  },
-                })}
-              />
-              {errors.mobile && <p className="text-red-500 text-[14px]">{errors.mobile.message as string}</p>}
-              <input
-                {...register("vatNumber")}
-                placeholder="VAT Number (if applicable)"
-                className={inputStyle}
-              />
-              {errors.vatNumber && <p className="text-red-500 text-[14px]">{errors.vatNumber.message as string}</p>}
-              <input
-                {...register("eoriNumber")}
-                placeholder="EORI Number (if applicable)"
-                className={inputStyle}
-              />
-              {errors.eoriNumber && <p className="text-red-500 text-[14px]">{errors.eoriNumber.message as string}</p>}
-              <div>
-                <label className={fieldLabelStyle}>
-                  Are you part of a group? i.e. A symbol group or Industry Body, The FED etc.
-                </label>
+              <section className="flex flex-col gap-2">
+                <h3 className={sectionTitleStyle}>Company Address</h3>
+                <input
+                  {...register("invoice1", {
+                    required: "Address line 1 is required",
+                  })}
+                  placeholder="Invoice address line 1"
+                  className={inputStyle}
+                />
+                {errors.invoice1 && (
+                  <p className={errorTextClass}>
+                    {errors.invoice1.message as string}
+                  </p>
+                )}
+                <input
+                  {...register("invoice2")}
+                  placeholder="Invoice address line 2"
+                  className={inputStyle}
+                />
+                <input
+                  {...register("city", { required: "City is required" })}
+                  placeholder="Invoice address city"
+                  className={inputStyle}
+                />
+                {errors.city && (
+                  <p className={errorTextClass}>
+                    {errors.city.message as string}
+                  </p>
+                )}
+                <input
+                  {...register("state")}
+                  placeholder="Invoice address county"
+                  className={inputStyle}
+                />
+                <input
+                  {...register("postcode", {
+                    required: "Postcode is required",
+                  })}
+                  placeholder="Invoice address postcode"
+                  className={inputStyle}
+                />
+                {errors.postcode && (
+                  <p className={errorTextClass}>
+                    {errors.postcode.message as string}
+                  </p>
+                )}
+                <input
+                  {...register("country")}
+                  placeholder="Country (if applicable)"
+                  className={inputStyle}
+                />
+              </section>
+
+              <section className="flex flex-col gap-2">
+                <h3 className={sectionTitleStyle}>Contact Number</h3>
+                <input
+                  type="text"
+                  inputMode="text"
+                  autoComplete="tel"
+                  maxLength={20}
+                  placeholder="Please enter your contact number"
+                  className={inputStyle}
+                  onKeyDown={(e) => {
+                    if (e.ctrlKey || e.metaKey || e.altKey) return;
+                    if (e.key.length === 1 && !/^[a-zA-Z0-9]$/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  {...register("mobile", {
+                    required: "Contact number is required",
+                    setValueAs: contactSetValueAs,
+                    minLength: {
+                      value: 10,
+                      message: "Contact must be at least 10 characters.",
+                    },
+                    maxLength: {
+                      value: 20,
+                      message: "Contact must be at most 20 characters.",
+                    },
+                    pattern: {
+                      value: /^[a-zA-Z0-9]+$/,
+                      message: "Contact must contain only letters and numbers.",
+                    },
+                  })}
+                />
+                {errors.mobile && (
+                  <p className={errorTextClass}>
+                    {errors.mobile.message as string}
+                  </p>
+                )}
+              </section>
+
+              <section className="flex flex-col gap-2">
+                <h3 className={sectionTitleStyle}>
+                  Additional company details
+                </h3>
+                <input
+                  {...register("vatNumber")}
+                  placeholder="VAT Number (if applicable)"
+                  className={inputStyle}
+                />
+                {errors.vatNumber && (
+                  <p className={errorTextClass}>
+                    {errors.vatNumber.message as string}
+                  </p>
+                )}
+                <input
+                  {...register("eoriNumber")}
+                  placeholder="EORI Number (if applicable)"
+                  className={inputStyle}
+                />
+                <div>
+                  <label className={detailLabelStyle}>
+                    Are you part of a group? i.e. A symbol group or Industry
+                    Body, The FED etc.
+                  </label>
+                  <div className="relative mt-1">
+                    <select
+                      {...register("isPartOfGroup")}
+                      className={`${inputStyle} z-0 cursor-pointer appearance-none pr-12`}
+                    >
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                    <span className="pointer-events-none absolute right-4 top-1/2 z-20 -translate-y-1/2 text-[#3D495E]">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M6 9l6 6 6-6"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+                <label className={detailLabelStyle}>Type of business</label>
                 <div className="relative">
                   <select
-                    {...register("isPartOfGroup")}
-                    className={`${inputStyle} appearance-none pr-12 z-0 cursor-pointer`}
+                    {...register("businessType")}
+                    className={`${inputStyle} z-0 cursor-pointer appearance-none pr-12`}
                   >
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
+                    {[
+                      "Wholesaler",
+                      "Distributor",
+                      "Retailer",
+                      "Online retailer",
+                      "Vape shop",
+                    ].map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
                   </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#3D495E] z-20 cursor-pointer">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <span className="pointer-events-none absolute right-4 top-1/2 z-20 -translate-y-1/2 text-[#3D495E]">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </span>
                 </div>
-                {errors.isPartOfGroup && <p className="text-red-500 text-[14px]">{errors.isPartOfGroup.message as string}</p>}
-              </div>
-              <label className={fieldLabelStyle} style={{ fontSize: "14px", lineHeight: "18px", fontWeight: 500 }}>
-                Type of business
-              </label>
-              <div className="relative">
-                <select
-                  {...register("businessType")}
-                  className={`${inputStyle} appearance-none pr-12 z-0 cursor-pointer`}
-                >
-                  {["Wholesaler", "Distributor", "Retailer", "Online retailer", "Vape shop"].map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#3D495E] z-20 cursor-pointer">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-              </div>
-              {errors.businessType && <p className="text-red-500 text-[14px]">{errors.businessType.message as string}</p>}
-              <label className={fieldLabelStyle} style={{ fontSize: "14px", lineHeight: "18px", fontWeight: 500 }}>
-                What is you average monthly spend excluding vat ?
-              </label>
-              <input
-                type="text"
-                min={0}
-                step="0.01"
-                {...register("averageMonthlySpendExVat")}
-                className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5]`}
-                style={{ border: "1px solid #4A90E5" }}
-              />
-              {errors.averageMonthlySpendExVat && <p className="text-red-500 text-[14px]">{errors.averageMonthlySpendExVat.message as string}</p>}
-              <label
-                className={fieldLabelStyle}
-                style={{ fontSize: "14px", lineHeight: "18px", fontWeight: 400 }}
-              >
-                How many stores do you have or how many stores do you service ?
-              </label>
-              <input
-                type="number"
-                min={0}
-                step="1"
-                {...register("storesServicedCount")}
-                className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5]`}
-                style={{ border: "1px solid #4A90E5" }}
-              />
-              {errors.storesServicedCount && <p className="text-red-500 text-[14px]">{errors.storesServicedCount.message as string}</p>}
-            </div>
+                {errors.businessType && (
+                  <p className={errorTextClass}>
+                    {errors.businessType.message as string}
+                  </p>
+                )}
+                <label className={detailLabelStyle}>
+                  What is you average monthly spend excluding vat ?
+                </label>
+                <input
+                  type="text"
+                  min={0}
+                  step="0.01"
+                  {...register("averageMonthlySpendExVat")}
+                  className={inputStyle}
+                />
+                <label className={detailLabelStyle}>
+                  How many stores do you have or how many stores do you service
+                  ?
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step="1"
+                  {...register("storesServicedCount")}
+                  className={inputStyle}
+                />
+              </section>
 
-            <div className="rounded-[6px] p-4 space-y-3">
-              <h3 className="text-[14px] font-semibold text-[#3D495E]">3. User Details</h3>
-              <input
-                {...register("yourName")}
-                placeholder="Your Name"
-                className={inputStyle}
-              />
-              {errors.yourName && <p className="text-red-500 text-[14px]">{errors.yourName.message as string}</p>}
-              <input
-                type="email"
-                {...register("email", { required: "Email is required" })}
-                placeholder="Email Address"
-                className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5] focus:ring-1 focus:ring-[#4A90E5]`} style={{ border: "1px solid #4A90E5" }}
-              />
-              {errors.email && <p className="text-red-500 text-[14px]">{errors.email.message as string}</p>}
-              <input
-                type="password"
-                {...register("password", { required: "Password is required", minLength: 6 })}
-                placeholder="New Password"
-                className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5] focus:ring-1 focus:ring-[#4A90E5]`} style={{ border: "1px solid #4A90E5" }}
-              />
-              {errors.password && <p className="text-red-500 text-[14px]">{errors.password.message as string}</p>}
-              <input
-                type="password"
-                {...register("confirmPassword", {
-                  required: "Confirm password is required",
-                  validate: (v, formValues: any) => v === formValues.password || "Passwords do not match",
-                })}
-                placeholder="Confirm Password"
-                className={`${inputStyle} border-[#4A90E5] focus:border-[#4A90E5] focus:ring-1 focus:ring-[#4A90E5]`} style={{ border: "1px solid #4A90E5" }}
-              />
-              {errors.confirmPassword && <p className="text-red-500 text-[14px]">{errors.confirmPassword.message as string}</p>}
+              <section className="flex flex-col gap-2">
+                <h3 className={sectionTitleStyle}>Login Details</h3>
+                <input
+                  {...register("yourName")}
+                  placeholder="Your name"
+                  className={inputStyle}
+                />
+                {errors.yourName && (
+                  <p className={errorTextClass}>
+                    {errors.yourName.message as string}
+                  </p>
+                )}
+                <input
+                  type="email"
+                  {...register("email", { required: "Email is required" })}
+                  placeholder="Please enter your email address"
+                  className={inputStyle}
+                />
+                {errors.email && (
+                  <p className={errorTextClass}>
+                    {errors.email.message as string}
+                  </p>
+                )}
+                <input
+                  type="password"
+                  {...register("password", {
+                    required: "Password is required",
+                    minLength: 6,
+                  })}
+                  placeholder="Please enter your password"
+                  className={inputStyle}
+                />
+                {errors.password && (
+                  <p className={errorTextClass}>
+                    {errors.password.message as string}
+                  </p>
+                )}
+                <input
+                  type="password"
+                  {...register("confirmPassword", {
+                    required: "Confirm password is required",
+                    validate: (v, formValues: any) =>
+                      v === formValues.password || "Passwords do not match",
+                  })}
+                  placeholder="Please confirm your password"
+                  className={inputStyle}
+                />
+                {errors.confirmPassword && (
+                  <p className={errorTextClass}>
+                    {errors.confirmPassword.message as string}
+                  </p>
+                )}
+              </section>
+
+              <section className="flex flex-col gap-2">
+                <h3 className={sectionTitleStyle}>Rep Code</h3>
+                <input
+                  {...register("repCode")}
+                  placeholder="Please enter your rep code"
+                  className={inputStyle}
+                />
+              </section>
+
+              <p className="text-left text-[11px] font-normal leading-[18px] text-[#3D495E] [font-family:Roboto]">
+                By registering an account you agree to our{" "}
+                <a
+                  href="#"
+                  className="text-[#4A90E5] underline underline-offset-2"
+                >
+                  Terms & Conditions
+                </a>{" "}
+                and{" "}
+                <a
+                  href="#"
+                  className="text-[#4A90E5] underline underline-offset-2"
+                >
+                  Privacy Policy
+                </a>
+                .
+              </p>
             </div>
           </div>
 
-          {/* Fixed Footer Buttons */}
-          <div className="py-6 bg-[#FAFBFD]/80 backdrop-blur-sm">
-            <div className="flex flex-col gap-4">
+          {/* Fixed footer — Figma bottom area; sm+ 12px frame padding respected via pb-3 on frame */}
+          <div className="relative z-10 shrink-0 bg-[#FAFBFD]/80 px-1 py-6 backdrop-blur-sm pb-[calc(24px+env(safe-area-inset-bottom,0px))] sm:bg-[#FAFBFD] sm:px-2 sm:py-4 sm:backdrop-blur-none sm:pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
+            <div className="mx-auto flex w-full max-w-[466px] flex-col gap-[11px]">
               <button
                 type="submit"
+                form="register-page-form"
                 disabled={loading || isSubmitting}
-                className="w-full h-[48px] rounded-[25px] text-white text-[18px] font-bold [font-family:Roboto] transition-all active:scale-[0.98] disabled:opacity-70"
-                style={{ background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)" }}
+                className="mx-auto box-border flex h-[48px] w-full max-w-[466px] items-center justify-center rounded-[25px] border-0 px-[26px] py-0 text-[16px] font-bold leading-none text-white transition-all [font-family:Roboto] active:scale-[0.98] disabled:opacity-70 sm:text-[18px]"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #4C92E9 0%, #2868C0 100%)",
+                }}
               >
                 {loading ? "Registering..." : "Agree & Sign Up"}
               </button>
@@ -348,7 +519,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => router.replace(buildPath("/landing"))}
-                className="w-full h-[48px] rounded-[25px] border border-[#4A90E5] bg-white text-[#4A90E5] text-[17px] font-bold [font-family:Roboto] transition-all active:scale-[0.98]"
+                className="mx-auto box-border flex h-[48px] w-full max-w-[466px] items-center justify-center rounded-[25px] border border-solid border-[#4A90E5] bg-white px-[26px] py-0 text-[16px] font-bold leading-none text-[#4A90E5] transition-all [font-family:Roboto] active:scale-[0.98] sm:text-[17px]"
               >
                 Back
               </button>

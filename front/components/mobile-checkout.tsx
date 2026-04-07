@@ -37,6 +37,7 @@ import { useCustomer } from "@/components/customer-provider";
 import FloatingInput from "./ui/floating-input";
 import { useCurrency } from "@/components/currency-provider";
 import { useSettings } from "@/components/settings-provider";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 interface Branch {
   id: number;
@@ -483,34 +484,21 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
     }
   };
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-[402px] mx-auto bg-[#F3F4F8]">
-      {/* Header */}
-      <div className="bg-[#EEF0F5] flex items-center justify-between px-4 h-[58px] border-b border-[#E2E6EF] relative">
-        <button 
-          onClick={onBack} 
-          className="flex items-center gap-1 text-[#8A94A6] hover:text-black transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="text-[14px] font-medium">Back</span>
-        </button>
-        
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-bold text-[#1E293B]">
-          Checkout
-        </h1>
-        
-        <div className="w-[60px]"></div> {/* Spacer for balance */}
+    <div className="min-h-screen lg:min-h-[1024px] flex flex-col w-full max-w-[402px] lg:max-w-[1000px] mx-auto bg-[#FAFBFD]">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] lg:max-w-[1000px] z-[60]">
+        <MobilePageHeader title="Checkout" onBack={onBack} noTopPadding />
       </div>
 
-      <div className="flex w-full justify-center px-3 py-2">
-        <Banner />
-      </div>
+      <main className="flex-1 overflow-y-auto px-[10px] lg:px-[16px] pt-[104px] pb-[94px] space-y-2">
+        <div className="flex w-full justify-center px-0 py-2">
+          <Banner className="w-full max-w-full h-[94px] rounded-[4px] lg:max-w-[968px] lg:h-[242px] lg:rounded-[10px]" />
+        </div>
 
-      <main className="flex-1 overflow-y-auto px-[10px] py-[2px] space-y-2 pb-10">
         {/* Dispatch To Section */}
-        <div className="bg-white rounded-[4px] border border-[#DCE1EE] overflow-hidden">
+        <div className="bg-white rounded-[5px] border border-[#E2E2E2] overflow-hidden">
           <button 
             onClick={() => setIsDispatchExpanded(!isDispatchExpanded)}
-            className="w-full flex items-center px-3 py-2.5 gap-3"
+            className="w-full min-h-[57px] flex items-center px-4 py-2 gap-4"
           >
             <div className="w-[22px] h-[22px] rounded-full border border-[#DCE1EE] bg-[#F7FAFF] flex items-center justify-center flex-shrink-0">
               <HomeIcon className="w-3.5 h-3.5 text-[#6EA2E8]" />
@@ -555,7 +543,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         </div>
 
         {/* Bill To Section */}
-        <div className="bg-white rounded-[4px] border border-[#DCE1EE] overflow-hidden">
+        <div className="bg-white rounded-[5px] border border-[#E2E2E2] overflow-hidden">
           <button
             onClick={() => setIsBillingExpanded(!isBillingExpanded)}
             className="w-full flex items-center px-3 py-2.5 gap-3"
@@ -603,11 +591,11 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         </div>
 
         {/* Delivery Method Section */}
-        <div className="bg-white rounded-[4px] border border-[#DCE1EE] overflow-hidden">
+        <div className="bg-white rounded-[5px] border border-[#E2E2E2] overflow-hidden">
           <button
             type="button"
             onClick={() => setIsDeliveryExpanded((v) => !v)}
-            className="w-full flex items-center px-3 py-2.5 gap-3 hover:cursor-pointer"
+            className="w-full min-h-[79px] flex items-center px-4 py-2 gap-4 hover:cursor-pointer"
           >
             <div className="w-[22px] h-[22px] rounded-full border border-[#DCE1EE] bg-[#F7FAFF] flex items-center justify-center flex-shrink-0">
               <PackageIcon className="w-3.5 h-3.5 text-[#6EA2E8]" />
@@ -673,20 +661,20 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         </div>
 
         {/* Additional Instructions */}
-        <div className="bg-white rounded-[4px] border border-[#DCE1EE] px-3 py-2.5">
+        <div className="bg-white rounded-[5px] border border-[#E2E2E2] px-4 py-2">
           <input
             type="text"
             placeholder="Note"
-            className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none focus:ring-0 p-0"
+            className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none !border-0 rounded-none bg-transparent shadow-none !shadow-none outline-none focus:outline-none focus:ring-0 p-0"
             value={deliveryInstructions}
             onChange={(e) => setDeliveryInstructions(e.target.value)}
           />
         </div>
-        <div className="bg-white rounded-[4px] border border-[#DCE1EE] px-3 py-2.5 mt-2">
+        <div className="bg-white rounded-[5px] border border-[#E2E2E2] px-4 py-2 mt-2">
           <input
             type="text"
             placeholder="P.O. Number (if applicable)"
-            className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none focus:ring-0 p-0"
+            className="w-full text-[13px] text-[#4E5667] placeholder:text-[#A4ADBC] border-none !border-0 rounded-none bg-transparent shadow-none !shadow-none outline-none focus:outline-none focus:ring-0 p-0"
             value={poNumber}
             onChange={(e) => setPoNumber(e.target.value)}
             autoComplete="off"
@@ -694,9 +682,9 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         </div>
 
         {/* Combined Summary Card */}
-        <div className="bg-[#FBFCFF] rounded-[6px] border border-[#D5DBE7] overflow-hidden text-[13px]">
+        <div className="bg-white rounded-[5px] border border-[#E2E2E2] overflow-hidden text-[13px]">
           {/* Order Details */}
-          <div className="px-5 pt-4 pb-3">
+          <div className="px-4 pt-2 pb-2">
             <div className="flex items-start justify-between">
               <h4 className="font-bold text-[#3F4B63] text-[13px] leading-[1]">Order Details</h4>
               <div className="space-y-1 text-right">
@@ -736,8 +724,8 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
           </div>
 
           {/* Summary Details */}
-          <div className="px-5 pt-3 pb-4 border-t border-[#D9DFEB]">
-            <h4 className="font-bold text-[#3F4B63] mb-3 text-[16px]">Summary</h4>
+          <div className="px-4 pt-2 pb-2 border-t border-[#E2E2E2]">
+            <h4 className="font-bold text-[#3F4B63] mb-2 text-[16px]">Summary</h4>
             <div className="space-y-[7px]">
               <div className="flex justify-between">
                 <span className="text-[#5E6A80] font-[500] text-[15px]">Subtotal (Excl. VAT)</span>
@@ -827,7 +815,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         )}
 
         {/* Checkout Button */}
-        <div className="pt-4 pb-12">
+        <div className="pt-4 pb-4">
           <button
             onClick={handleContinueToPayment}
             disabled={isProcessing || !canProceedToPayment}
@@ -840,7 +828,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] lg:max-w-[1000px] z-50 shadow-[0px_-1px_8px_0px_#555E5814] bg-white">
         <div className="h-[74px] px-2 pt-[8px] pb-[10px] grid grid-cols-5 items-center 
         bg-[#F1F2F7] border-t border-[#E4E7F0]">
           <button onClick={() => onNavigate("dashboard")} className="flex flex-col items-center gap-[4px] text-[#BDC7DE] text-[11px] font-bold leading-none">

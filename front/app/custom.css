@@ -51,6 +51,7 @@
 /* Login page css start */
 body {
   font-family: var(--site-font-family);
+  background-color: #fafbfd;
 }
 .box-shadow-top {
   box-shadow: var(--box-shadow-top);
@@ -170,6 +171,21 @@ input[type="email"]:focus::placeholder,
 input[type="password"]:focus::placeholder {
   color: rgba(0, 0, 0, 0);
 }
+
+/* Register page: unscoped input[type] rules above use var(--color-border); force every field to Figma blue */
+form.register-form-fields input[type="text"],
+form.register-form-fields input[type="number"],
+form.register-form-fields input[type="email"],
+form.register-form-fields input[type="password"],
+form.register-form-fields select {
+  border: 1px solid #4a90e5 !important;
+  border-radius: 8px !important;
+}
+form.register-form-fields h3.register-label,
+form.register-form-fields label.register-label {
+  color: #3d495e !important;
+}
+
 .loginregisterform label {
   position: absolute;
   pointer-events: none;
@@ -179,14 +195,15 @@ input[type="password"]:focus::placeholder {
   color: var(--color-gray-400);
   opacity: 0;
 }
-input[type="text"]:focus ~ label,
-input[type="text"]:not(:placeholder-shown) ~ label,
-input[type="number"]:focus ~ label,
-input[type="number"]:not(:placeholder-shown) ~ label,
-input[type="email"]:focus ~ label,
-input[type="email"]:not(:placeholder-shown) ~ label,
-input[type="password"]:focus ~ label,
-input[type="password"]:not(:placeholder-shown) ~ label {
+/* Scoped: was global and shrunk any label after an input (e.g. register page “How many stores…”). */
+.loginregisterform input[type="text"]:focus ~ label,
+.loginregisterform input[type="text"]:not(:placeholder-shown) ~ label,
+.loginregisterform input[type="number"]:focus ~ label,
+.loginregisterform input[type="number"]:not(:placeholder-shown) ~ label,
+.loginregisterform input[type="email"]:focus ~ label,
+.loginregisterform input[type="email"]:not(:placeholder-shown) ~ label,
+.loginregisterform input[type="password"]:focus ~ label,
+.loginregisterform input[type="password"]:not(:placeholder-shown) ~ label {
   top: 8px;
   left: 16px;
   font-size: 10px;
@@ -281,4 +298,8 @@ button.box-shadow-bottom {
   display: none;
 }
 
-.fullscreen-sec{height:100vh}
+.fullscreen-sec {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+}

@@ -18,10 +18,9 @@ export function Banner({ className }: BannerProps) {
   return (
     <div
       className={cn(
-        "mx-auto h-[94px] w-full max-w-[380px] shrink-0",
+        "mx-auto h-[94px] w-full max-w-[380px] shrink-0 overflow-hidden rounded-[4px]",
         className,
       )}
-      style={{ borderRadius: "4px", overflow: "hidden" }}
     >
       <img
         src={src}

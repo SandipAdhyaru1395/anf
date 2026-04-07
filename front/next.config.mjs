@@ -1,8 +1,13 @@
-import withPWA from 'next-pwa'
-
 /** @type {import('next').NextConfig} */
-const baseConfig = {
-  eslint: { 
+const envBase = (process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "")
+  .trim()
+  .replace(/^\/+|\/+$/g, "")
+const inferredBase =
+  envBase || (process.env.NEXT_PUBLIC_API_URL ? "anf/front" : "")
+const nextBasePath = inferredBase ? `/${inferredBase}` : undefined
+
+const nextConfig = {
+  eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
@@ -11,21 +16,8 @@ const baseConfig = {
   images: {
     unoptimized: true,
   },
-  // async rewrites() {
-  //   return [
-  //     {
-  //       source: "/api/:path*",
-  //       destination: "http://localhost:8000/api/:path*", // Laravel API
-  //     },
-  //   ];
-  // },
+  // App is served under /anf/front on XAMPP/production; without this, `/_next/static/*` 404s.
+  ...(nextBasePath ? { basePath: nextBasePath, assetPrefix: nextBasePath } : {}),
 }
-
-const nextConfig = withPWA({
-  dest: (!process.env.NEXT_PUBLIC_API_URL) ? 'public' : 'anf/front/public',
-  disable: (!process.env.NEXT_PUBLIC_API_URL) ? true : false,
-  register: true,
-  skipWaiting: true,
-})(baseConfig)
 
 export default nextConfig

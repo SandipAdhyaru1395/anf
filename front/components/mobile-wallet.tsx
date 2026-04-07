@@ -46,12 +46,12 @@ const CoinStackIcon = () => (
 /** Figma "Wallet Transaction Item": row flex, p 16, gap 16; list uses divide-y #E2E2E2, radius 5 */
 const TransactionItem = ({ type, amount, order, total, date, symbol }: { type: "used" | "earned"; amount: string; order: string; total: string; date: string; symbol: string }) => {
   return (
-    <div className="flex w-full gap-4 p-4">
+    <div className="flex w-full gap-4 p-4 bg-white lg:min-h-[67px]">
       <div className="flex h-[32px] w-[26px] shrink-0 items-center justify-center self-center">
         <CoinStackIcon />
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-[6px]">
-        <p className="text-[13px] font-semibold leading-none tracking-normal text-[#111827]">
+        <p className="text-[13px] font-medium leading-none tracking-[0.04em] text-[#3D495E]">
           {type === "used" ? "- " : "+ "}
           {symbol}
           {amount} - Credit {type === "used" ? "Used" : "Earned"}
@@ -96,10 +96,10 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
     resolveBackendAssetUrl(settings?.banner) ?? settings?.banner ?? null;
   const wallet = Number(customer?.wallet_balance || 0);
   /** Show wallet explainer only when user taps info icon. */
+
   const [showIntro, setShowIntro] = useState(false);
   const [transactions, setTransactions] = useState<WalletTransactionRow[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
-
   useEffect(() => {
     let active = true;
     const loadTransactions = async () => {
@@ -141,74 +141,25 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
     return { groups, orderedKeys };
   })();
 
-  if (showIntro) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#C9C9C9] px-4 py-6">
-        <div className="flex w-full max-w-[402px] flex-col overflow-hidden bg-[#FFFFFF]">
-          <div className="p-8 pb-4 space-y-6">
-            <div className="space-y-1">
-              <h2 className="text-[#3D495E] font-bold text-[13px]">What is the Wallet?</h2>
-              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
-                Your wallet stores the credit you have earned from previous orders placed through this platform.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <h2 className="text-[#3D495E] font-bold text-[13px]">How is wallet credit earned?</h2>
-              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
-                Each product displays a wallet credit value, showing how much credit will be added to your wallet for every unit purchased. You can also earn additional credit by referring other retailers to the platform.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <h2 className="text-[#3D495E] font-bold text-[13px]">How do I use wallet credit?</h2>
-              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
-                Any credit in your wallet is automatically deducted from the total of your next order when you check out.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <h2 className="text-[#3D495E] font-bold text-[13px]">Can I earn credit without ordering through the platform?</h2>
-              <p className="text-[#8F98AD] text-[11px] leading-relaxed font-medium">
-                No. Wallet credit is only awarded when purchases are made directly through this platform.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setShowIntro(false);
-            }}
-            className="mt-4 w-full cursor-pointer bg-[#4A90E5] py-4 text-[18px] font-bold text-white transition-colors hover:bg-[#3d7fd4]"
-          >
-            Ok, Got It
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD]" style={{ fontFamily: "Roboto, system-ui, sans-serif" }}>
-      <MobilePageHeader title="Wallet" onBack={() => onNavigate("dashboard")} noTopPadding />
-
-            <div className="shrink-0 bg-[#FAFBFD] px-4 pb-2 pt-2">
-              <Banner className="mx-auto h-[93px] w-full max-w-[370px] !rounded-[2px]" />
-            </div>
+    <div className="relative mx-auto flex h-[100dvh] min-h-0 w-full max-w-[402px] flex-col bg-[#FAFBFD] lg:max-w-[1000px]" style={{ fontFamily: "Roboto, system-ui, sans-serif" }}>
+      <MobilePageHeader title="Wallet" variant="plain" onBack={() => onNavigate("dashboard")} noTopPadding />
 
       {/* Scroll: Figma padding 16 / bottom ~60 + nav; gap 16 between blocks */}
-      <main className="scrollbar-hide min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-4 pb-[72px] pt-4">
-        <div className="mx-auto flex w-full max-w-[370px] flex-col gap-4">
+      <main className="scrollbar-hide min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[#FAFBFD] px-4 pb-[72px] pt-4 lg:h-[864px] lg:px-4 lg:pb-[60px] lg:pt-4">
+        <div className="mx-auto flex w-full max-w-[370px] flex-col gap-4 lg:max-w-full lg:gap-4">
+          <div className="shrink-0 bg-[#FAFBFD] pb-2 pt-2">
+            <Banner className="mx-auto h-[93px] w-full max-w-[370px] !rounded-[2px] lg:h-[242px] lg:max-w-[968px] lg:!rounded-[10px]" />
+          </div>
           {/* Figma typography: title 33/700/3%, "Available" 21/500/3%, amount 33/900/3%; grad + r25 + py22 */}
           <div
-            className={`box-border flex w-full flex-col rounded-[25px] py-[22px] text-center text-white shadow-[0_8px_24px_rgba(40,104,192,0.28)] ${!bannerSrc ? "mt-0" : ""}`}
+            className={`box-border flex w-full flex-col rounded-[25px] py-[22px] text-center text-white shadow-[0_8px_24px_rgba(40,104,192,0.28)] lg:mx-auto lg:h-[180px] lg:max-w-[700px] ${!bannerSrc ? "mt-0" : ""}`}
             style={{
               fontFamily: "Roboto, system-ui, sans-serif",
               background: "linear-gradient(180deg, #2868C0 0%, #4C92E9 100%)",
             }}
           >
-            <div className="mx-auto flex w-full max-w-[370px] flex-col items-center gap-[3px] px-6">
+            <div className="mx-auto flex w-full max-w-[370px] flex-col items-center gap-[3px] px-6 lg:max-w-[700px] lg:px-[116px]">
               <h2 className="text-[33px] font-bold leading-none tracking-[0.03em] text-white">Wallet Balance</h2>
               <p className="text-[21px] font-medium leading-none tracking-[0.03em] text-white">Available to use</p>
               <div className="mt-1 flex items-center justify-center gap-2">
@@ -232,7 +183,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
           </div>
 
           {/* Figma: month block gap 8 (title→list); 16px between month groups */}
-          <div className="flex w-full flex-col gap-4">
+          <div className="flex w-full flex-col gap-4 lg:mx-auto lg:max-w-[968px] lg:gap-2">
             {loadingTransactions ? (
               <div className="rounded-[5px] bg-white px-4 py-5 text-center text-[13px] text-[#6B7280] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
                 Loading transactions...
@@ -244,7 +195,7 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
             ) : (
               groupedTransactions.orderedKeys.map((monthKey) => (
                 <section key={monthKey} className="flex w-full flex-col gap-2">
-                  <h3 className="text-left text-[15px] font-semibold capitalize leading-none tracking-[0.03em] text-[#3D495E]">
+                  <h3 className="inline-block w-fit text-left text-[15px] font-semibold capitalize leading-[18px] tracking-[0.03em] text-[#3D495E]">
                     {monthKey}
                   </h3>
                   <div className="w-full overflow-hidden rounded-[5px] bg-white divide-y divide-[#E2E2E2] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
@@ -270,11 +221,26 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
               ))
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate("shop", false)}
+            className="box-border flex h-[48px] w-full max-w-[370px] shrink-0 items-center justify-center gap-[10px] self-center rounded-[8px] px-5 text-[17px] font-bold leading-none tracking-tight text-white shadow-[0_2px_10px_rgba(40,104,192,0.38)] transition-transform active:scale-[0.98] [font-family:Roboto,system-ui,sans-serif] lg:h-[35px] lg:max-w-[700px] lg:rounded-[5px] lg:px-2 lg:py-2 lg:gap-2"
+            style={{
+              background: "linear-gradient(180deg, #4C92E9 0%, #2868C0 100%)",
+            }}
+            aria-label="Shop now"
+          >
+            <FontAwesomeIcon icon={faShop} className="h-[18px] w-[18px] shrink-0 text-[18px] leading-none text-white" aria-hidden />
+            <span className="lg:text-[16px] lg:font-bold lg:leading-[16px] lg:tracking-[0] lg:text-white lg:text-center">
+              Shop Now
+            </span>
+          </button>
         </div>
       </main>
 
       <nav
-        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)]"
+        className="fixed bottom-0 left-1/2 z-50 box-border flex h-[64px] w-full max-w-[402px] -translate-x-1/2 flex-col rounded-t-[10px] bg-white px-[43px] pb-4 pt-2 shadow-[0_-5px_15px_0_rgba(85,94,88,0.09)] lg:max-w-[1000px]"
         aria-label="Main navigation"
         style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
       >
@@ -303,7 +269,58 @@ export function MobileWallet({ onNavigate }: MobileWalletProps) {
           </div>
         </div>
       </nav>
+
+      {showIntro ? (
+        <div
+          className="absolute inset-0 z-[60] flex items-start justify-center bg-black/20 p-2"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowIntro(false);
+          }}
+        >
+          <div
+            className="relative h-full w-full max-w-[402px]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="absolute left-1/2 top-[48%] flex h-[305px] w-[370px] max-w-[600px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[8px] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.2)]">
+              <div className="flex w-full flex-1 flex-col gap-[10px] p-4 overflow-y-auto">
+                <div className="space-y-1">
+                  <h3 className="text-[13px] font-bold leading-[17px] text-[#3D495E]">What is the Wallet?</h3>
+                  <p className="text-[11px] font-normal leading-[17px] text-[#3D495E]">
+                    Your wallet stores the credit you have earned from previous orders placed through this platform.
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-[13px] font-bold leading-[17px] text-[#3D495E]">How is wallet credit earned?</h3>
+                  <p className="text-[11px] font-normal leading-[17px] text-[#3D495E]">
+                    Each product displays a wallet credit value, showing how much credit will be added to your wallet for every unit purchased. You can also earn additional credit by referring other retailers to the platform.
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-[13px] font-bold leading-[17px] text-[#3D495E]">How do I use wallet credit?</h3>
+                  <p className="text-[11px] font-normal leading-[17px] text-[#3D495E]">
+                    Any credit in your wallet is automatically deducted from the total of your next order when you check out.
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-[13px] font-bold leading-[17px] text-[#3D495E]">Can I earn credit without ordering through the platform?</h3>
+                  <p className="text-[11px] font-normal leading-[17px] text-[#3D495E]">
+                    No. Wallet credit is only awarded when purchases are made directly through this platform.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowIntro(false)}
+                className="box-border flex h-[37px] w-full cursor-pointer items-center justify-center bg-[#4A90E5] px-0 py-[8px] text-[18px] font-extrabold leading-none tracking-[0.03em] text-white transition-colors hover:bg-[#3d7fd4]"
+              >
+                Ok, Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
-

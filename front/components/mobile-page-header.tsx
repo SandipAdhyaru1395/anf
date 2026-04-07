@@ -18,39 +18,26 @@ type MobilePageHeaderProps = {
 };
 
 export function MobilePageHeader({ title, onBack, variant = "tinted", noTopPadding = false, trailing }: MobilePageHeaderProps) {
-  const plain = variant === "plain";
+  void variant;
+  void noTopPadding;
 
   return (
-    <header
-      className={
-        plain
-          ? "z-50 w-full shrink-0  bg-[#FAFBFD]"
-          : "z-50 w-full shrink-0 bg-[#F8F7FC] shadow-[0_5px_15px_0_rgba(85,94,88,0.09)]"
-      }
-    >
+    <header className="z-50 h-[96px] w-full shrink-0 bg-[#F8F7FC] shadow-[0px_5px_15px_0px_#555E5817]">
       <div
-        className={`mx-auto box-border w-full max-w-[402px] py-4 ${plain ? "p-4" : `px-[29px]}`}`}
+        className="mx-auto box-border h-full w-full max-w-[402px] px-[29px] pb-4 pt-[65px] lg:max-w-[1000px]"
         style={{ fontFamily: "Roboto, system-ui, sans-serif" }}
       >
-        <div className="relative flex min-h-[1.25rem] items-center justify-center">
+        <div className="relative mx-auto flex h-[15px] w-full max-w-[344px] items-center justify-center lg:max-w-full">
           <button
             type="button"
             onClick={onBack}
-            className={
-              plain
-                ? "absolute left-0 top-1/2 flex -translate-y-1/2 items-center gap-2 text-[#6B7280] transition-colors hover:text-[#181725]"
-                : "absolute left-0 top-1/2 flex -translate-y-1/2 items-center gap-2 text-[#9CA3CF] transition-colors hover:text-[#7C83B8]"
-            }
+            className="absolute left-0 top-1/2 flex h-[15px] -translate-y-1/2 items-center gap-2 text-[#3D495E] transition-opacity hover:opacity-80"
           >
-            <ChevronLeft className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-            <span className="text-[15px] font-normal leading-none tracking-normal">Back</span>
+            <ChevronLeft className="h-[15px] w-[15px] shrink-0" strokeWidth={2} aria-hidden />
+            <span className="inline-flex h-[15px] w-[30px] items-center justify-center text-[13px] font-light leading-none tracking-[0.03em]">Back</span>
           </button>
           <h1
-            className={
-              plain
-                ? "pointer-events-none max-w-[min(220px,calc(100%-5rem))] truncate text-center text-[20px] font-bold leading-none tracking-normal text-[#181725]"
-                : "pointer-events-none max-w-[min(220px,calc(100%-5.5rem))] truncate text-center text-[20px] font-bold leading-none tracking-[0.04em] text-[#3D495E]"
-            }
+            className="pointer-events-none max-w-[min(220px,calc(100%-6rem))] truncate text-center text-[20px] font-bold leading-none tracking-[0.04em] text-[#3D495E]"
             title={title}
           >
             {title}

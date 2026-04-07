@@ -775,18 +775,16 @@ function CategoryNode({ node, path, depth, expandedPaths, togglePath, cart, onIn
   };
 
   const depthColors = [
-    "bg-[#ED008C]", // depth 0 — Figma "New In" magenta
-    "bg-[#E2EFFF]", // depth 1 — light blue
-    "border border-[#E6E8F2] bg-white", // depth 2 — Figma Subbrand: white + hairline border
+    "bg-[#ED027E]", // depth 0 — Figma special category
+    "bg-[#DFEDFF]", // depth 1 — under special / normal nested row
+    "bg-[#EEF1F4]", // depth 2 — underneath row
     "bg-gray-100",
     "bg-gray-50",
     "",
   ];
 
-  if (depth === 0 && node.is_special === 1) {
-    var bgClass = "bg-[#ED008C]";
-  } else if (depth === 0) {
-    var bgClass = "bg-[#4A90E5]";
+  if (depth === 0) {
+    var bgClass = "bg-[#ED027E]";
   } else {
     var bgClass = depthColors[Math.min(depth, depthColors.length - 1)];
   }

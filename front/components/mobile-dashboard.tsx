@@ -421,7 +421,7 @@ export function MobileDashboard({
                   icon={faWallet}
                   className="shrink-0 text-[14px] text-[#4A90E5]"
                 />
-                <span className="truncate text-left text-[12px] font-bold leading-none text-[#3D495E]">
+                <span className="truncate text-left text-[13px] font-bold leading-none text-[#3D495E]">
                   {symbol}
                   {walletBalance.toFixed(2)} credit in your wallet
                 </span>

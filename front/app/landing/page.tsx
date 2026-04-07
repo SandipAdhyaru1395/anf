@@ -2,16 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSettings } from "@/components/settings-provider";
-import { buildPath, publicAssetUrl } from "@/lib/utils";
+import { buildPath, publicAssetUrl } from "@/lib/utils"; // publicAssetUrl અહી ઈમ્પોર્ટ કરવું પડશે
 import Image from "next/image";
 
 export default function LandingPage() {
   const { settings } = useSettings();
   const logoSrc = settings?.company_logo_url;
-  // const logoSrc = "https://aidemo.in/anf/admin/public/storage/settings/EIr5VV7lgIUiUYJFe7cRJrqAr5Mja5DVlp70TcL0.svg";
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [isCompactActions, setIsCompactActions] = useState(false);
 
   useEffect(() => {
     const container = contentRef.current;
@@ -20,7 +18,6 @@ export default function LandingPage() {
     const onScroll = () => {
       const hasScrolled = container.scrollTop > 120;
       setShowScrollTop(hasScrolled);
-      setIsCompactActions(container.scrollTop > 40);
     };
 
     container.addEventListener("scroll", onScroll);
@@ -36,58 +33,53 @@ export default function LandingPage() {
   };
 
   return (
-    // <div className="flex min-h-screen w-full items-center justify-center bg-[#f0f2f5]">
-    <div className="flex min-h-screen w-full items-center justify-center">
-      <div className="fullscreen-sec relative flex min-h-screen w-full flex-col items-center overflow-hidden bg-[#FAFBFD] shadow-xl sm:h-screen sm:max-h-[874px] sm:max-w-[402px]">
-        <div className="relative w-full h-full flex flex-col items-center">
-          <div
-            className="absolute inset-0 z-0 pointer-events-none"
-            style={{
-              backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "auto 90%",
-              backgroundPosition: "top 60px right",
-            }}
-          />
+    <div className="flex h-[100dvh] max-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#F2F5F9]">
+      <div className="fullscreen-sec relative flex w-full max-w-[1004px] flex-col overflow-hidden bg-[#FAFBFD] px-6 py-10 shadow-sm min-h-screen max-h-[812px] sm:h-[812px] sm:min-h-[812px] sm:max-h-[812px] sm:w-[1004px] sm:px-10 sm:py-12">
+        {/* Same watermark layer as login (`components/login.tsx`) — basePath-safe URL */}
+        <div
+          className="pointer-events-none absolute left-[calc(50%+170px)] top-[95px] z-0 hidden h-[812px] w-[1004px] -translate-x-1/2 lg:block"
+          style={{
+            backgroundImage: `url('${publicAssetUrl("background.svg")}')`,
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "1004px 812px",
+            backgroundPosition: "center top",
+          }}
+        />
 
+        <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col">
           <div
             ref={contentRef}
-            className="relative z-10 flex h-full w-full flex-col items-center justify-between px-[18px] pt-[20px] pb-[22px] sm:px-[32px] sm:pt-[20px] sm:pb-[60px] overflow-y-auto no-scrollbar"
+            className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col items-center justify-between overflow-y-auto no-scrollbar"
           >
             {/* Logo Section */}
-            <div className="sticky top-0 z-10 flex w-full flex-col items-center shrink-0 bg-transparent py-2">
+            <div className="sticky top-0 z-10 flex w-full shrink-0 flex-col items-center bg-transparent py-2">
               {logoSrc ? (
                 <Image
                   src={logoSrc}
                   alt="Logo"
-                  width={214}
-                  height={151}
-                  className="block mx-auto h-auto w-[155px] sm:w-[214px]"
+                  width={276}
+                  height={195}
+                  className="mx-auto block aspect-[276/195] w-[276px] max-w-full h-auto object-contain object-center"
                   priority
                 />
               ) : null}
             </div>
 
-            <div className="flex w-full flex-col items-center gap-[12px] mt-[34px] sm:mt-0 shrink-0">
+            <div className="mx-auto flex w-full max-w-[477px] shrink-0 flex-col items-stretch gap-[11px] mb-[30px]"> {/* નીચે થોડી જગ્યા છોડી */}
               <button
                 onClick={() => (window.location.href = buildPath("/login"))}
-                className={`w-full rounded-[25px] text-center [font-family:Roboto] text-[#FFFFFF] hover:cursor-pointer active:scale-[0.98] transition-all font-[700] ${
-                  isCompactActions
-                    ? "max-w-[268px] h-[38px] px-[20px] py-[9px] text-[18px] leading-[16px]"
-                    : "max-w-[306px] h-[44px] px-[22px] py-[12px] text-[18px] leading-[16px] sm:max-w-[338px] sm:h-[48px] sm:px-[26px] sm:py-[15px] sm:text-[20px] sm:leading-[18px]"
-                }`}
-                style={{ background: "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)" }}
+                className="box-border flex h-[48px] w-full items-center justify-center rounded-[25px] px-[26px] py-[15px] text-center font-[700] leading-none [font-family:Roboto] text-white transition-all hover:cursor-pointer active:scale-[0.98] text-[18px] sm:text-[20px]"
+                style={{
+                  background:
+                    "linear-gradient(0deg, #2868C0 -107.69%, #4C92E9 80.77%)",
+                }}
               >
                 Log In
               </button>
 
               <button
                 onClick={() => (window.location.href = buildPath("/register"))}
-                className={`flex w-full items-center justify-center rounded-[25px] border border-[#4A90E5] bg-[#FFFFFF] text-center font-[700] [font-family:Roboto] text-[#4A90E5] hover:cursor-pointer active:scale-[0.98] transition-all ${
-                  isCompactActions
-                    ? "max-w-[268px] h-[38px] px-[20px] py-[9px] text-[18px] leading-[16px]"
-                    : "max-w-[306px] h-[44px] px-[22px] py-[12px] text-[18px] leading-[16px] sm:max-w-[338px] sm:h-[48px] sm:px-[26px] sm:py-[15px] sm:text-[20px] sm:leading-[18px]"
-                }`}
+                className="box-border flex h-[48px] w-full items-center justify-center rounded-[25px] border border-[#6497EA] bg-white px-[26px] py-[15px] text-center font-[700] leading-none [font-family:Roboto] text-[#6497EA] transition-all hover:cursor-pointer active:scale-[0.98] text-[18px] sm:text-[20px]"
               >
                 Sign Up
               </button>
