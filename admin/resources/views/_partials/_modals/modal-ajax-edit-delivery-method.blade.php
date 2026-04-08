@@ -33,7 +33,6 @@
                           <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="editDmMinimumAmount"
                               name="dmMinimumAmount" class="form-control" placeholder="Min. order subtotal for this tier"
                               value="{{ old('dmMinimumAmount') }}" />
-                          <div class="form-text">Highest tier where minimum ≤ order subtotal is applied at checkout.</div>
                           @error('dmMinimumAmount', 'editModal')
                               <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
                           @enderror
@@ -43,7 +42,6 @@
                           <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="editDmMaximumAmount"
                               name="dmMaximumAmount" class="form-control" placeholder="Optional — no upper limit if empty"
                               value="{{ old('dmMaximumAmount') }}" />
-                          <div class="form-text">Empty = no cap. Otherwise subtotal must be ≤ this amount.</div>
                           @error('dmMaximumAmount', 'editModal')
                               <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
                           @enderror
@@ -53,6 +51,14 @@
                           <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="dmPrice"
                               name="dmPrice" class="form-control" placeholder="Rate" value="{{ old('dmPrice') }}" />
                           @error('dmPrice', 'editModal')
+                              <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
+                          @enderror
+                      </div>
+                      <div class="col-12 mb-6 form-control-validation">
+                          <label class="form-label" for="dmVat">VAT</label>
+                          <input type="text" onkeypress="return /^[0-9.]+$/.test(event.key)" id="dmVat"
+                              name="dmVat" class="form-control" placeholder="VAT amount" value="{{ old('dmVat', '0') }}" />
+                          @error('dmVat', 'editModal')
                               <span class="text-danger" role="alert"><strong>{{ $message }}</strong></span>
                           @enderror
                       </div>

@@ -57,6 +57,7 @@
                       <th>Minimum Amount</th>
                       <th>Maximum Amount</th>
                       <th>Rate</th>
+                      <th>VAT</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>

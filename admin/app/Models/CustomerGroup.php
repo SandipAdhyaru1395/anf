@@ -12,7 +12,6 @@ class CustomerGroup extends Model
     public $fillable = [
         'name',
         'restrict_categories',
-        'pay_later',
     ];
     
     public function categories()

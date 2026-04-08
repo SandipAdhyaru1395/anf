@@ -64,6 +64,14 @@
                             <div class="ov-label">Customer Ref</div>
                             <div class="ov-value">{{ $order->customer_ref ?? '—' }}</div>
                         </div>
+                        <div class="ov-row">
+                            <div class="ov-label">PO Number</div>
+                            <div class="ov-value">{{ $order->customer_po_number ?: '—' }}</div>
+                        </div>
+                        <div class="ov-row">
+                            <div class="ov-label">Notes</div>
+                            <div class="ov-value">{{ $order->delivery_note ?: '—' }}</div>
+                        </div>
                         <div class="ov-row ov-row-last">
                             <div class="ov-label">Created By</div>
                             <div class="ov-value">{{ $order->created_by ?? '—' }}</div>
@@ -149,7 +157,7 @@
                                     @php
                                         $qty = (float) ($item->quantity ?? 0);
                                         $unitPrice = (float) ($item->unit_price ?? 0);
-                                        $total = (float) ($item->total ?? 0);
+                                        $total = (float) ($item->total_price ?? 0);
                                         $grandTotal += $total;
                                         $dispatched = $order->status === 'Fulfilled' ? $qty : 0;
                                         $invoiced = $order->type === 'EST' ? 0 : $qty;
@@ -179,11 +187,49 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
+                                @php
+                                    $subTotalAmount = (float) ($order->subtotal ?? 0);
+                                    $deliveryAmount = (float) ($order->delivery_charge ?? 0);
+                                    $vatAmount = (float) ($order->vat_amount ?? 0);
+                                    $totalBeforeWalletDiscount = $subTotalAmount + $deliveryAmount + $vatAmount;
+                                    $walletDiscountAmount = abs((float) ($order->wallet_discount ?? 0));
+                                    $paymentTotalAmount = max(0, $totalBeforeWalletDiscount - $walletDiscountAmount);
+                                @endphp
                                 <tr>
-                                    <td colspan="7" class="ov-total-label">Total {{ $currencyCode ?? 'GBP' }} ({{ $soldItems->count() }}
+                                    <td colspan="7" class="ov-total-label text-end">Subtotal (Excl. VAT)</td>
+                                    <td class="text-end ov-total-value">
+                                        {{ $currencySymbol }}{{ number_format($subTotalAmount, 2) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" class="ov-total-label text-end">Delivery</td>
+                                    <td class="text-end ov-total-value">
+                                        {{ $currencySymbol }}{{ number_format($deliveryAmount, 2) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" class="ov-total-label text-end">VAT</td>
+                                    <td class="text-end ov-total-value">
+                                        {{ $currencySymbol }}{{ number_format($vatAmount, 2) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" class="ov-total-label text-end">Total {{ $currencyCode ?? 'GBP' }} ({{ $soldItems->count() }}
                                         item{{ $soldItems->count() !== 1 ? 's' : '' }})</td>
                                     <td class="text-end ov-total-value">
-                                        {{ $currencySymbol }}{{ number_format($grandTotal > 0 ? $grandTotal : (float) ($order->total_amount ?? 0), 2) }}
+                                        {{ $currencySymbol }}{{ number_format($totalBeforeWalletDiscount, 2) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" class="ov-total-label text-end">Wallet Discount</td>
+                                    <td class="text-end ov-total-value">
+                                        - {{ $currencySymbol }}{{ number_format($walletDiscountAmount, 2) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" class="ov-total-label text-end">Payment Total {{ $currencyCode ?? 'GBP' }}</td>
+                                    <td class="text-end ov-total-value">
+                                        {{ $currencySymbol }}{{ number_format($paymentTotalAmount, 2) }}
                                     </td>
                                 </tr>
                             </tfoot>

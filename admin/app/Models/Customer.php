@@ -49,8 +49,11 @@ class Customer extends Model implements CanResetPasswordContract
         'stores_serviced_count',
         'contact_person_name',
         'rep_id',
+        'rep_code',
+        'sales_rep_name',
         'customer_group_id',
         'price_list_id',
+        'pay_later',
     ];
 
     protected $casts = [
@@ -58,6 +61,7 @@ class Customer extends Model implements CanResetPasswordContract
         'email_verified_at' => 'datetime',
         'last_login' => 'datetime',
         'is_active' => 'boolean',
+        'pay_later' => 'boolean',
         'is_approved' => 'integer',
         'credit_balance' => 'decimal:2',
         'password' => 'hashed',

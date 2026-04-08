@@ -13,6 +13,7 @@ class DeliveryMethod extends Model
         'name',
         'time',
         'rate',
+        'vat',
         'minimum_amount',
         'maximum_amount',
         'status',
@@ -23,6 +24,7 @@ class DeliveryMethod extends Model
     {
         return [
             'rate' => 'decimal:2',
+            'vat' => 'decimal:2',
             'minimum_amount' => 'decimal:2',
             'maximum_amount' => 'decimal:2',
             'sort_order' => 'integer',

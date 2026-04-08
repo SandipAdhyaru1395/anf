@@ -50,7 +50,7 @@ class OrderController extends Controller
                 'units' => (int)($order->units_count ?? 0),
                 'skus' => (int)($order->skus_count ?? 0),
                 'currency_symbol' => $setting['currency_symbol'] ?? '',
-                'total_paid' => (float)($order->paid_amount ?? 0),
+                'total_paid' => (float)($order->outstanding_amount ?? 0),
             ];
         });
 
@@ -113,6 +113,8 @@ class OrderController extends Controller
                 'subtotal' => (float)($order->subtotal ?? 0),
                 'vat_amount' => (float)($order->vat_amount ?? 0),
                 'delivery_method' => $order->delivery_method_name,
+                'customer_po_number' => $order->customer_po_number,
+                'delivery_note' => $order->delivery_note,
                 'wallet_discount' => (float)($order->wallet_credit_used ?? 0) * -1,
                 'delivery_charge' => (float)($order->delivery_charge ?? 0),
                 'total_paid' => (float)($order->paid_amount ?? 0),
@@ -328,6 +330,8 @@ class OrderController extends Controller
             $deliveryMethod = $chosen;
 
             $deliveryCharge = (float) $deliveryMethod->rate;
+            $deliveryVat = round((float) ($deliveryMethod->vat ?? 0), 2);
+            $vatAmount = round((float) $vatAmount + $deliveryVat, 2);
             $totalAmount = $subtotal + $vatAmount + $deliveryCharge;
 			$walletCreditUsed = min($subtotal, $availableCredit);
 			$outstandingAmount = $totalAmount - $walletCreditUsed; // total - wallet_used = outstanding
@@ -370,8 +374,7 @@ class OrderController extends Controller
             $paymentMode = $request->input('payment_mode'); // "gateway", "gateway_bank", or "pay_later"
             $bankId = $request->input('bank_id');
 
-            // Enforce customer-group pay_later flag
-            $canPayLater = (bool) optional(optional($customer)->customerGroup)->pay_later;
+            $canPayLater = (bool) ($customer?->pay_later ?? false);
             if ($paymentMode === 'pay_later' && !$canPayLater) {
                 return response()->json([
                     'success' => false,

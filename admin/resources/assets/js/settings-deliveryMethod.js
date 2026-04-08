@@ -5,6 +5,11 @@
 
 // Delivery Method List & Modals
 $(function () {
+  const currencySymbol = window.currencySymbol || '';
+  const formatMoney = function (value) {
+    return currencySymbol + Number(value).toFixed(2);
+  };
+
   const select2 = $('.select2');
   if (select2.length) {
     select2.each(function () {
@@ -27,6 +32,7 @@ $(function () {
         { data: 'minimum_amount' },
         { data: 'maximum_amount' },
         { data: 'rate' },
+        { data: 'vat' },
         { data: 'status' },
         { data: null, defaultContent: '' }
       ],
@@ -58,10 +64,14 @@ $(function () {
         },
         {
           targets: 5,
-          render: function (data) { return data !== null && data !== undefined ? Number(data).toFixed(2) : '-'; }
+          render: function (data) { return data !== null && data !== undefined ? formatMoney(data) : '-'; }
         },
         {
           targets: 6,
+          render: function (data) { return data !== null && data !== undefined ? formatMoney(data) : '-'; }
+        },
+        {
+          targets: 7,
           render: function (data) {
             if (data === 'Active') {
               return '<span class="badge bg-label-success">Active</span>';
@@ -71,7 +81,7 @@ $(function () {
           }
         },
         {
-          targets: 7,
+          targets: 8,
           orderable: false,
           searchable: false,
           render: function (data, type, full) {
@@ -105,6 +115,7 @@ $(function () {
               response.maximum_amount !== null && response.maximum_amount !== undefined ? response.maximum_amount : ''
             );
             $('#ajaxEditDeliveryMethodForm').find('#dmPrice').val(response.rate);
+            $('#ajaxEditDeliveryMethodForm').find('#dmVat').val(response.vat ?? 0);
             $('#ajaxEditDeliveryMethodForm').find('#dmStatus').val(response.status).trigger('change');
             $('#ajaxEditDeliveryMethodForm').find('#dmSortOrder').val(response.sort_order || '');
           }
@@ -145,6 +156,7 @@ $(function () {
         dmName: { validators: { notEmpty: { message: 'Please enter name' } } },
         dmTime: { validators: { notEmpty: { message: 'Please enter delivery time' } } },
         dmPrice: { validators: { notEmpty: { message: 'Please enter rate' }, numeric: { message: 'Rate must be a number' } } },
+        dmVat: { validators: { notEmpty: { message: 'Please enter VAT' }, numeric: { message: 'VAT must be a number' } } },
         dmMinimumAmount: { validators: { notEmpty: { message: 'Please enter minimum amount' }, numeric: { message: 'Minimum amount must be a number' } } },
         dmStatus: { validators: { notEmpty: { message: 'Please select status' } } },
         dmSortOrder: { validators: { integer: { message: 'Sort order must be an integer' } } }
@@ -167,6 +179,7 @@ $(function () {
         dmName: { validators: { notEmpty: { message: 'Please enter name' } } },
         dmTime: { validators: { notEmpty: { message: 'Please enter delivery time' } } },
         dmPrice: { validators: { notEmpty: { message: 'Please enter rate' }, numeric: { message: 'Rate must be a number' } } },
+        dmVat: { validators: { notEmpty: { message: 'Please enter VAT' }, numeric: { message: 'VAT must be a number' } } },
         dmMinimumAmount: { validators: { notEmpty: { message: 'Please enter minimum amount' }, numeric: { message: 'Minimum amount must be a number' } } },
         dmStatus: { validators: { notEmpty: { message: 'Please select status' } } },
         dmSortOrder: { validators: { integer: { message: 'Sort order must be an integer' } } }

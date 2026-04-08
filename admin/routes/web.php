@@ -268,11 +268,11 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/user/view/security/{id}', [UserController::class, 'viewSecurity'])->name('user-view-security.read');
         Route::get('/user/view/notifications/{id}', [UserController::class, 'viewNotifications'])->name('user-view-notifications.read');
 
-        Route::get('/profile-user', [UserProfile::class, 'index'])->name('profile-user.read');
-        Route::get('/profile-teams', [UserTeams::class, 'index'])->name('profile-teams.read');
-        Route::get('/profile-projects', [UserProjects::class, 'index'])->name('profile-projects.read');
-        Route::get('/profile-connections', [UserConnections::class, 'index'])->name('profile-connections.read');
+        // Route::get('/profile-teams', [UserTeams::class, 'index'])->name('profile-teams.read');
+        // Route::get('/profile-projects', [UserProjects::class, 'index'])->name('profile-projects.read');
+        // Route::get('/profile-connections', [UserConnections::class, 'index'])->name('profile-connections.read');
     });
+    
 
     Route::middleware('permission:user.write')->group(function () {
         Route::post('/user/update', [UserController::class, 'update'])->name('user.update');
@@ -301,8 +301,6 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::post('/role/update', [RoleController::class, 'update'])->name('role.update');
     });
 
-
-
     // Report
     Route::middleware('permission:report.read')->group(function () {
         Route::get('/report', [ReportController::class, 'index'])->name('report.index');
@@ -316,84 +314,168 @@ Route::middleware(['auth', 'sidebar'])->group(function () {
         Route::get('/report/net-vat/ajax', [ReportController::class, 'netVatReportAjax'])->name('report.net-vat.ajax');
     });
 
-    Route::middleware('permission:settings.read')->group(function () {
-        Route::get('/settings', [SettingController::class, 'viewGeneralSettings'])->name('settings.general');
+    Route::middleware('permission:settings_general.read')->group(function () {
+        Route::get('/settings/general', [SettingController::class, 'viewGeneralSettings'])->name('settings.general');
+    });
+
+    Route::middleware('permission:settings_general.write')->group(function () {
+        Route::post('/settings/general/update', [SettingController::class, 'updateGeneralSettings'])->name('settings.general.update');
+    });
+
+    Route::middleware('permission:settings_smtp.read')->group(function () {
         Route::get('/settings/smtp', [SettingController::class, 'viewSmtpSettings'])->name('settings.smtp');
+    });
+
+    Route::middleware('permission:settings_smtp.write')->group(function () {
+        Route::post('/settings/smtp/update', [SettingController::class, 'updateSmtpSettings'])->name('settings.smtp.update');
+    });
+
+    Route::middleware('permission:settings_banner.read')->group(function () {
         Route::get('/settings/banner', [SettingController::class, 'viewBannerSettings'])->name('settings.banner');
+    });
+
+    Route::middleware('permission:settings_banner.write')->group(function () {
+        Route::post('/settings/banner/update', [SettingController::class, 'updateBannerSettings'])->name('settings.banner.update');
+    });
+
+    Route::middleware('permission:settings_maintenance.read')->group(function () {
         Route::get('/settings/maintenance', [SettingController::class, 'viewMaintenanceSettings'])->name('settings.maintenance');
+    });
+
+    Route::middleware('permission:settings_maintenance.write')->group(function () {
+        Route::post('/settings/maintenance/update', [SettingController::class, 'updateMaintenanceSettings'])->name('settings.maintenance.update');
+    });
+
+    Route::middleware('permission:settings_termsAndConditions.read')->group(function () {
         Route::get('/settings/terms-and-conditions', [SettingController::class, 'viewTermsAndConditions'])->name('settings.termsAndConditions');
-        Route::get('/settings/theme', [SettingController::class, 'viewThemeSettings'])->name('settings.theme');
-        Route::get('/settings/payment-gateways', [SettingController::class, 'viewPaymentGateways'])->name('settings.paymentGateways');
-        Route::get('/settings/planufac-erp', [SettingController::class, 'viewPlanufacErp'])->name('settings.planufacErp');
-        Route::get('/settings/application-logs', [SettingController::class, 'viewApplicationLogs'])->name('settings.applicationLogs');
+    });
+
+    Route::middleware('permission:settings_termsAndConditions.write')->group(function () {
+        Route::post('/settings/terms-and-conditions/update', [SettingController::class, 'updateTermsAndConditions'])->name('settings.termsAndConditions.update');
+    });
+
+    Route::middleware('permission:settings_deliveryMethod.read')->group(function () {
         Route::get('/settings/delivery-method', [SettingController::class, 'viewDeliveryMethod'])->name('settings.deliveryMethod');
         Route::get('/settings/delivery-method/list/ajax', [SettingController::class, 'deliveryMethodListAjax'])->name('settings.deliveryMethod.list.ajax');
         Route::get('/settings/delivery-method/ajax/show', [SettingController::class, 'deliveryMethodShow'])->name('settings.deliveryMethod.ajax.show');
-        // VAT Methods (read)
+    });
+
+    Route::middleware('permission:settings_deliveryMethod.write')->group(function () {
+        Route::post('/settings/delivery-method/update', [SettingController::class, 'deliveryMethodUpdate'])->name('settings.deliveryMethod.update');
+        Route::get('/settings/delivery-method/delete/{id}', [SettingController::class, 'deliveryMethodDelete'])->name('settings.deliveryMethod.delete');
+    });
+
+    Route::middleware('permission:settings_deliveryMethod.create')->group(function () {
+        Route::post('/settings/delivery-method/store', [SettingController::class, 'deliveryMethodStore'])->name('settings.deliveryMethod.store');
+    });
+
+    Route::middleware('permission:settings_customerGroup.read')->group(function () {
+        Route::get('/settings/groups', [SettingController::class, 'viewCustomerGroup'])->name('settings.customerGroup');
+        Route::get('/settings/groups/list/ajax', [SettingController::class, 'customerGroupListAjax'])->name('settings.customerGroup.list.ajax');
+        Route::get('/settings/groups/check-name', [SettingController::class, 'checkGroupName'])->name('settings.customerGroup.checkName');
+    });
+
+    Route::middleware('permission:settings_customerGroup.write')->group(function () {
+        Route::get('/settings/groups/edit/{id}', [SettingController::class, 'customerGroupEdit'])->name('settings.customerGroup.edit');
+        Route::post('/settings/groups/update', [SettingController::class, 'customerGroupUpdate'])->name('settings.customerGroup.update');
+        Route::delete('/settings/groups/delete/{id}', [SettingController::class, 'customerGroupDelete'])->name('settings.customerGroup.delete');
+    });
+
+    Route::middleware('permission:settings_customerGroup.create')->group(function () {
+        Route::get('/settings/groups/add/', [SettingController::class, 'customerGroupAdd'])->name('settings.customerGroup.add');
+        Route::post('/settings/groups/store', [SettingController::class, 'customerGroupStore'])->name('settings.customerGroup.store');
+    });
+
+    Route::middleware('permission:settings_priceList.read')->group(function () {
+        Route::get('/settings/priceList', [SettingController::class, 'viewPriceList'])->name('settings.priceList');
+        Route::get('/settings/priceList/list/ajax', [SettingController::class, 'priceListAjax'])->name('settings.priceList.ajax');
+        Route::get('/settings/priceList/edit/{id}', [SettingController::class, 'priceListEdit'])->name('settings.priceList.edit');
+        Route::get('/settings/priceList/check-name', [SettingController::class, 'checkPriceListName'])->name('settings.priceList.checkName');
+    });
+
+    Route::middleware('permission:settings_priceList.write')->group(function () {
+        Route::post('/settings/priceList/update', [SettingController::class, 'priceListUpdate'])->name('settings.priceList.update');
+        Route::delete('/settings/priceList/delete/{id}', [SettingController::class, 'priceListDelete'])->name('settings.priceList.delete');
+    });
+
+    Route::middleware('permission:settings_priceList.create')->group(function () {
+        Route::get('/settings/priceList/add/', [SettingController::class, 'priceListAdd'])->name('settings.priceList.add');
+        Route::post('/settings/priceList/store', [SettingController::class, 'priceListStore'])->name('settings.priceList.store');
+    });
+
+    Route::middleware('permission:settings_vatMethod.read')->group(function () {
         Route::get('/settings/vat-method', [SettingController::class, 'viewVatMethod'])->name('settings.vatMethod');
         Route::get('/settings/vat-method/list/ajax', [SettingController::class, 'vatMethodListAjax'])->name('settings.vatMethod.list.ajax');
         Route::get('/settings/vat-method/ajax/show', [SettingController::class, 'vatMethodShow'])->name('settings.vatMethod.ajax.show');
+    });
+
+    Route::middleware('permission:settings_vatMethod.create')->group(function () {
+        Route::post('/settings/vat-method/store', [SettingController::class, 'vatMethodStore'])->name('settings.vatMethod.store');
+    });
+
+    Route::middleware('permission:settings_vatMethod.write')->group(function () {
+        Route::post('/settings/vat-method/update', [SettingController::class, 'vatMethodUpdate'])->name('settings.vatMethod.update');
+        Route::get('/settings/vat-method/delete/{id}', [SettingController::class, 'vatMethodDelete'])->name('settings.vatMethod.delete');
+    });
+
+    Route::middleware('permission:settings_unit.read')->group(function () {
         Route::get('/settings/unit', [SettingController::class, 'viewUnit'])->name('settings.unit');
         Route::get('/settings/unit/list/ajax', [SettingController::class, 'unitListAjax'])->name('settings.unit.list.ajax');
         Route::get('/settings/unit/ajax/show', [SettingController::class, 'unitShow'])->name('settings.unit.ajax.show');
+    });
+
+    Route::middleware('permission:settings_unit.create')->group(function () {
+        Route::post('/settings/unit/store', [SettingController::class, 'unitStore'])->name('settings.unit.store');
+    });
+
+    Route::middleware('permission:settings_unit.write')->group(function () {
+        Route::post('/settings/unit/update', [SettingController::class, 'unitUpdate'])->name('settings.unit.update');
+        Route::get('/settings/unit/delete/{id}', [SettingController::class, 'unitDelete'])->name('settings.unit.delete');
+    });
+
+    Route::middleware('permission:settings_currency.read')->group(function () {
         Route::get('/settings/currencies', [SettingController::class, 'viewCurrency'])->name('settings.currency');
         Route::get('/settings/currencies/list/ajax', [SettingController::class, 'currencyListAjax'])->name('settings.currency.list.ajax');
         Route::get('/settings/currencies/ajax/show', [SettingController::class, 'currencyShow'])->name('settings.currency.ajax.show');
-
-        Route::get('/settings/groups', [SettingController::class, 'viewCustomerGroup'])->name('settings.customerGroup');
-        Route::get('/settings/groups/list/ajax', [SettingController::class, 'customerGroupListAjax'])->name('settings.customerGroup.list.ajax');
-
-        Route::get('/settings/priceList', [SettingController::class, 'viewPriceList'])->name('settings.priceList');
-
-        Route::get('/settings/groups/edit/{id}', [SettingController::class, 'customerGroupEdit'])->name('settings.customerGroup.edit');
-
-        Route::get('/settings/groups/check-name', [SettingController::class, 'checkGroupName'])->name('settings.customerGroup.checkName');
-
-        Route::get('/settings/priceList/check-name', [SettingController::class, 'checkPriceListName'])->name('settings.priceList.checkName');
-
-        Route::get('/settings/priceList/list/ajax', [SettingController::class, 'priceListAjax'])->name('settings.priceList.ajax');
-
-        Route::get('/settings/priceList/edit/{id}', [SettingController::class, 'priceListEdit'])->name('settings.priceList.edit');
     });
 
-    Route::middleware('permission:settings.update')->group(function () {
-        Route::post('/settings/general/update', [SettingController::class, 'updateGeneralSettings'])->name('settings.general.update');
-        Route::post('/settings/smtp/update', [SettingController::class, 'updateSmtpSettings'])->name('settings.smtp.update');
-        Route::post('/settings/banner/update', [SettingController::class, 'updateBannerSettings'])->name('settings.banner.update');
-        Route::post('/settings/maintenance/update', [SettingController::class, 'updateMaintenanceSettings'])->name('settings.maintenance.update');
-        Route::post('/settings/terms-and-conditions/update', [SettingController::class, 'updateTermsAndConditions'])->name('settings.termsAndConditions.update');
-        Route::post('/settings/truncate', [SettingController::class, 'truncateData'])->name('settings.truncate');
-        Route::post('/settings/theme/update', [SettingController::class, 'updateThemeSettings'])->name('settings.theme.update');
-        Route::post('/settings/payment-gateways/update', [SettingController::class, 'updatePaymentGateways'])->name('settings.paymentGateways.update');
-        Route::post('/settings/planufac-erp/update', [SettingController::class, 'updatePlanufacErp'])->name('settings.planufacErp.update');
-        Route::post('/settings/delivery-method/store', [SettingController::class, 'deliveryMethodStore'])->name('settings.deliveryMethod.store');
-        Route::post('/settings/delivery-method/update', [SettingController::class, 'deliveryMethodUpdate'])->name('settings.deliveryMethod.update');
-        Route::get('/settings/delivery-method/delete/{id}', [SettingController::class, 'deliveryMethodDelete'])->name('settings.deliveryMethod.delete');
-        // VAT Methods (write)
-        Route::post('/settings/vat-method/store', [SettingController::class, 'vatMethodStore'])->name('settings.vatMethod.store');
-        Route::post('/settings/vat-method/update', [SettingController::class, 'vatMethodUpdate'])->name('settings.vatMethod.update');
-        Route::get('/settings/vat-method/delete/{id}', [SettingController::class, 'vatMethodDelete'])->name('settings.vatMethod.delete');
-        Route::post('/settings/unit/store', [SettingController::class, 'unitStore'])->name('settings.unit.store');
-        Route::post('/settings/unit/update', [SettingController::class, 'unitUpdate'])->name('settings.unit.update');
-        Route::get('/settings/unit/delete/{id}', [SettingController::class, 'unitDelete'])->name('settings.unit.delete');
+    Route::middleware('permission:settings_currency.create')->group(function () {
         Route::post('/settings/currencies/store', [SettingController::class, 'currencyStore'])->name('settings.currency.store');
+    });
+    Route::middleware('permission:settings_currency.write')->group(function () {
         Route::post('/settings/currencies/update', [SettingController::class, 'currencyUpdate'])->name('settings.currency.update');
         Route::get('/settings/currencies/delete/{id}', [SettingController::class, 'currencyDelete'])->name('settings.currency.delete');
-
-        Route::post('/settings/groups/update', [SettingController::class, 'customerGroupUpdate'])->name('settings.customerGroup.update');
-        Route::delete('/settings/groups/delete/{id}', [SettingController::class, 'customerGroupDelete'])->name('settings.customerGroup.delete');
-
-        Route::post('/settings/priceList/update', [SettingController::class, 'priceListUpdate'])->name('settings.priceList.update');
-        Route::delete('/settings/priceList/delete/{id}', [SettingController::class, 'priceListDelete'])->name('settings.priceList.delete');
-
     });
 
-    Route::middleware('permission:settings.write')->group(function () {
-        Route::get('/settings/groups/add/', [SettingController::class, 'customerGroupAdd'])->name('settings.customerGroup.add');
-        Route::get('/settings/priceList/add/', [SettingController::class, 'priceListAdd'])->name('settings.priceList.add');
-        Route::post('/settings/groups/store', [SettingController::class, 'customerGroupStore'])->name('settings.customerGroup.store');
-        Route::post('/settings/priceList/store', [SettingController::class, 'priceListStore'])->name('settings.priceList.store');
+    Route::middleware('permission:settings_paymentGateways.read')->group(function () {
+        Route::get('/settings/payment-gateways', [SettingController::class, 'viewPaymentGateways'])->name('settings.paymentGateways');
     });
+
+    Route::middleware('permission:settings_paymentGateways.write')->group(function () {
+        Route::post('/settings/payment-gateways/update', [SettingController::class, 'updatePaymentGateways'])->name('settings.paymentGateways.update');
+    });
+
+    Route::middleware('permission:settings_planufacErp.read')->group(function () {
+        Route::get('/settings/planufac-erp', [SettingController::class, 'viewPlanufacErp'])->name('settings.planufacErp');
+    });
+
+    Route::middleware('permission:settings_planufacErp.write')->group(function () {
+        Route::post('/settings/planufac-erp/update', [SettingController::class, 'updatePlanufacErp'])->name('settings.planufacErp.update');
+    });
+    
+    Route::middleware('permission:settings_applicationLogs.read')->group(function () {
+        Route::get('/settings/application-logs', [SettingController::class, 'viewApplicationLogs'])->name('settings.applicationLogs');
+    });
+
+    // Route::middleware('permission:settings_theme.read')->group(function () {
+    //     Route::get('/settings/theme', [SettingController::class, 'viewThemeSettings'])->name('settings.theme');
+    // });
+    Route::get('/profile', [UserController::class, 'getProfile'])->name('profile.read');
+    Route::post('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+    
+    Route::post('/settings/truncate', [SettingController::class, 'truncateData'])->name('settings.truncate');
+    // Route::post('/settings/theme/update', [SettingController::class, 'updateThemeSettings'])->name('settings.theme.update');
+   
 });
 
 Route::get('/', [AuthLoginController::class, 'show']);

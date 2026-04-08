@@ -238,6 +238,8 @@ class DnaCallbackController extends Controller
                 $availableCredit = (float)($customer->credit_balance ?? 0.0);
                 $deliveryMethod = \App\Models\DeliveryMethod::resolveForCheckout((float) $subtotal, $cachedDeliveryMethodId);
                 $deliveryCharge = $deliveryMethod ? (float) $deliveryMethod->rate : 0;
+                $deliveryVat = $deliveryMethod ? round((float) ($deliveryMethod->vat ?? 0), 2) : 0;
+                $vatAmount = round((float) $vatAmount + $deliveryVat, 2);
                 $totalAmount = $subtotal + $vatAmount + $deliveryCharge;
                 $walletCreditUsed = min($subtotal, $availableCredit);
                 if (is_float($cachedWalletUsed) || is_int($cachedWalletUsed)) {

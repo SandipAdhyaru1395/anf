@@ -422,6 +422,8 @@
                 <td class="addr" aria-label="Payment details">
                     <p><b>Order Date:</b> {{ \App\Helpers\Helpers::displayDateTime($order->order_date ?? $order->created_at) }}</p>
                     <p><b>Payment status:</b> {{ strtoupper($order->payment_status ?? '—') }}</p>
+                    <p><b>PO Number:</b> {{ $order->customer_po_number ?: '—' }}</p>
+                    <p><b>Notes:</b> {{ $order->delivery_note ?: '—' }}</p>
                 </td>
             </tr>
         </table>

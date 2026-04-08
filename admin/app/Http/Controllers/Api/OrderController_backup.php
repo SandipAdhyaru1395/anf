@@ -309,8 +309,7 @@ class OrderController extends Controller
             $paymentMode = $request->input('payment_mode'); // "gateway", "gateway_bank", or "pay_later"
             $bankId = $request->input('bank_id');
 
-            // Enforce customer-group pay_later flag
-            $canPayLater = (bool) optional(optional($customer)->customerGroup)->pay_later;
+            $canPayLater = (bool) ($customer?->pay_later ?? false);
             if ($paymentMode === 'pay_later' && !$canPayLater) {
                 return response()->json([
                     'success' => false,

@@ -17,28 +17,12 @@
                             <ul
                                 class="list-inline mb-0 d-flex align-items-center flex-wrap justify-content-sm-start justify-content-center gap-4 my-2">
                                 @if (auth()->user()->role)
-                                    @php
-                                        $icon = [
-                                            'Super Admin' => 'tabler-crown',
-                                            'Manager' => 'tabler-chart-pie',
-                                            'Administrator' => 'tabler-users',
-                                            'User' => 'tabler-user',
-                                        ];
-                                    @endphp
                                     <li class="list-inline-item d-flex gap-2 align-items-center"><i
-                                            class="icon-base ti {{ $icon[auth()->user()->role->name] ?? '' }} icon-lg"></i><span
+                                            class="icon-base ti ti tabler-user-shield icon-lg"></i><span
                                             class="fw-medium">{{ auth()->user()->role->name }}</span></li>
                                 @endif
-                                <li class="list-inline-item d-flex gap-2 align-items-center"><i
-                                        class="icon-base ti tabler-map-pin  icon-lg"></i><span class="fw-medium">Vatican
-                                        City</span></li>
-                                <li class="list-inline-item d-flex gap-2 align-items-center"><i
-                                        class="icon-base ti tabler-calendar  icon-lg"></i><span class="fw-medium">
-                                        Joined April 2021</span></li>
                             </ul>
                         </div>
-                        <a href="javascript:void(0)" class="btn btn-primary mb-1"> <i
-                                class="icon-base ti tabler-user-check icon-xs me-2"></i>Connected </a>
                     </div>
                 </div>
             </div>

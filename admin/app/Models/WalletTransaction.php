@@ -19,6 +19,13 @@ class WalletTransaction extends Model
         'description',
         'balance_after',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (WalletTransaction $walletTransaction) {
+            return (float) ($walletTransaction->amount ?? 0) !== 0.0;
+        });
+    }
 }
 
 

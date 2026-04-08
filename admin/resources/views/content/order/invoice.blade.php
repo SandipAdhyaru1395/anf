@@ -466,6 +466,8 @@
                         <p><b>Invoice Ref:</b> {{ $order->invoice_ref }}</p>
                     @endif
                     <p><b>Payment status:</b> {{ strtoupper($order->payment_status ?? '—') }}</p>
+                    <p><b>PO Number:</b> {{ $order->customer_po_number ?: '—' }}</p>
+                    <p><b>Notes:</b> {{ $order->delivery_note ?: '—' }}</p>
                 </td>
             </tr>
         </table>

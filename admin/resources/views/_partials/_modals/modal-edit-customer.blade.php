@@ -4,13 +4,24 @@
         <div class="modal-content">
             <div class="modal-body">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                <div class="text-center mb-6">
-                    <h4 class="address-title mb-2">Edit Customer</h4>
-                </div>
                 <form method="post" action="{{ route('customer.update') }}" class="customer-add pt-0"
                     id="editCustomerForm">
                     @csrf
                     <input type="hidden" name="id" value="{{ $customer->id }}">
+                    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-6">
+                        <h4 class="address-title mb-0">Edit Customer</h4>
+                        <div class="d-flex align-items-center gap-2 ms-auto">
+                            <label class="form-label mb-0 text-nowrap" for="pay_later_edit">Pay later</label>
+                            <div class="form-check form-switch m-0">
+                                <input type="checkbox" name="pay_later" value="1" class="form-check-input"
+                                    id="pay_later_edit"
+                                    @checked(old('pay_later', $customer->pay_later))>
+                            </div>
+                        </div>
+                    </div>
+                    @error('pay_later', 'editCustomer')
+                        <div class="text-danger small mb-4">{{ $message }}</div>
+                    @enderror
                     <div class="row mb-5">
                         <div class="col-12 mb-2">
                             <h5 class="mb-2">1. Business Address</h5>
@@ -185,6 +196,19 @@
                                     <span class="input-group-text cursor-pointer"><i class="icon-base ti tabler-eye-off"></i></span>
                                 </div>
                             </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="price_list_id">Price List</label>
+                                <select class="form-select select2" id="price_list_id" name="price_list_id">
+                                    @if ($price_lists->isNotEmpty())
+                                        <option value="" selected>Select price list</option>
+                                    @endif
+                                    @forelse($price_lists as $price_list)
+                                        <option value="{{ $price_list->id }}" @selected(old('price_list_id') == $price_list->id) @selected($customer->price_list_id == $price_list->id)>{{ $price_list->name }}</option>
+                                    @empty
+                                        <option value="">No price list found</option>
+                                    @endforelse
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-6 form-control-validation">
@@ -216,6 +240,24 @@
                                 @enderror
                             </div>
                             <div class="mb-6">
+                                <label class="form-label" for="repCode">Rep code</label>
+                                <input type="text" autocomplete="off" id="repCode" class="form-control"
+                                    placeholder="Optional" name="repCode"
+                                    value="{{ old('repCode') ?? $customer->rep_code }}" maxlength="100" />
+                                @error('repCode', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6">
+                                <label class="form-label" for="salesRepName">Sales rep name (if known)</label>
+                                <input type="text" autocomplete="off" id="salesRepName" class="form-control"
+                                    placeholder="Name as given at registration" name="salesRepName"
+                                    value="{{ old('salesRepName') ?? $customer->sales_rep_name }}" maxlength="255" />
+                                @error('salesRepName', 'editCustomer')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-6">
                                 <label class="form-label" for="customer_group_id">Customer Group</label>
                                 <select class="form-select select2" id="customer_group_id" name="customer_group_id">
                                     @if ($customer_groups->isNotEmpty())
@@ -225,19 +267,6 @@
                                         <option value="{{ $customerGroup->id }}" @selected(old('customer_group_id') == $customerGroup->id) @selected($customer->customer_group_id == $customerGroup->id)>{{ $customerGroup->name }}</option>
                                     @empty
                                         <option value="">No customer group found</option>
-                                    @endforelse
-                                </select>
-                            </div>
-                            <div class="mb-6">
-                                <label class="form-label" for="price_list_id">Price List</label>
-                                <select class="form-select select2" id="price_list_id" name="price_list_id">
-                                    @if ($price_lists->isNotEmpty())
-                                        <option value="" selected>Select price list</option>
-                                    @endif
-                                    @forelse($price_lists as $price_list)
-                                        <option value="{{ $price_list->id }}" @selected(old('price_list_id') == $price_list->id) @selected($customer->price_list_id == $price_list->id)>{{ $price_list->name }}</option>
-                                    @empty
-                                        <option value="">No price list found</option>
                                     @endforelse
                                 </select>
                             </div>

@@ -339,6 +339,16 @@
                   <div class="k">Price List</div>
                   <div class="v">{{ optional($overviewPriceList)->name ?? '-' }}</div>
                 </div>
+                <div class="row-item">
+                  <div class="k">Pay later</div>
+                  <div class="v">
+                    @if($customer->pay_later)
+                      <span class="badge bg-label-success">Allowed</span>
+                    @else
+                      <span class="badge bg-danger">Not allowed</span>
+                    @endif
+                  </div>
+                </div>
               </div>
 
               <div class="customer-details-extra">
@@ -383,6 +393,14 @@
                   <div class="row-item">
                     <div class="k">Name</div>
                     <div class="v">{{ $customer->contact_person_name ?: '-' }}</div>
+                  </div>
+                  <div class="row-item">
+                    <div class="k">Rep code</div>
+                    <div class="v">{{ $customer->rep_code ?: '-' }}</div>
+                  </div>
+                  <div class="row-item">
+                    <div class="k k-long">Sales rep name (if known)</div>
+                    <div class="v">{{ $customer->sales_rep_name ?: '-' }}</div>
                   </div>
                 </div>
               </div>

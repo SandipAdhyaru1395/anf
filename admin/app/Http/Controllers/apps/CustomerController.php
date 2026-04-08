@@ -402,6 +402,9 @@ class CustomerController extends Controller
       'averageMonthlySpendExVat' => ['nullable', 'string', 'max:255'],
       'storesServicedCount' => ['nullable', 'integer', 'min:0'],
       'yourName' => ['nullable', 'string', 'max:255'],
+      'salesRepName' => ['nullable', 'string', 'max:255'],
+      'repCode' => ['nullable', 'string', 'max:100'],
+      'pay_later' => ['nullable', 'boolean'],
     ], [
       'companyName.required' => 'Please enter company name',
       'email.required' => 'Please enter email',
@@ -450,8 +453,11 @@ class CustomerController extends Controller
         'stores_serviced_count' => $request->storesServicedCount,
         'contact_person_name' => $request->yourName,
         'rep_id' => $request->rep_id ?? null,
+        'rep_code' => $request->filled('repCode') ? trim((string) $request->repCode) : null,
+        'sales_rep_name' => $request->filled('salesRepName') ? trim((string) $request->salesRepName) : null,
         'customer_group_id' => $request->customer_group_id ?? null,
-        'price_list_id' => $request->price_list_id ?? null
+        'price_list_id' => $request->price_list_id ?? null,
+        'pay_later' => $request->boolean('pay_later'),
       ]);
 
       DB::commit();
@@ -489,6 +495,9 @@ class CustomerController extends Controller
       'averageMonthlySpendExVat' => ['nullable', 'string', 'max:255'],
       'storesServicedCount' => ['nullable', 'integer', 'min:0'],
       'yourName' => ['nullable', 'string', 'max:255'],
+      'salesRepName' => ['nullable', 'string', 'max:255'],
+      'repCode' => ['nullable', 'string', 'max:100'],
+      'pay_later' => ['nullable', 'boolean'],
     ], [
       'companyName.required' => 'Please enter company name',
       'email.required' => 'Please enter email',
@@ -541,8 +550,11 @@ class CustomerController extends Controller
       'stores_serviced_count' => $request->storesServicedCount,
       'contact_person_name' => $request->yourName,
       'rep_id' => $request->rep_id ?? null,
+      'rep_code' => $request->filled('repCode') ? trim((string) $request->repCode) : null,
+      'sales_rep_name' => $request->filled('salesRepName') ? trim((string) $request->salesRepName) : null,
       'customer_group_id' => $request->customer_group_id ?? null,
-      'price_list_id' => $request->price_list_id ?? null
+      'price_list_id' => $request->price_list_id ?? null,
+      'pay_later' => $request->boolean('pay_later'),
     ];
 
     if ($request->password) {

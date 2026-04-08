@@ -139,6 +139,8 @@ class AuthController extends Controller
             'averageMonthlySpendExVat' => ['nullable', 'string', 'max:255'],
             'storesServicedCount' => ['nullable', 'integer', 'min:0'],
             'yourName' => ['nullable', 'string', 'max:255'],
+            'salesRepName' => ['nullable', 'string', 'max:255'],
+            'repCode' => ['nullable', 'string', 'max:100'],
         ], [
             'email.required' => 'Please enter email',
             'email.unique' => 'Email already exists',
@@ -190,6 +192,13 @@ class AuthController extends Controller
             'average_monthly_spend_ex_vat' => $data['averageMonthlySpendExVat'] ?? null,
             'stores_serviced_count' => $data['storesServicedCount'],
             'contact_person_name' => $data['yourName'],
+            'sales_rep_name' => !empty($data['salesRepName'] ?? null)
+                ? trim((string) $data['salesRepName'])
+                : null,
+            'rep_code' => !empty($data['repCode'] ?? null)
+                ? trim((string) $data['repCode'])
+                : null,
+            'pay_later' => false,
         ]);
         $customerWelcomeEmailService->send($customer);
         $customerRegistrationAdminNotifyService->send($customer);

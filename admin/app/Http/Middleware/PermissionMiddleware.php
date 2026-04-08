@@ -57,7 +57,7 @@ class PermissionMiddleware
     {
         $default_permission = [
             'dashboard.read',
-            'profile-user.read'
+            'profile.read'
         ];
 
         $user = auth()->user();
@@ -71,7 +71,7 @@ class PermissionMiddleware
                 }
 
             } else {
-
+                dd($permission, $default_permission);
                 if (!in_array($permission, $default_permission)) {
 
                     $hasPermission = Permission::where('role_id', $user->role_id)

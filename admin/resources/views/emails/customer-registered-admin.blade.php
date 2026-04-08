@@ -88,6 +88,14 @@
                     @endif
                 </td>
             </tr>
+            <tr>
+                <th>Rep code</th>
+                <td>{{ $customer->rep_code ?: '—' }}</td>
+            </tr>
+            <tr>
+                <th>Sales rep name (if known)</th>
+                <td>{{ $customer->sales_rep_name ?: '—' }}</td>
+            </tr>
         </table>
     </div>
 

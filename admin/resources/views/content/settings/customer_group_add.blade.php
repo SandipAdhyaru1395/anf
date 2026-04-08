@@ -37,18 +37,6 @@
         }
     </style>
     @vite('resources/assets/js/settings-customerGroup.js')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const headerToggle = document.getElementById('pay_later_header');
-            const hiddenInput = document.getElementById('pay_later');
-
-            if (headerToggle && hiddenInput) {
-                headerToggle.addEventListener('change', function () {
-                    hiddenInput.value = this.checked ? 1 : 0;
-                });
-            }
-        });
-    </script>
 @endsection
 
 @section('content')
@@ -61,15 +49,7 @@
                 <div class="tab-pane fade show active" id="general" role="tabpanel">
                     <div class="card mb-6">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Add Customer Group</h5>
-                            <div class="d-flex align-items-center gap-2">
-                                <label class="form-label mb-0" for="pay_later_header">Pay Later</label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="pay_later_header">
-                                </div>
-                            </div>
-                        </div>
+                        <h5 class="card-title mb-3">Add Customer Group</h5>
                             <form action="{{ route('settings.customerGroup.store') }}" method="POST"
                                 id="addCustomerGroupForm">
                                 @csrf
@@ -85,11 +65,6 @@
                                             <option value="0">No</option>
                                             <option value="1">Yes</option>
                                         </select>
-                                    </div>
-                                    <div class="col-md-3 form-control-validation">
-                                        <label class="form-label d-block">&nbsp;</label>
-                                        <!-- Hidden field to carry Pay Later value from header switch -->
-                                        <input type="hidden" name="pay_later" id="pay_later" value="0">
                                     </div>
                                 </div>
 

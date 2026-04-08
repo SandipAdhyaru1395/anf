@@ -323,4 +323,45 @@ class UserController extends Controller
     ]);
   }
 
+  public function getProfile()
+  {
+    return view('content.user.profile');
+  }
+
+  public function updateProfile(Request $request)
+  {
+    $user = $request->user();
+
+    $request->merge([
+      'phone' => PhoneNormalizer::normalize($request->phone),
+    ]);
+
+    $validator = Validator::make($request->all(), [
+      'name' => 'required|string|max:255',
+      'email' => 'required|email|unique:users,email,' . $user->id,
+      'phone' => ['nullable', 'min:10', 'max:20', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('users', 'phone')->ignore($user->id)],
+    ], [
+      'name.required' => 'Name is required',
+      'email.required' => 'Email is required',
+      'email.email' => 'Must be a valid email',
+      'email.unique' => 'Email already exists',
+      'phone.min' => 'Contact must be at least 10 characters.',
+      'phone.max' => 'Contact must be at most 20 characters.',
+      'phone.regex' => 'Contact must contain only letters and numbers.',
+      'phone.unique' => 'This contact number is already in use',
+    ]);
+
+    if ($validator->fails()) {
+      return redirect()->back()->withErrors($validator)->withInput();
+    }
+
+    $user->name = $request->name;
+    $user->email = $request->email;
+    $user->phone = $request->phone;
+    $user->save();
+
+    Toastr::success('Profile updated successfully!');
+    return redirect()->back();
+  }
+
 }

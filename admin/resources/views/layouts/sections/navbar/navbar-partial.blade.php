@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Route;
       <ul class="dropdown-menu dropdown-menu-end">
         <li>
           <a class="dropdown-item mt-0"
-            href="{{ Route::has('profile.show') ? route('profile.show') : url('profile-user') }}">
+            href="{{ url('profile') }}">
             <div class="d-flex align-items-center">
               <div class="flex-shrink-0 me-2">
                 <div class="avatar avatar-online">
@@ -54,7 +54,7 @@ use Illuminate\Support\Facades\Route;
         </li>
         <li>
           <a class="dropdown-item"
-            href="{{ Route::has('profile.show') ? route('profile.show') : url('profile-user') }}">
+            href="{{ url('profile') }}">
             <i class="icon-base ti tabler-user me-3 icon-md"></i><span class="align-middle">My Profile</span> </a>
         </li>
         <!-- <li>

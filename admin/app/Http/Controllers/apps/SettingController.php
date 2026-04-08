@@ -144,7 +144,7 @@ class SettingController extends Controller
   }
   public function deliveryMethodListAjax()
   {
-    $methods = DeliveryMethod::orderBy('id', 'desc')->get(['id', 'name', 'time', 'rate', 'minimum_amount', 'maximum_amount', 'status']);
+    $methods = DeliveryMethod::orderBy('id', 'desc')->get(['id', 'name', 'time', 'rate', 'vat', 'minimum_amount', 'maximum_amount', 'status']);
 
     $data = [];
     foreach ($methods as $key => $method) {
@@ -154,6 +154,7 @@ class SettingController extends Controller
       $data[$key]['minimum_amount'] = $method->minimum_amount;
       $data[$key]['maximum_amount'] = $method->maximum_amount;
       $data[$key]['rate'] = $method->rate;
+      $data[$key]['vat'] = $method->vat;
       $data[$key]['status'] = $method->status;
     }
 
@@ -351,7 +352,6 @@ class SettingController extends Controller
       $customerGroup = CustomerGroup::create([
         'name' => $validated['name'],
         'restrict_categories' => $validated['restrict_categories'],
-        'pay_later' => (bool) ($validated['pay_later'] ?? 0),
       ]);
 
       if ($validated['restrict_categories']) {
@@ -377,14 +377,13 @@ class SettingController extends Controller
   {
 
     $customerGroups = CustomerGroup::withCount('customers')
-      ->get(['id', 'name', 'restrict_categories', 'pay_later']);
+      ->get(['id', 'name', 'restrict_categories']);
 
     $data = [];
     foreach ($customerGroups as $key => $customerGroup) {
       $data[$key]['id'] = $customerGroup->id;
       $data[$key]['name'] = $customerGroup->name;
       $data[$key]['restrict_categories'] = $customerGroup->restrict_categories;
-      $data[$key]['pay_later'] = (bool) $customerGroup->pay_later;
       $data[$key]['customers_count'] = $customerGroup->customers_count;
     }
 
@@ -479,7 +478,6 @@ class SettingController extends Controller
     $customerGroup->update([
       'name' => $validated['name'],
       'restrict_categories' => $validated['restrict_categories'],
-      'pay_later' => (bool) ($validated['pay_later'] ?? 0),
     ]);
 
     // Clear old relations
@@ -601,7 +599,7 @@ class SettingController extends Controller
 
   public function deliveryMethodShow(Request $request)
   {
-    $method = DeliveryMethod::select('id', 'name', 'time', 'rate', 'minimum_amount', 'maximum_amount', 'status', 'sort_order')
+    $method = DeliveryMethod::select('id', 'name', 'time', 'rate', 'vat', 'minimum_amount', 'maximum_amount', 'status', 'sort_order')
       ->where('id', $request->id)
       ->first();
 
@@ -662,6 +660,7 @@ class SettingController extends Controller
       'dmName' => 'required|string|max:255',
       'dmTime' => 'required|string|max:255',
       'dmPrice' => 'required|numeric|min:0',
+      'dmVat' => 'required|numeric|min:0',
       'dmMinimumAmount' => 'required|numeric|min:0',
       'dmMaximumAmount' => 'nullable|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
@@ -670,6 +669,7 @@ class SettingController extends Controller
       'dmName.required' => 'Delivery Name is required.',
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
+      'dmVat.required' => 'VAT is required.',
       'dmMinimumAmount.required' => 'Minimum Amount is required.',
       'dmMaximumAmount.numeric' => 'Maximum Amount must be a number.',
       'dmStatus.required' => 'Status is required.',
@@ -693,6 +693,7 @@ class SettingController extends Controller
       'name' => $request->dmName,
       'time' => $request->dmTime,
       'rate' => $request->dmPrice,
+      'vat' => $request->dmVat,
       'minimum_amount' => $request->dmMinimumAmount,
       'maximum_amount' => $request->filled('dmMaximumAmount') ? $request->dmMaximumAmount : null,
       'status' => $request->dmStatus,
@@ -763,6 +764,7 @@ class SettingController extends Controller
       'dmName' => 'required|string|max:255',
       'dmTime' => 'required|string|max:255',
       'dmPrice' => 'required|numeric|min:0',
+      'dmVat' => 'required|numeric|min:0',
       'dmMinimumAmount' => 'required|numeric|min:0',
       'dmMaximumAmount' => 'nullable|numeric|min:0',
       'dmStatus' => 'required|in:Active,Inactive',
@@ -771,6 +773,7 @@ class SettingController extends Controller
       'dmName.required' => 'Delivery Name is required.',
       'dmTime.required' => 'Delivery Time is required.',
       'dmPrice.required' => 'Delivery Rate is required.',
+      'dmVat.required' => 'VAT is required.',
       'dmMinimumAmount.required' => 'Minimum Amount is required.',
       'dmMaximumAmount.numeric' => 'Maximum Amount must be a number.',
       'dmStatus.required' => 'Status is required.',
@@ -794,6 +797,7 @@ class SettingController extends Controller
     $method->name = $request->dmName;
     $method->time = $request->dmTime;
     $method->rate = $request->dmPrice;
+    $method->vat = $request->dmVat;
     $method->minimum_amount = $request->dmMinimumAmount;
     $method->maximum_amount = $request->filled('dmMaximumAmount') ? $request->dmMaximumAmount : null;
     $method->status = $request->dmStatus;
