@@ -45,6 +45,7 @@ export default function Register() {
       password: "",
       confirmPassword: "",
       repCode: "",
+      salesRepName: "",
     },
   });
 
@@ -87,6 +88,10 @@ export default function Register() {
         averageMonthlySpendExVat: values.averageMonthlySpendExVat,
         storesServicedCount: values.storesServicedCount,
         yourName: values.yourName,
+        salesRepName: values.salesRepName?.trim()
+          ? values.salesRepName.trim()
+          : undefined,
+        repCode: values.repCode?.trim() ? values.repCode.trim() : undefined,
       });
 
       if (data?.success) {
@@ -118,6 +123,8 @@ export default function Register() {
             averageMonthlySpendExVat: "averageMonthlySpendExVat",
             storesServicedCount: "storesServicedCount",
             yourName: "yourName",
+            salesRepName: "salesRepName",
+            repCode: "repCode",
             email: "email",
           };
           const target = map[field] || field;
@@ -474,10 +481,25 @@ export default function Register() {
               <section className="flex flex-col gap-2">
                 <h3 className={sectionTitleStyle}>Rep Code</h3>
                 <input
-                  {...register("repCode")}
+                  {...register("repCode", { maxLength: { value: 100, message: "Rep code must be at most 100 characters." } })}
                   placeholder="Please enter your rep code"
                   className={inputStyle}
+                  autoComplete="off"
                 />
+                {errors.repCode && (
+                  <p className={errorTextClass}>{errors.repCode.message as string}</p>
+                )}
+                <input
+                  {...register("salesRepName", { maxLength: 255 })}
+                  placeholder="Sales Rep Name (If Known)"
+                  className={inputStyle}
+                  autoComplete="off"
+                />
+                {errors.salesRepName && (
+                  <p className={errorTextClass}>
+                    {errors.salesRepName.message as string}
+                  </p>
+                )}
               </section>
 
               <p className="text-left text-[11px] font-normal leading-[18px] text-[#3D495E] [font-family:Roboto]">

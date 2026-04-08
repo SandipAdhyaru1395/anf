@@ -66,6 +66,7 @@ interface DeliveryMethod {
   name: string;
   time: string;
   rate: number;
+  vat?: number | string | null;
   status: string;
   minimum_amount?: number | string | null;
   maximum_amount?: number | string | null;
@@ -242,9 +243,11 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
   }, [deliveryMethods, subtotal, userSelectedDeliveryMethodId]);
 
   const deliveryRate = selectedDeliveryMethod ? Number(selectedDeliveryMethod.rate) || 0 : 0;
+  const deliveryVat = selectedDeliveryMethod ? Number(selectedDeliveryMethod.vat ?? 0) || 0 : 0;
   const discount = Number(walletDiscount) || 0;
-  const vat = Number(totalVatAmount) || 0;
-  const paymentTotal = subtotal - discount + deliveryRate + vat;
+  const vat = (Number(totalVatAmount) || 0) + deliveryVat;
+  const totalBeforeWalletDiscount = subtotal + deliveryRate + vat;
+  const paymentTotal = Math.max(0, totalBeforeWalletDiscount - discount);
 
   useEffect(() => {
     fetchBranches();
@@ -302,7 +305,10 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
     !!selectedShippingBranch &&
     !!selectedBillingBranch &&
     !!selectedDeliveryMethod &&
-    !hidePaymentSection;
+    (paymentTotal <= 0 || !hidePaymentSection);
+
+  const isZeroPayment = paymentTotal <= 0;
+  const shouldShowPaymentSection = !isZeroPayment && !hidePaymentSection;
 
   // If gateway becomes unavailable but pay-later is allowed, default to pay-later
   useEffect(() => {
@@ -322,7 +328,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
   }, [paymentMode, gatewayAvailable]);
 
   const handleContinueToPayment = async () => {
-    if (hidePaymentSection) {
+    if (!isZeroPayment && hidePaymentSection) {
       toast({
         title: "Checkout unavailable",
         description: "Online payment is currently unavailable. Please contact support.",
@@ -348,7 +354,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
     }
 
     // Require a valid payment mode
-    if (!paymentMode || (paymentMode === "pay_later" && !payLaterAllowed) || (paymentMode === "gateway_bank" && !selectedBankId)) {
+    if (!isZeroPayment && (!paymentMode || (paymentMode === "pay_later" && !payLaterAllowed) || (paymentMode === "gateway_bank" && !selectedBankId))) {
       const description = paymentMode === "gateway_bank" && !selectedBankId
         ? "Please select a bank for Pay by bank."
         : payLaterAllowed
@@ -380,8 +386,10 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         delivery_method_name: selectedDeliveryMethod?.name ?? null,
         delivery_time: selectedDeliveryMethod?.time ?? null,
         delivery_charge: selectedDeliveryMethod?.rate ?? null,
-        payment_mode: paymentMode,
       };
+      if (!isZeroPayment) {
+        payload.payment_mode = paymentMode;
+      }
       if (paymentMode === "gateway_bank" && selectedBankId) {
         payload.bank_id = selectedBankId;
       }
@@ -454,6 +462,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
 
         const gatewayErrorText = firstPaymentError || errorMessage || "";
         if (
+          !isZeroPayment &&
           typeof gatewayErrorText === "string" &&
           (gatewayErrorText.includes("Payment Gateway is disabled.") ||
             gatewayErrorText.includes("Payment Gateway is not configured."))
@@ -731,10 +740,6 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
                 <span className="text-[#5E6A80] font-[500] text-[15px]">Subtotal (Excl. VAT)</span>
                 <span className="text-[#5E6A80] font-[500] text-[15px]">{format(subtotal)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#5E6A80] font-[500] text-[15px]">Wallet Discount</span>
-                <span className="text-[#5E6A80] font-[500] text-[15px]">{format(discount)}</span>
-              </div>
               {selectedDeliveryMethod && (
                 <div className="flex justify-between">
                   <span className="text-[#5E6A80] font-[500] text-[15px]">Delivery</span>
@@ -745,6 +750,14 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
                 <span className="text-[#5E6A80] font-[500] text-[15px]">VAT ({subtotal > 0 ? ((vat/subtotal)*100).toFixed(2) : '20.00'}%)</span>
                 <span className="text-[#5E6A80] font-[500] text-[15px]">{format(vat)}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-[#5E6A80] font-[500] text-[15px]">Total</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">{format(totalBeforeWalletDiscount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#5E6A80] font-[500] text-[15px]">Wallet Discount</span>
+                <span className="text-[#5E6A80] font-[500] text-[15px]">- {format(discount)}</span>
+              </div>
               <div className="flex justify-between text-[16px] pt-3 mt-2">
                 <span className="text-[#3A86E4] font-bold text-[14px]">Payment Total</span>
                 <span className="text-[#3A86E4] font-bold text-[16px]">{format(paymentTotal)}</span>
@@ -754,7 +767,7 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
         </div>
 
         {/* Payment options */}
-        {!hidePaymentSection && (
+        {shouldShowPaymentSection && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <h3 className="text-[14px] font-bold text-[#131A44] mb-4 uppercase tracking-wider opacity-60">Payment Method</h3>
             <div className="space-y-3">
@@ -822,7 +835,13 @@ export function MobileCheckout({ onNavigate, onBack, cart, totals, clearCart, on
             className="w-full bg-[#4A90E5] disabled:bg-[#BDC7DE] text-white py-4 rounded-xl 
             font-bold text-[18px] hover:bg-[#3B7DCF] transition-colors shadow-lg shadow-[#4A90E53D] active:scale-[0.98] transform transition-transform"
           >
-            {isProcessing ? "Processing..." : "Continue to Payment"}
+            {isProcessing
+              ? isZeroPayment
+                ? "Placing order..."
+                : "Processing..."
+              : isZeroPayment
+                ? "Place Order"
+                : "Continue to Payment"}
           </button>
         </div>
       </main>

@@ -49,6 +49,8 @@ type OrderDetails = {
   subtotal: number;
   vat_amount: number;
   delivery_method: string;
+  customer_po_number?: string | null;
+  delivery_note?: string | null;
   delivery_charge: number;
   wallet_discount: number;
   total_paid: number;
@@ -226,6 +228,18 @@ export function MobileOrderDetails({
                     {Number(order.delivery_charge) <= 0 ? " - Free" : ` - ${order.currency_symbol}${order.delivery_charge.toFixed(2)}`}
                   </div>
                 </div>
+                <div className="mt-2 flex items-start justify-between gap-3">
+                  <span className="shrink-0 text-[12px] font-medium text-[#8F98AD]">PO Number</span>
+                  <div className="max-w-[72%] text-right text-[12px] font-medium leading-snug text-[#4E5667]">
+                    {order.customer_po_number?.trim() || "—"}
+                  </div>
+                </div>
+                <div className="mt-1.5 flex items-start justify-between gap-3">
+                  <span className="shrink-0 text-[12px] font-medium text-[#8F98AD]">Notes</span>
+                  <div className="max-w-[72%] text-right text-[12px] font-medium leading-snug text-[#4E5667]">
+                    {order.delivery_note?.trim() || "—"}
+                  </div>
+                </div>
 
                 <LabeledAddressRows companyLine={companyLine} address={order.address} />
               </div>
@@ -311,44 +325,64 @@ export function MobileOrderDetails({
                   );
                 })()}
                 <div className="space-y-2 text-[13px] text-[#4E5667]">
+                  {(() => {
+                    const subtotal = Number(order.subtotal || 0);
+                    const delivery = Number(order.delivery_charge || 0);
+                    const vat = Number(order.vat_amount || 0);
+                    const totalBeforeWalletDiscount = subtotal + delivery + vat;
+                    const walletDiscount = Math.abs(Number(order.wallet_discount || 0));
+                    const paymentTotal =
+                      order.payment_amount ??
+                      Math.max(0, (order.total_paid ?? 0) - (order.wallet_credit_used ?? 0));
+                    return (
+                      <>
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
+                    <span>Subtotal (Excl. VAT)</span>
                     <span dir="ltr">
                       {order.currency_symbol}
-                      {order.subtotal.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Wallet discount</span>
-                    <span dir="ltr">
-                      {order.currency_symbol}
-                      {Math.abs(order.wallet_discount).toFixed(2)}
+                          {subtotal.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery</span>
                     <span dir="ltr">
                       {order.currency_symbol}
-                      {(order.delivery_charge || 0).toFixed(2)}
+                          {delivery.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>VAT</span>
+                    <span>
+                            VAT ({subtotal > 0 ? ((vat / subtotal) * 100).toFixed(2) : "0.00"}%)
+                    </span>
                     <span dir="ltr">
                       {order.currency_symbol}
-                      {order.vat_amount.toFixed(2)}
+                          {vat.toFixed(2)}
                     </span>
                   </div>
+                        <div className="flex justify-between">
+                          <span>Total</span>
+                          <span dir="ltr">
+                            {order.currency_symbol}
+                            {totalBeforeWalletDiscount.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Wallet discount</span>
+                          <span dir="ltr">
+                            - {order.currency_symbol}
+                            {walletDiscount.toFixed(2)}
+                          </span>
+                        </div>
                   <div className="flex justify-between border-t border-[#E8EDF5] pt-2.5 text-[14px] font-bold">
                     <span>Payment total</span>
                     <span dir="ltr">
                       {order.currency_symbol}
-                      {(
-                        order.payment_amount ??
-                        Math.max(0, (order.total_paid ?? 0) - (order.wallet_credit_used ?? 0))
-                      ).toFixed(2)}
+                            {paymentTotal.toFixed(2)}
                     </span>
                   </div>
+                      </>
+                    );
+                  })()}
                 </div>
                 <button
                   type="button"
